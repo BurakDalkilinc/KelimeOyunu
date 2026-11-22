@@ -42,6 +42,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [x] Bilinmeyen kelime → "???" yaratığı
 - [x] Hayalet modu (eleme sonrası izleme): yarı saydam, WASD ile gezer, duvarlar/yaratıklar/tehditler işlemez, hedef alınamaz (oylama Aşama 4'te)
 - [x] Maç sonu ekranı: kazanan, yazılan kelimeler listesi, R ile yeniden başlama
+- [x] Piksel sanat görünümü: kodla üretilen 16x16 sprite'lar (`Tools/GeneratePixelArt.py`), Pixel Perfect Camera, piksel yazı tipi (Pixelify Sans). Beğenilmeyen sprite aynı adlı PNG ile değiştirilebilir
 - [ ] **Test:** 3 arkadaş oynadı, notlar `Docs/TEST_NOTLARI.md`'ye yazıldı
 
 ## Aşama 3 — Online 4–8 kişi
