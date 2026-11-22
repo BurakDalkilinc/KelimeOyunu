@@ -101,6 +101,15 @@ public class CreatureModel
     /// </summary>
     public float PlacementOffset { get; set; }
 
+    /// <summary>
+    /// Çözüm alanındaki (ev, mağara...) korunanlara vurulmasını engelleyen kaynak. null ise herkese vurabilir.
+    /// Sürü saldırısı gibi tehdit yaratıkları için tehdit tarafından atanır.
+    /// </summary>
+    public IProtection Protection { get; set; }
+
+    /// <summary>Oyuncu bu yaratığa karşı korunuyor mu?</summary>
+    bool IsProtectedFromThis(PlayerState player) => Protection != null && Protection.IsProtected(player.Id);
+
     /// <summary>true ise yaratık gökten düşer (ör. meteor): gölge olarak görünür, geri sayım yazısı gösterilmez. "sky" etiketi açar.</summary>
     public bool IsSky { get; set; }
 
@@ -263,7 +272,8 @@ public class CreatureModel
 
         bool touching = (targetPosition - Position).magnitude <= reach;
         bool hasEffect = Damage > 0 || KnockbackDistance > 0f || SlowSeconds > 0f; // Hasarsız ama fırlatan/yavaşlatan da etki eder.
-        bool targetOutOfReach = Target.Status.IsFlying && !IsFlying; // Uçan oyuncuya yerdeki yaratık vuramaz
+        bool targetOutOfReach = (Target.Status.IsFlying && !IsFlying) // Uçan oyuncuya yerdeki yaratık vuramaz
+                                || IsProtectedFromThis(Target);       // Evdekine (çözüm alanı) vurulamaz
         if (!touching || !hasEffect || hitCooldownLeft > 0f || targetOutOfReach) return false;
 
         if (Damage > 0) Target.TakeDamage(Damage);
@@ -398,6 +408,7 @@ public class CreatureModel
             if ((playerPosition - Position).magnitude > Radius + playerRadius) continue;
 
             if (player.Status.IsFlying && !IsFlying) continue; // Uçanlar tuzağa basmaz
+            if (IsProtectedFromThis(player)) continue;
 
             triggered++;
             if (Damage > 0) player.TakeDamage(Damage);
@@ -419,6 +430,7 @@ public class CreatureModel
         {
             if (!player.IsAlive || !world.TryGetPosition(player.Id, out Vector2 playerPosition)) continue;
             if ((playerPosition - Position).magnitude > Radius + playerRadius) continue;
+            if (IsProtectedFromThis(player)) continue;
 
             if (Damage > 0) player.TakeDamage(Damage);
             if (SlowSeconds > 0f) player.Status.ApplySlow(SlowMultiplier, SlowSeconds);

@@ -143,6 +143,14 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
         }
     }
 
+    /// <summary>Oyuncu herhangi bir tehdidin çözüm alanında şu an korunuyor mu?</summary>
+    public bool IsSheltered(PlayerState player)
+    {
+        foreach (GlobalThreat threat in threats)
+            if (threat.Zones.IsProtected(player.Id)) return true;
+        return false;
+    }
+
     /// <summary>
     /// Botun sığınacağı yeri verir: zaten içinde olduğu alan varsa orada kalır, yoksa en yakın boş alana gider.
     /// Etkinlik bittiyse (alan kalkınca) null döner.

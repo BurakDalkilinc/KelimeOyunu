@@ -14,6 +14,7 @@ public class MapWideTag : ITagBehaviour, IThreatEffectTag
         // Diğer etiketlere göre etki seçilir; yeni türler sırayla eklenir.
         if (word != null && word.HasTag("water")) return new WaveEffect();
         if (word != null && word.HasTag("sky")) return new MeteorShowerEffect();
+        if (word != null && word.HasTag("swarm")) return new HordeEffect();
 
         return new MapBlastEffect();
     }

@@ -98,7 +98,8 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         if (Refuge != null && Refuge.TryGetRefuge(State, transform.position, out Vector2 refugePoint))
             refuge = refugePoint;
 
-        Vector2 direction = brain.Think(Time.deltaTime, transform.position, dangers, refuge);
+        bool sheltered = Refuge != null && Refuge.IsSheltered(State);
+        Vector2 direction = brain.Think(Time.deltaTime, transform.position, dangers, refuge, sheltered);
         if (direction == Vector2.zero) return;
 
         FacingDirection = direction;

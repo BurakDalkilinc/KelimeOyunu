@@ -37,7 +37,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [ ] Kalan 4 global tehdit ve çözümleri
   - [x] Tsunami: rastgele kenardan dalga, kuleler (3 × 3 kişi) korur
   - [x] Meteor yağmuru: 12 sn'de 30 meteor, her biri 1,5 sn gölge gösterir, çözüm gölgeleri görüp kaçmak
-  - [ ] Zombi sürüsü (evler 4 × 2 kişi)
+  - [x] Zombi sürüsü: 5 sn uyarı, kenarlardan 20 zombi, 4 ev (2 kişilik) korur; evdeki bot evinde kalır
   - [ ] Ejderha (mağaralar 2 × 4 kişi, `fire`)
 - [ ] Bilinmeyen kelime → "???" yaratığı
 - [ ] Hayalet modu (eleme sonrası izleme)

@@ -523,6 +523,35 @@ public class ThreatTests
     }
 
     [Test]
+    public void Bot_AlreadyShelteredInAZone_StaysPut_EvenWithDangerRightNextToIt()
+    {
+        var brain = new BotBrain(config, arena, new Random(1));
+        var dangers = new List<DangerZone> { new DangerZone(new Vector2(1f, 0f), 1f) }; // Çok yakın tehlike
+        Vector2 refuge = new Vector2(0.5f, 0f);
+
+        // Korunmuyorsa kaçardı (sola); korunuyorsa sığınağın merkezine kalır.
+        Vector2 flee = brain.Think(0.1f, Vector2.zero, dangers, refuge, false);
+        Assert.Less(flee.x, 0f);
+
+        Vector2 stays = brain.Think(0.1f, new Vector2(0.45f, 0f), dangers, refuge, true);
+        Assert.AreEqual(Vector2.zero, stays, "Sığınağın merkezine yakınsa durur");
+
+        Vector2 returns = brain.Think(0.1f, new Vector2(-0.5f, 0f), dangers, refuge, true);
+        Assert.Greater(returns.x, 0f, "Merkezden uzaklaştıysa geri döner, kaçmaz");
+    }
+
+    [Test]
+    public void Bot_ShelteredButWithNoRefugePoint_FallsBackToNormalBehaviour()
+    {
+        var brain = new BotBrain(config, arena, new Random(1));
+        var dangers = new List<DangerZone> { new DangerZone(new Vector2(1f, 0f), 1f) };
+
+        Vector2 direction = brain.Think(0.1f, Vector2.zero, dangers, null, true);
+
+        Assert.Less(direction.x, 0f, "Sığınak noktası yoksa normal kaçma");
+    }
+
+    [Test]
     public void Bot_WithoutRefuge_StillWanders()
     {
         var brain = new BotBrain(config, arena, new Random(1));

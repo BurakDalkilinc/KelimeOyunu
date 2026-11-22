@@ -120,6 +120,9 @@ public class GameConfig : ScriptableObject
     [Tooltip("Oyuncuyu hedefleyen meteor, oyuncudan en fazla bu kadar uzağa düşer (birim).")]
     [Min(0f)] public float meteorAimSpread = 2f;
 
+    [Tooltip("Sürüde (swarm) bir üyenin ilk vuruş gecikmesi en çok bu kadar olur (sn). 20 kişilik sürüde sondakiler çok beklemesin diye.")]
+    [Min(0f)] public float swarmMaxStaggerSeconds = 4f;
+
     [Header("Tur süreleri (saniye)")]
     [Min(0.5f)] public float diceSeconds = 2f;
     [Min(1f)] public float typingSeconds = 10f;

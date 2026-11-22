@@ -44,6 +44,28 @@ public static class ArenaSpawn
         return center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * Mathf.Max(0f, distance);
     }
 
+    /// <summary>
+    /// Arenanın kenarında rastgele bir nokta verir (dört kenardan biri, kenar boyunca rastgele bir yer).
+    /// Sürü yaratıkları arenaya buradan girer. Nokta <paramref name="inset"/> kadar içeridedir, yani arenanın içindedir.
+    /// </summary>
+    public static Vector2 PickEdgePoint(ArenaBounds arena, System.Random random, float inset = 0.5f)
+    {
+        if (arena == null) throw new System.ArgumentNullException(nameof(arena));
+        if (random == null) throw new System.ArgumentNullException(nameof(random));
+
+        Vector2 half = arena.HalfSize - Vector2.one * Mathf.Max(0f, inset);
+        half = new Vector2(Mathf.Max(0f, half.x), Mathf.Max(0f, half.y));
+
+        float along = (float)random.NextDouble() * 2f - 1f; // -1..1
+        switch (random.Next(4))
+        {
+            case 0: return new Vector2(-half.x, along * half.y);
+            case 1: return new Vector2(half.x, along * half.y);
+            case 2: return new Vector2(along * half.x, half.y);
+            default: return new Vector2(along * half.x, -half.y);
+        }
+    }
+
     static Vector2 FarthestCorner(Vector2 half, Vector2 awayFrom)
     {
         Vector2 best = new Vector2(half.x, half.y);

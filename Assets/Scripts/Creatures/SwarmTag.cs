@@ -19,6 +19,7 @@ public class SwarmTag : ITagBehaviour, ISpawnCountTag
     public void Configure(CreatureModel creature, SpawnContext context)
     {
         if (context.Config == null) return;
-        creature.DelayFirstHit(context.Index * context.Config.swarmHitStaggerSeconds);
+        float delay = context.Index * context.Config.swarmHitStaggerSeconds;
+        creature.DelayFirstHit(Mathf.Min(delay, context.Config.swarmMaxStaggerSeconds)); // Büyük sürüde sondakiler çok beklemesin
     }
 }

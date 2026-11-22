@@ -41,6 +41,23 @@ public class BotBrain
     /// </summary>
     public Vector2 Think(float deltaSeconds, Vector2 position, IReadOnlyList<DangerZone> dangers, Vector2? refuge)
     {
+        return Think(deltaSeconds, position, dangers, refuge, false);
+    }
+
+    /// <summary>
+    /// Yukarıdakinin aynısı; <paramref name="sheltered"/> true ise bot zaten bir çözüm alanında korunuyordur: tehlikeden
+    /// kaçmaz, sığınağında kalır (korunduğu yerden çıkıp ölmesin).
+    /// </summary>
+    public Vector2 Think(float deltaSeconds, Vector2 position, IReadOnlyList<DangerZone> dangers, Vector2? refuge, bool sheltered)
+    {
+        if (sheltered && refuge.HasValue)
+        {
+            hasTarget = false;
+            pauseLeft = 0f;
+            Vector2 toShelter = refuge.Value - position;
+            return toShelter.magnitude <= config.botArrivalDistance ? Vector2.zero : toShelter.normalized;
+        }
+
         if (TryFlee(position, dangers, out Vector2 fleeDirection))
         {
             hasTarget = false; // Kaçtıktan sonra yeni bir hedef seçilsin.
