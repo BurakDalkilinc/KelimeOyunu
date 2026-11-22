@@ -189,7 +189,7 @@ public class CreatureView : MonoBehaviour
     {
         if (string.IsNullOrEmpty(text)) return; // Sürünün diğer üyelerinde yazı olmaz.
 
-        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        var font = GameFont.Get();
 
         var labelObject = new GameObject("Label");
         labelObject.transform.SetParent(transform, false);

@@ -34,7 +34,7 @@ public class SafeZoneView : MonoBehaviour
             iconRenderer.sortingOrder = 3;
         }
 
-        var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        var font = GameFont.Get();
         var labelObject = new GameObject("Etiket");
         labelObject.transform.SetParent(transform, false);
         labelObject.transform.localPosition = new Vector3(0f, zone.Radius + 0.4f, 0f);
