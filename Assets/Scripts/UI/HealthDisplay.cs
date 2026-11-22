@@ -21,6 +21,12 @@ public class HealthDisplay : MonoBehaviour
         }
 
         health = player.Health;
+        if (health == null)
+        {
+            Debug.LogError("HealthDisplay: oyuncu maça bağlanmamış (sahnede MatchBootstrap var mı?).", this);
+            return;
+        }
+
         health.Changed += OnChanged;
         Refresh(health.Current, health.Max);
     }

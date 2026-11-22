@@ -11,7 +11,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 ## Aşama 2 — Yerel prototip (tek bilgisayar, botlarla)
 - [x] Oyun alanı: sınırları olan düz bir 2D arena, kamera
 - [x] Oyuncu: WASD hareketi, 3 can, can göstergesi
-- [ ] 7 bot oyuncu: rastgele dolaşır, tehditten kaçmaya çalışır
+- [x] 7 bot oyuncu: rastgele dolaşır, tehditten kaçmaya çalışır
 - [x] `WordNormalizer`: Türkçe küçük harf, boşluk temizleme, aksansız eşleşme + testleri
 - [x] `WordDatabase`: words.json'u yükler, alias ile arar, kullanılan kelimeleri kilitler + testleri
 - [x] `TurnManager`: zar → yazma → sonuç → eleme döngüsü + testleri

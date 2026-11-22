@@ -23,6 +23,25 @@ public class GameConfig : ScriptableObject
     [Tooltip("Kameranın arenanın etrafında bırakacağı boşluk (birim).")]
     [Min(0f)] public float cameraPadding = 1f;
 
+    [Header("Botlar")]
+    [Tooltip("Oyuncuyla birlikte maça katılan bot sayısı (1 oyuncu + 7 bot = 8 kişi).")]
+    [Min(0)] public int botCount = 7;
+    [Min(0.1f)] public float botMoveSpeed = 4f;
+    [Tooltip("Botun gezinme hedeflerini arena kenarından ne kadar içeride seçeceği (birim).")]
+    [Min(0f)] public float botWanderMargin = 1.5f;
+    [Tooltip("Hedefe bu kadar yaklaşınca bot vardı sayılır (birim).")]
+    [Min(0.05f)] public float botArrivalDistance = 0.3f;
+    [Tooltip("Bot hedefe varınca bu iki değer arasında rastgele bekler (sn).")]
+    [Min(0f)] public float botPauseMin = 0.3f;
+    [Min(0f)] public float botPauseMax = 1.5f;
+    [Tooltip("Bot, tehlike alanının kenarına bu kadar yaklaşınca kaçmaya başlar (birim).")]
+    [Min(0f)] public float botFleeMargin = 2f;
+
+    [Tooltip("Kaçarken bot, duvara bu mesafeden yakınsa duvardan uzaklaşmaya başlar (birim). Köşeye sıkışmayı önler.")]
+    [Min(0f)] public float botWallAvoidRange = 3f;
+    [Tooltip("Duvardan uzak durma kuvveti (kaçış kuvvetine göre).")]
+    [Min(0f)] public float botWallAvoidWeight = 1.5f;
+
     [Header("Tur süreleri (saniye)")]
     [Min(0.5f)] public float diceSeconds = 2f;
     [Min(1f)] public float typingSeconds = 10f;

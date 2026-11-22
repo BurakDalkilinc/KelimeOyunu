@@ -12,19 +12,28 @@ public class PlayerController : MonoBehaviour
 
     ArenaBounds arena;
 
-    /// <summary>Oyuncunun canı.</summary>
-    public Health Health { get; private set; }
+    /// <summary>Oyuncunun maçtaki durumu. <see cref="Bind"/> çağrılana kadar null.</summary>
+    public PlayerState State { get; private set; }
+
+    /// <summary>Oyuncunun canı (bağlanmadıysa null).</summary>
+    public Health Health => State?.Health;
 
     /// <summary>Yazı kutusu açıkken ya da oyuncu elenince false yapılır.</summary>
     public bool CanMove { get; set; } = true;
+
+    /// <summary>Oyuncuyu maç durumuna bağlar. Maçı kuran <see cref="MatchBootstrap"/> çağırır.</summary>
+    public void Bind(PlayerState state)
+    {
+        if (State != null) State.Health.Died -= OnDied;
+        State = state;
+        State.Health.Died += OnDied;
+    }
 
     void Awake()
     {
         if (config == null) { Debug.LogError("PlayerController: GameConfig atanmamış.", this); enabled = false; return; }
 
         arena = new ArenaBounds(config.arenaSize);
-        Health = new Health(config.startingHealth);
-        Health.Died += OnDied;
 
         var sr = GetComponent<SpriteRenderer>();
         if (sr != null)
@@ -38,12 +47,12 @@ public class PlayerController : MonoBehaviour
 
     void OnDestroy()
     {
-        if (Health != null) Health.Died -= OnDied;
+        if (State != null) State.Health.Died -= OnDied;
     }
 
     void Update()
     {
-        if (!CanMove) return;
+        if (!CanMove || State == null) return;
 
         Vector2 input = ReadMoveInput();
         if (input == Vector2.zero) return;
