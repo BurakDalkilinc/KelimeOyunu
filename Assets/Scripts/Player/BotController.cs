@@ -68,7 +68,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
     void MoveBy(Vector2 delta)
     {
         Vector2 from = transform.position;
-        IObstacleField obstacles = State.Status.IsFlying ? null : Obstacles;
+        IObstacleField obstacles = MovementRules.EffectiveObstacles(State, Obstacles);
         transform.position = ObstacleMover.Move(from, from + delta, config.playerRadius, arena, config.playerRadius, obstacles);
     }
 

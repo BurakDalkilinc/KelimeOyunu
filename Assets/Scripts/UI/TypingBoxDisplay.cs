@@ -68,7 +68,7 @@ public class TypingBoxDisplay : MonoBehaviour
 
     void RestoreMovement()
     {
-        if (player != null && player.State != null) player.CanMove = player.State.IsAlive;
+        if (player != null && player.State != null) player.CanMove = true; // Hayalet de gezebilir
     }
 
     void Open()

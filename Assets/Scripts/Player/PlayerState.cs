@@ -26,6 +26,9 @@ public class PlayerState
         return Health.TakeDamage(amount);
     }
 
+    /// <summary>Elendi mi? Elenenler hayalet olur: izlemeye devam eder, hiçbir şeyi etkilemez, hiçbir şey ona işlemez.</summary>
+    public bool IsGhost => Health.IsDead;
+
     /// <summary>Hayatta mı? (Elenenler hayalet olur, zarda seçilmez.)</summary>
     public bool IsAlive => !Health.IsDead;
 

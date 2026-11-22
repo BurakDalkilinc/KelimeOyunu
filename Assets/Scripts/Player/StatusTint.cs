@@ -13,6 +13,17 @@ public static class StatusTint
     /// <summary>Görünmez karakterin saydamlığı (0 = tamamen görünmez).</summary>
     public const float StealthAlpha = 0.3f;
 
+    /// <summary>Hayaletin (elenmiş oyuncunun) saydamlığı.</summary>
+    public const float GhostAlpha = 0.35f;
+
+    /// <summary>Hayalet görünümü: taban renk beyaza doğru solar ve yarı saydam olur.</summary>
+    public static Color Ghost(Color baseColor)
+    {
+        Color color = Color.Lerp(baseColor, Color.white, 0.5f);
+        color.a = GhostAlpha;
+        return color;
+    }
+
     /// <summary>Taban rengi etkilere göre değiştirir. Etki yoksa taban renk aynen döner.</summary>
     public static Color Apply(Color baseColor, StatusEffects status)
     {

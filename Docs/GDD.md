@@ -42,7 +42,7 @@
 - Çekme (Mıknatıs, pull): arenanın merkezine düşer ve süresi boyunca (4 sn) hedefi saniyede 4 birim hızla oraya çeker. Oyuncu hızı 5 olduğu için ters yönde yürüyerek direnebilir. Botlar mıknatıstan kaçmaz.
 - Yavaşlatma (slowdown): hız yarıya iner. Alan yaratıkları (Bulut) içindeki herkesi yavaşlatır; alandan çıkınca etki 0,6 sn daha sürer.
 - Vur-kaç yaratıklar (ör. Kurt, predator): vurduktan sonra 2 sn geri çekilir, ömrünün son 1,5 sn'sinde sıkılıp gider. Sürü (swarm) üyelerinin ilk vuruşları 0,8 sn arayla kademelidir.
-- Hayaletler: (karar bekliyor) oylama ile sonraki turu etkiler.
+- Hayaletler: elenen oyuncu hayalet olur: yarı saydam görünür, arenada gezip maçı izler; duvarlar, yaratıklar ve tehditler ona işlemez, hedef alınamaz, zarda seçilmez. (Oylama ile sonraki turu etkilemek Aşama 4'te.)
 
 ## Etiket listesi (v1)
 | Etiket | Anlamı |

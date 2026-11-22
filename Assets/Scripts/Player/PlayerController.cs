@@ -74,17 +74,18 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
     void MoveBy(Vector2 delta)
     {
         Vector2 from = transform.position;
-        IObstacleField obstacles = State.Status.IsFlying ? null : Obstacles;
+        IObstacleField obstacles = MovementRules.EffectiveObstacles(State, Obstacles);
         transform.position = ObstacleMover.Move(from, from + delta, config.playerRadius, arena, config.playerRadius, obstacles);
     }
 
     /// <summary>Karakter bir duvarın içine girmişse (duvar tam üstüne çıktı ya da fırlatıldı) dışarı iter.</summary>
     void ResolveObstacles()
     {
-        if (Obstacles == null || State.Status.IsFlying) return;
+        IObstacleField obstacles = MovementRules.EffectiveObstacles(State, Obstacles);
+        if (obstacles == null) return;
 
         Vector2 position = transform.position;
-        Vector2 resolved = Obstacles.Resolve(position, config.playerRadius);
+        Vector2 resolved = obstacles.Resolve(position, config.playerRadius);
         if (resolved != position)
             transform.position = arena.Clamp(resolved, config.playerRadius);
     }
@@ -116,7 +117,7 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
     void UpdateTint()
     {
         if (spriteRenderer == null) return;
-        spriteRenderer.color = StatusTint.Apply(playerColor, State.Status);
+        spriteRenderer.color = State.IsGhost ? StatusTint.Ghost(playerColor) : StatusTint.Apply(playerColor, State.Status);
     }
 
     /// <summary>WASD / ok tuşlarından yön okur. Çapraz hareket de aynı hızda olur.</summary>
@@ -143,7 +144,9 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
 
     void OnDied()
     {
-        // Eleme: karakter durur. Hayalet modu ileride (Player/Ghost) eklenecek.
-        CanMove = false;
+        // Eleme: oyuncu hayalet olur. Yarı saydam görünür, WASD ile arenada gezip maçı izlemeye devam eder;
+        // duvarlar, yaratıklar ve tehditler ona işlemez. Üzerindeki etkiler (yavaşlama, kalkan...) kalkar.
+        State.Status.Clear();
+        CanMove = true;
     }
 }

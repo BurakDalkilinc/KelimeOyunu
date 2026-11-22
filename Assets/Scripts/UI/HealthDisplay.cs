@@ -43,6 +43,6 @@ public class HealthDisplay : MonoBehaviour
 
     void Refresh(int current, int max)
     {
-        label.text = current > 0 ? $"Can: {current} / {max}" : "Elendin";
+        label.text = current > 0 ? $"Can: {current} / {max}" : "Elendin: hayalet olarak izliyorsun";
     }
 }
