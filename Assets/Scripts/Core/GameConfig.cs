@@ -85,6 +85,15 @@ public class GameConfig : ScriptableObject
     [Tooltip("Kelimede 'slowSeconds' yazmıyorsa yavaşlatma süresi (sn).")]
     [Min(0.1f)] public float slowdownDefaultSeconds = 3f;
 
+    [Tooltip("Alan yaratığının (ör. yağmur bulutu) içindeki yavaşlatma, alandan çıkınca bu kadar süre daha sürer (sn). Kısa tutulur ki alandan kaçan hemen kurtulsun.")]
+    [Min(0.1f)] public float areaLingerSeconds = 0.6f;
+
+    [Tooltip("Patlayıcı (explosive) yaratık, hedefin bu kadar yanına düşer (birim). Yumruk gibi tam üstüne değil.")]
+    [Min(0f)] public float explosiveDropDistance = 1.5f;
+
+    [Tooltip("Tuzak (trap) hedefin bu kadar yanına düşer (birim).")]
+    [Min(0f)] public float trapDropDistance = 2f;
+
     [Header("Tur süreleri (saniye)")]
     [Min(0.5f)] public float diceSeconds = 2f;
     [Min(1f)] public float typingSeconds = 10f;

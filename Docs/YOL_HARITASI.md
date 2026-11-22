@@ -25,9 +25,9 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
   - [x] `instant` (yerde uyarı alanı, süre dolunca alandaki herkese vurur), `knockback` (kısa süreye yayılan fırlatma)
 - [ ] Etiket davranışları: `trap`, `slowdown`, `pull`, `explosive`, `area`, `sky`
   - [x] Durum etkileri altyapısı ve `slowdown` (Fare: hasarsız yavaşlatma, göstergeli)
-  - [ ] `area` (Bulut: hedefi takip eden, içindekileri yavaşlatan alan)
-  - [ ] `explosive` (Bomba: yanına düşer, fitil, alan patlaması)
-  - [ ] `trap` (Muz kabuğu: yerde bekler, basanı kaydırır)
+  - [x] `area` (Bulut: hedefi yavaşça takip eden, içindeki herkesi yavaşlatan sürekli alan)
+  - [x] `explosive` (Bomba: hedefin yanına düşer, ekranda geri sayım, süre dolunca alandaki herkese hasar)
+  - [x] `trap` (Muz kabuğu: hedefin yanına düşer, basan herkes kayar, tek kullanımlık, botlar görmez)
   - [ ] `pull` (Mıknatıs: hedefi merkeze çeker)
   - [ ] `sky`: global tehdit adımında (Meteor yağmuru) yapılacak
 - [ ] Koruma etiketleri: `shield`, `heal`, `wall`, `escape`, `stealth`

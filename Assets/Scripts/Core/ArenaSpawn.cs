@@ -32,6 +32,18 @@ public static class ArenaSpawn
         return FarthestCorner(half, awayFrom);
     }
 
+    /// <summary>
+    /// <paramref name="center"/> noktasının <paramref name="distance"/> kadar yanında, rastgele bir yönde bir nokta verir
+    /// (arenaya sıkıştırma yapılmaz; yaratık modeli yerleşirken kendisi sıkıştırır).
+    /// </summary>
+    public static Vector2 PointBeside(Vector2 center, float distance, System.Random random)
+    {
+        if (random == null) throw new System.ArgumentNullException(nameof(random));
+
+        float angle = (float)(random.NextDouble() * Mathf.PI * 2.0);
+        return center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * Mathf.Max(0f, distance);
+    }
+
     static Vector2 FarthestCorner(Vector2 half, Vector2 awayFrom)
     {
         Vector2 best = new Vector2(half.x, half.y);

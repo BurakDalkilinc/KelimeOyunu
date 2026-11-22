@@ -82,6 +82,40 @@ public class CreatureModel
         }
     }
 
+    /// <summary>"area" etiketi bunu açar: etki hedefe temasla değil, yaratığın yarıçapındaki herkese uygulanmak ister.</summary>
+    public bool AreaRequested { get; set; }
+
+    /// <summary>Alan yaratığında, alandan çıkan oyuncuda etkinin ne kadar süre daha kalacağı (sn).</summary>
+    public float AreaLingerSeconds { get; set; }
+
+    /// <summary>
+    /// Sürekli alan yaratığı mı (ör. yağmur bulutu)? Hedefi yavaşça takip eder ve yarıçapındaki herkesi etkiler.
+    /// Anında vuran yaratıklar zaten alan vuruşu yaptığı için bunlarda "area" bir şey değiştirmez.
+    /// Alanın uygulayacağı bir etki de olmalı (şimdilik yavaşlatma); etkisiz alan yaratığı eski temas davranışında kalır.
+    /// </summary>
+    public bool IsArea => AreaRequested && !IsStrike && SlowSeconds > 0f;
+
+    /// <summary>
+    /// 0'dan büyükse anında vuran yaratık hedefin üstüne değil, onun bu kadar yanına yerleştirilir (birim).
+    /// "explosive" etiketi ayarlar.
+    /// </summary>
+    public float PlacementOffset { get; set; }
+
+    /// <summary>true ise ekranda fitilin kalan saniyesi yazılır (geri sayım). "explosive" etiketi açar.</summary>
+    public bool ShowsCountdown { get; set; }
+
+    /// <summary>Anında vuran yaratığın vuruşuna kalan süre (sn). Vuruş yapıldıysa ya da vuran değilse 0.</summary>
+    public float StrikeWarningLeft => IsStrike && !HasStruck ? Mathf.Max(0f, strikeWarningLeft) : 0f;
+
+    /// <summary>
+    /// true ise yaratık bir tuzaktır: yerinde bekler, yarıçapına giren herkesi (hedef olsun olmasın) etkiler ve bir kez
+    /// tetiklenince kaybolur. "trap" etiketi açar. Botlar tuzakları görmez, onlardan kaçmaz.
+    /// </summary>
+    public bool IsTrap { get; set; }
+
+    /// <summary>Hedefin yakınına yerleştirilen türden mi (anında vuran ya da tuzak)? Mesafeyi <see cref="PlacementOffset"/> belirler.</summary>
+    public bool PlacesNearTarget => IsStrike || IsTrap;
+
     /// <summary>Anında vuran yaratık mı?</summary>
     public bool IsStrike => strikeWarningSeconds > 0f;
 
@@ -119,7 +153,7 @@ public class CreatureModel
     /// Oyuncuya herhangi bir zarar ya da engel verebilir mi (hasar, fırlatma ya da yavaşlatma)? Botlar bunlardan kaçar.
     /// Anında vuran yaratık vuruşunu yaptıktan sonra artık zararlı değildir.
     /// </summary>
-    public bool IsHarmful => !IsFinished && Target != null
+    public bool IsHarmful => !IsFinished && Target != null && !IsTrap // Botlar tuzakları görmez
                              && (Damage > 0 || KnockbackDistance > 0f || SlowSeconds > 0f)
                              && !(IsStrike && HasStruck);
 
@@ -163,7 +197,7 @@ public class CreatureModel
     /// </summary>
     public bool Tick(float deltaSeconds, Vector2 targetPosition, float targetRadius, float hitCooldownSeconds)
     {
-        if (IsFinished || IsStrike) return false;
+        if (IsFinished || IsStrike || IsArea || IsTrap) return false;
 
         float dt = Mathf.Max(0f, deltaSeconds);
         LifeLeft -= dt;
@@ -234,6 +268,83 @@ public class CreatureModel
 
         if (LifeLeft <= 0f) IsFinished = true;
         return affected;
+    }
+
+    /// <summary>
+    /// Sürekli alan yaratığının zamanını ilerletir: hedefin üstüne doğru süzülür (hızı kelimenin değeri, genelde
+    /// oyuncudan yavaş, yani alandan kaçılabilir) ve yarıçapındaki hayattaki herkesi etkiler (şimdilik yavaşlatma).
+    /// Etki her karede tazelenir ve alandan çıkınca <see cref="AreaLingerSeconds"/> kadar sürer.
+    /// Alandaki oyuncu sayısını döndürür. Hedef elenirse yaratık kaybolur.
+    /// </summary>
+    public int TickArea(float deltaSeconds, IPlayerLocator world, float playerRadius)
+    {
+        if (!IsArea || IsFinished) return 0;
+
+        float dt = Mathf.Max(0f, deltaSeconds);
+        LifeLeft -= dt;
+        if (LifeLeft <= 0f)
+        {
+            IsFinished = true;
+            return 0;
+        }
+
+        if (Target != null && !Target.IsAlive)
+        {
+            IsFinished = true;
+            return 0;
+        }
+
+        if (world == null) return 0;
+
+        if (Target != null && world.TryGetPosition(Target.Id, out Vector2 targetPosition))
+            MoveToward(targetPosition, 0.1f, dt);
+
+        int inside = 0;
+        foreach (PlayerState player in world.Players)
+        {
+            if (!player.IsAlive || !world.TryGetPosition(player.Id, out Vector2 playerPosition)) continue;
+            if ((playerPosition - Position).magnitude > Radius + playerRadius) continue;
+
+            inside++;
+            if (SlowSeconds > 0f) player.Status.ApplySlow(SlowMultiplier, AreaLingerSeconds);
+        }
+        return inside;
+    }
+
+    /// <summary>
+    /// Tuzağın zamanını ilerletir: yarıçapına (+ oyuncu yarıçapı) giren hayattaki herkesi etkiler (hasar, yavaşlatma,
+    /// fırlatma: tuzağın merkezinden dışarı) ve tek kullanımlık olduğu için kaybolur. Fırlatılacaklar
+    /// <paramref name="hits"/> listesine eklenir. Tetiklenen oyuncu sayısını döndürür. Hedef elense de tuzak yerinde kalır.
+    /// </summary>
+    public int TickTrap(float deltaSeconds, IPlayerLocator world, float playerRadius, List<CreatureHit> hits)
+    {
+        if (!IsTrap || IsFinished) return 0;
+
+        float dt = Mathf.Max(0f, deltaSeconds);
+        LifeLeft -= dt;
+        if (LifeLeft <= 0f)
+        {
+            IsFinished = true;
+            return 0;
+        }
+
+        if (world == null) return 0;
+
+        int triggered = 0;
+        foreach (PlayerState player in world.Players)
+        {
+            if (!player.IsAlive || !world.TryGetPosition(player.Id, out Vector2 playerPosition)) continue;
+            if ((playerPosition - Position).magnitude > Radius + playerRadius) continue;
+
+            triggered++;
+            if (Damage > 0) player.Health.TakeDamage(Damage);
+            if (SlowSeconds > 0f) player.Status.ApplySlow(SlowMultiplier, SlowSeconds);
+            if (KnockbackDistance > 0f && hits != null)
+                hits.Add(new CreatureHit(player, DirectionAway(Position, playerPosition) * KnockbackDistance));
+        }
+
+        if (triggered > 0) IsFinished = true; // Tek kullanımlık
+        return triggered;
     }
 
     int Strike(IPlayerLocator world, float playerRadius, List<CreatureHit> hits)

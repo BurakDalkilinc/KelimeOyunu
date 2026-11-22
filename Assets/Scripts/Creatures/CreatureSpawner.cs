@@ -94,7 +94,14 @@ public class CreatureSpawner : MonoBehaviour
             CreatureModel model = CreatureFactory.CreateAttack(word, target, spawn, config, arena, i, count);
 
             // Anında vuran yaratık (yumruk) uzaktan koşmaz: uyarı alanı hedefin o anki yerine konur.
-            if (model.IsStrike) model.PlaceAt(targetPosition);
+            if (model.PlacesNearTarget)
+            {
+                // Yumruk hedefin tam üstüne düşer; patlayıcı (bomba) ve tuzak (muz kabuğu) yanına düşer.
+                Vector2 at = model.PlacementOffset > 0f
+                    ? ArenaSpawn.PointBeside(targetPosition, model.PlacementOffset, random)
+                    : targetPosition;
+                model.PlaceAt(at);
+            }
 
             Create(model, attackColor, count == 1 || i == 0 ? word.display : string.Empty);
         }

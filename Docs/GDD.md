@@ -31,6 +31,9 @@
 - Global tehdit = haritada çözüm de çıkar.
 - Bilinmeyen kelime: komik "???" yaratığı (zararsız), tur yanmaz.
 - Alan etkili saldırılar (ör. Yumruk): yerde uyarı alanı çıkar (hedefin o anki yerinde, hedefi takip etmez), uyarı süresi dolunca alandaki herkese vurur, yazan dahil. Fırlatma (knockback) kısa süreye yayılır.
+- Gecikmeli patlayıcılar (ör. Bomba, explosive): hedefin 1,5 birim yanına düşer, fitil süresince ekranda geri sayım görünür, süre dolunca yarıçapındaki herkese hasar verir (fırlatmaz). Fitil süresinde alandan çıkılarak kaçılır.
+- Tuzaklar (ör. Muz kabuğu, trap): hedefin 2 birim yanına düşer ve yerinde bekler (15 sn). Yarıçapına kim basarsa (hedef, yazan ya da başkası) kayar ve tuzak kaybolur (tek kullanımlık). Botlar tuzakları görmez, onlardan kaçmaz.
+- Yavaşlatma (slowdown): hız yarıya iner. Alan yaratıkları (Bulut) içindeki herkesi yavaşlatır; alandan çıkınca etki 0,6 sn daha sürer.
 - Vur-kaç yaratıklar (ör. Kurt, predator): vurduktan sonra 2 sn geri çekilir, ömrünün son 1,5 sn'sinde sıkılıp gider. Sürü (swarm) üyelerinin ilk vuruşları 0,8 sn arayla kademelidir.
 - Hayaletler: (karar bekliyor) oylama ile sonraki turu etkiler.
 

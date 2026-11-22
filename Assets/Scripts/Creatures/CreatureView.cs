@@ -17,6 +17,7 @@ public class CreatureView : MonoBehaviour
     BotBrain wanderBrain;
     SpriteRenderer bodyRenderer;
     SpriteRenderer fillRenderer;
+    TextMesh labelMesh;
 
     /// <summary>Bu yaratığın oyun mantığı.</summary>
     public CreatureModel Model { get; private set; }
@@ -67,6 +68,23 @@ public class CreatureView : MonoBehaviour
             return;
         }
 
+        // Tuzak (muz kabuğu) yerinde bekler; yarıçapına giren herkesi etkiler ve kaybolur.
+        if (Model.IsTrap)
+        {
+            hits.Clear();
+            Model.TickTrap(dt, bootstrap, config.playerRadius, hits);
+            foreach (CreatureHit hit in hits)
+                bootstrap.TryApplyKnockback(hit.Player.Id, hit.Knockback);
+            return;
+        }
+
+        // Sürekli alan yaratığı (bulut): hedefi yavaşça takip eder, içindeki herkesi etkiler.
+        if (Model.IsArea)
+        {
+            Model.TickArea(dt, bootstrap, config.playerRadius);
+            return;
+        }
+
         bool hasTarget = bootstrap.TryGetPosition(Model.Target.Id, out Vector2 targetPosition);
         bool hitSomeone = Model.Tick(dt, hasTarget ? targetPosition : Model.Position, config.playerRadius, config.creatureHitCooldownSeconds);
 
@@ -83,6 +101,17 @@ public class CreatureView : MonoBehaviour
         bodyRenderer = body.AddComponent<SpriteRenderer>();
         bodyRenderer.sprite = SpriteFactory.Circle();
         bodyRenderer.sortingOrder = 8;
+
+        if (Model.IsTrap)
+        {
+            color = new Color(1f, 0.85f, 0.2f, 0.85f); // Sarı: muz kabuğu
+        }
+
+        if (Model.IsArea)
+        {
+            // Sürekli alan: büyük, yarı saydam, soğuk renkli bir daire.
+            color = new Color(0.55f, 0.7f, 0.95f, 0.32f);
+        }
 
         if (Model.IsStrike)
         {
@@ -114,6 +143,10 @@ public class CreatureView : MonoBehaviour
         }
 
         fillRenderer.transform.localScale = Vector3.one * (Model.Radius * 2f * Model.StrikeProgress);
+
+        // Patlayıcıda fitilin kalan saniyesi kelimenin yanında yazılır (3, 2, 1).
+        if (Model.ShowsCountdown && labelMesh != null && Model.Word != null)
+            labelMesh.text = Model.Word.display + " " + Mathf.CeilToInt(Model.StrikeWarningLeft);
     }
 
     void BuildLabel(string text, float radius)
@@ -127,6 +160,7 @@ public class CreatureView : MonoBehaviour
         labelObject.transform.localPosition = new Vector3(0f, radius + 0.45f, 0f);
 
         var mesh = labelObject.AddComponent<TextMesh>();
+        labelMesh = mesh;
         mesh.font = font;
         mesh.text = text;
         mesh.fontSize = 64;
