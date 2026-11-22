@@ -40,7 +40,14 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
 
         spriteRenderer = gameObject.GetComponent<SpriteRenderer>();
         if (spriteRenderer == null) spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
-        spriteRenderer.sprite = SpriteFactory.Circle();
+        spriteRenderer.sprite = SpriteLibrary.Get("char") ?? SpriteFactory.Circle();
+        Sprite[] frames = SpriteLibrary.GetFrames("char");
+        if (frames.Length >= 2)
+        {
+            var animator = gameObject.GetComponent<SpriteAnimator>();
+            if (animator == null) animator = gameObject.AddComponent<SpriteAnimator>();
+            animator.SetFrames(frames);
+        }
         spriteRenderer.color = color;
         spriteRenderer.sortingOrder = 5;
         transform.localScale = Vector3.one * (config.playerRadius * 2f);

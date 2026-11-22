@@ -23,6 +23,17 @@ public class SafeZoneView : MonoBehaviour
         sr.color = ThreatText.GetZoneColor(zone.Type);
         sr.sortingOrder = 2;
 
+        Sprite icon = SpriteLibrary.Get(zone.Type);
+        if (icon != null)
+        {
+            var iconObject = new GameObject("Simge");
+            iconObject.transform.SetParent(transform, false);
+            iconObject.transform.localScale = Vector3.one * Mathf.Max(1f, Mathf.Round(zone.Radius));
+            var iconRenderer = iconObject.AddComponent<SpriteRenderer>();
+            iconRenderer.sprite = icon;
+            iconRenderer.sortingOrder = 3;
+        }
+
         var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         var labelObject = new GameObject("Etiket");
         labelObject.transform.SetParent(transform, false);

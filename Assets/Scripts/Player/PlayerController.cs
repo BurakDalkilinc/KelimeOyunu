@@ -47,8 +47,15 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
         var sr = spriteRenderer;
         if (sr != null)
         {
-            sr.sprite = SpriteFactory.Circle();
+            sr.sprite = SpriteLibrary.Get("char") ?? SpriteFactory.Circle();
             sr.color = playerColor;
+            Sprite[] frames = SpriteLibrary.GetFrames("char");
+            if (frames.Length >= 2)
+            {
+                var animator = sr.gameObject.GetComponent<SpriteAnimator>();
+                if (animator == null) animator = sr.gameObject.AddComponent<SpriteAnimator>();
+                animator.SetFrames(frames);
+            }
             sr.sortingOrder = 10;
         }
         transform.localScale = Vector3.one * (config.playerRadius * 2f);

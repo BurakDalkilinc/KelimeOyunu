@@ -53,9 +53,22 @@ public class ArenaView : MonoBehaviour
         go.transform.localScale = new Vector3(size.x, size.y, 1f);
 
         var sr = go.AddComponent<SpriteRenderer>();
+        sr.sortingOrder = sortingOrder;
+
+        // Piksel sanat varsa karo döşenir (ölçek yerine boyut verilir); yoksa renkli kare.
+        Sprite tile = SpriteLibrary.Get(pieceName == "Floor" ? "floor" : "border");
+        if (tile != null)
+        {
+            go.transform.localScale = Vector3.one;
+            sr.sprite = tile;
+            sr.drawMode = SpriteDrawMode.Tiled;
+            sr.size = size;
+            sr.color = Color.white;
+            return;
+        }
+
         sr.sprite = SpriteFactory.Square();
         sr.color = color;
-        sr.sortingOrder = sortingOrder;
     }
 
     /// <summary>Kamerayı arenanın tamamı (kenarlıkla birlikte) görünecek şekilde yakınlaştırır.</summary>
@@ -66,6 +79,11 @@ public class ArenaView : MonoBehaviour
         lastAspect = targetCamera.aspect;
         float halfWidth = config.arenaSize.x * 0.5f + borderThickness + config.cameraPadding;
         float halfHeight = config.arenaSize.y * 0.5f + borderThickness + config.cameraPadding;
+
+        targetCamera.transform.position = new Vector3(0f, 0f, -10f);
+
+        // Pixel Perfect Camera varsa boyutu kendisi yönetir; ona karışma.
+        if (targetCamera.GetComponent("PixelPerfectCamera") != null) return;
 
         targetCamera.orthographic = true;
         targetCamera.orthographicSize = Mathf.Max(halfHeight, halfWidth / targetCamera.aspect);

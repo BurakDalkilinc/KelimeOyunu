@@ -25,6 +25,9 @@ public class WordEntry
     public WordCounter counter;
     public string description;
 
+    /// <summary>Isteğe bağlı: Resources/Sprites içindeki sprite adı. Boşsa kelime kimliği (id) kullanılır.</summary>
+    public string sprite;
+
     /// <summary>Büyük tehdit mi? (Tehdidin çözümü de haritada çıkar.)</summary>
     public bool IsThreat => category == CategoryThreat;
 

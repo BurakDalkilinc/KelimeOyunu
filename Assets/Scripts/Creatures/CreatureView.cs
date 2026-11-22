@@ -109,6 +109,26 @@ public class CreatureView : MonoBehaviour
         bodyRenderer.sprite = SpriteFactory.Circle();
         bodyRenderer.sortingOrder = 8;
 
+        // Piksel sanat: koşan yaratık sprite'ın kendisidir; alan/tuzak/uyarı yaratığı büyük daire + ortada simge.
+        bool isZone = Model.IsStrike || Model.IsArea || Model.IsTrap;
+        Sprite[] frames = SpriteLibrary.GetFrames(SpriteLibrary.NameFor(Model.Word));
+        if (frames.Length > 0)
+        {
+            if (!isZone)
+            {
+                body.transform.localScale = Vector3.one;
+                body.AddComponent<SpriteAnimator>().SetFrames(frames);
+                bodyRenderer.color = Color.white;
+                return;
+            }
+
+            var icon = new GameObject("Icon");
+            icon.transform.SetParent(transform, false);
+            var iconRenderer = icon.AddComponent<SpriteRenderer>();
+            iconRenderer.sortingOrder = 11;
+            icon.AddComponent<SpriteAnimator>().SetFrames(frames);
+        }
+
         if (Model.IsPull)
         {
             color = new Color(0.7f, 0.4f, 0.95f, 0.95f); // Mor: mıknatıs

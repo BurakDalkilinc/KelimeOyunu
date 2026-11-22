@@ -36,12 +36,22 @@ public class WallPresenter : MonoBehaviour
         go.transform.SetParent(transform, false);
         go.transform.position = wall.Center;
         go.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(wall.Direction.y, wall.Direction.x) * Mathf.Rad2Deg);
-        go.transform.localScale = new Vector3(wall.Length, wall.Thickness, 1f);
-
         var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = SpriteFactory.Square();
-        sr.color = wallColor;
         sr.sortingOrder = 6;
+
+        Sprite brick = SpriteLibrary.Get("wall");
+        if (brick != null)
+        {
+            sr.sprite = brick;
+            sr.drawMode = SpriteDrawMode.Tiled;
+            sr.size = new Vector2(wall.Length, wall.Thickness);
+        }
+        else
+        {
+            go.transform.localScale = new Vector3(wall.Length, wall.Thickness, 1f);
+            sr.sprite = SpriteFactory.Square();
+        }
+        sr.color = wallColor;
 
         views.Add(new KeyValuePair<WallSegment, SpriteRenderer>(wall, sr));
     }
