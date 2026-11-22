@@ -99,6 +99,13 @@ public class GameConfig : ScriptableObject
     [Tooltip("Kelimede 'pullForce' yazmıyorsa çekme gücü (birim/sn). Oyuncu hızından (5) düşük olduğu için yürüyerek direnilebilir.")]
     [Min(0.1f)] public float pullDefaultForce = 4f;
 
+    [Tooltip("Kelimede 'duration' yazmıyorsa kalkanın en uzun kalma süresi (sn).")]
+    [Min(1f)] public float shieldDefaultSeconds = 30f;
+    [Tooltip("Kelimede 'duration' yazmıyorsa görünmezlik süresi (sn).")]
+    [Min(1f)] public float stealthDefaultSeconds = 6f;
+    [Tooltip("Kelimede 'duration' yazmıyorsa uçma (kanat) süresi (sn).")]
+    [Min(1f)] public float flightDefaultSeconds = 5f;
+
     [Header("Tur süreleri (saniye)")]
     [Min(0.5f)] public float diceSeconds = 2f;
     [Min(1f)] public float typingSeconds = 10f;

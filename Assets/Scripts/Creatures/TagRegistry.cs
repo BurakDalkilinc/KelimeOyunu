@@ -20,7 +20,12 @@ public static class TagRegistry
         new AreaTag(),
         new ExplosiveTag(),
         new TrapTag(),
-        new PullTag());
+        new PullTag(),
+        new FlyingTag(),
+        new HealTag(),
+        new ShieldTag(),
+        new StealthTag(),
+        new EscapeTag());
 
     /// <summary>Hız zaten kelimenin değerinden geldiği için ek davranışı olmayan etiketler.</summary>
     public static readonly IReadOnlyCollection<string> LabelOnlyTags = new[] { "slow", "fast" };
@@ -28,8 +33,7 @@ public static class TagRegistry
     /// <summary>Henüz uygulanmamış etiketler. Sıradaki gruplarda tek tek uygulanacak.</summary>
     public static readonly IReadOnlyCollection<string> PendingTags = new[]
     {
-        "flying", "armored",
-        "water", "fire", "sky", "map_wide", "shield", "heal", "wall", "escape", "stealth"
+        "armored", "water", "fire", "sky", "map_wide", "wall"
     };
 
     public static IReadOnlyCollection<string> ImplementedTags => Implemented.Keys;
@@ -68,6 +72,26 @@ public static class TagRegistry
                 count = System.Math.Max(count, counter.GetSpawnCount(word));
         }
         return count;
+    }
+
+    /// <summary>
+    /// Yazanın kendine uyguladığı etkileri (can, kalkan, görünmezlik, uçma...) uygular. Kelimenin etiketlerinden
+    /// "self etkisi" olan her biri çalışır. Uygulanan etiket sayısını döndürür.
+    /// </summary>
+    public static int ApplySelfEffects(WordEntry word, SelfEffectContext context)
+    {
+        if (word?.tags == null || context.Writer == null) return 0;
+
+        int applied = 0;
+        foreach (string tag in word.tags)
+        {
+            if (tag != null && Implemented.TryGetValue(tag, out ITagBehaviour behaviour) && behaviour is ISelfEffectTag selfEffect)
+            {
+                selfEffect.ApplySelf(context);
+                applied++;
+            }
+        }
+        return applied;
     }
 
     static Dictionary<string, ITagBehaviour> Build(params ITagBehaviour[] behaviours)

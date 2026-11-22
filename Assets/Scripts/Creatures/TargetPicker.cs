@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 
 /// <summary>
-/// Saldırı kelimesinin hedefini seçer: hayattaki rakiplerden biri. Yazan kişi kendini hedefleyemez.
+/// Saldırı kelimesinin hedefini seçer: hayattaki rakiplerden biri. Yazan kişi kendini hedefleyemez, görünmezler (stealth) seçilemez.
 /// (İnsan oyuncunun fareyle hedef seçmesi sonraki adımda eklenecek; botlar ve süre dolunca bu kullanılır.)
 /// </summary>
 public static class TargetPicker
@@ -15,7 +15,7 @@ public static class TargetPicker
 
         var candidates = new List<PlayerState>();
         foreach (PlayerState player in players)
-            if (player != null && player.IsAlive && player != writer) candidates.Add(player);
+            if (player != null && player.IsAlive && player != writer && !player.Status.IsStealthed) candidates.Add(player);
 
         return candidates.Count == 0 ? null : candidates[random.Next(candidates.Count)];
     }

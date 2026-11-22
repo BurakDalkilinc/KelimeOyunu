@@ -43,7 +43,7 @@ public class TargetSelection
     public bool TrySelect(PlayerState candidate)
     {
         if (!IsPending) return false;
-        if (candidate == null || candidate == Writer || !candidate.IsAlive) return false;
+        if (candidate == null || candidate == Writer || !candidate.IsAlive || candidate.Status.IsStealthed) return false;
 
         Chosen = candidate;
         State = TargetSelectionState.Selected;

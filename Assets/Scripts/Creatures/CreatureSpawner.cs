@@ -54,7 +54,11 @@ public class CreatureSpawner : MonoBehaviour
         if (word.category == WordEntry.CategoryAttack && word.scope == WordEntry.ScopeTarget)
             BeginAttack(writer, word);
 
-        // Tehdit (threat) ve koruma (defense) kelimeleri yol haritasında sonraki adımlarda.
+        // Koruma kelimeleri yazana uygulanır: can, kalkan, görünmezlik, uçma...
+        if (word.category == WordEntry.CategoryDefense && word.scope == WordEntry.ScopeSelf)
+            TagRegistry.ApplySelfEffects(word, new SelfEffectContext(writer, word, config));
+
+        // Tehdit (threat) kelimeleri yol haritasında sonraki adımlarda.
     }
 
     /// <summary>

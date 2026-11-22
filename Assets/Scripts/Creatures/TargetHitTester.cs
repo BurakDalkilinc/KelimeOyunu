@@ -20,7 +20,7 @@ public static class TargetHitTester
 
         foreach (PlayerState player in world.Players)
         {
-            if (player == null || player == writer || !player.IsAlive) continue;
+            if (player == null || player == writer || !player.IsAlive || player.Status.IsStealthed) continue;
             if (!world.TryGetPosition(player.Id, out Vector2 position)) continue;
 
             float distance = (position - point).magnitude;

@@ -114,6 +114,12 @@ public class CreatureModel
     public bool IsTrap { get; set; }
 
     /// <summary>
+    /// true ise yaratık uçar (ör. Arı). Uçan yaratık, uçan oyunculara da vurabilir; uçmayanlar uçan oyunculara vuramaz.
+    /// "flying" etiketi açar.
+    /// </summary>
+    public bool IsFlying { get; set; }
+
+    /// <summary>
     /// true ise yaratık bir mıknatıstır: koşmaz, bulunduğu noktaya hedefi çeker (süresi bitene kadar).
     /// "pull" etiketi açar. Botlar için tehlike alanı değildir (etkisi yalnızca hedefedir).
     /// </summary>
@@ -241,9 +247,10 @@ public class CreatureModel
 
         bool touching = (targetPosition - Position).magnitude <= reach;
         bool hasEffect = Damage > 0 || KnockbackDistance > 0f || SlowSeconds > 0f; // Hasarsız ama fırlatan/yavaşlatan da etki eder.
-        if (!touching || !hasEffect || hitCooldownLeft > 0f) return false;
+        bool targetOutOfReach = Target.Status.IsFlying && !IsFlying; // Uçan oyuncuya yerdeki yaratık vuramaz
+        if (!touching || !hasEffect || hitCooldownLeft > 0f || targetOutOfReach) return false;
 
-        if (Damage > 0) Target.Health.TakeDamage(Damage);
+        if (Damage > 0) Target.TakeDamage(Damage);
         if (SlowSeconds > 0f) Target.Status.ApplySlow(SlowMultiplier, SlowSeconds);
 
         Vector2 push = KnockbackDistance > 0f ? DirectionAway(Position, targetPosition) * KnockbackDistance : Vector2.zero;
@@ -374,8 +381,10 @@ public class CreatureModel
             if (!player.IsAlive || !world.TryGetPosition(player.Id, out Vector2 playerPosition)) continue;
             if ((playerPosition - Position).magnitude > Radius + playerRadius) continue;
 
+            if (player.Status.IsFlying && !IsFlying) continue; // Uçanlar tuzağa basmaz
+
             triggered++;
-            if (Damage > 0) player.Health.TakeDamage(Damage);
+            if (Damage > 0) player.TakeDamage(Damage);
             if (SlowSeconds > 0f) player.Status.ApplySlow(SlowMultiplier, SlowSeconds);
             if (KnockbackDistance > 0f && hits != null)
                 hits.Add(new CreatureHit(player, DirectionAway(Position, playerPosition) * KnockbackDistance));
@@ -395,7 +404,7 @@ public class CreatureModel
             if (!player.IsAlive || !world.TryGetPosition(player.Id, out Vector2 playerPosition)) continue;
             if ((playerPosition - Position).magnitude > Radius + playerRadius) continue;
 
-            if (Damage > 0) player.Health.TakeDamage(Damage);
+            if (Damage > 0) player.TakeDamage(Damage);
             if (SlowSeconds > 0f) player.Status.ApplySlow(SlowMultiplier, SlowSeconds);
             affected++;
 

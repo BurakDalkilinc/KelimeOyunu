@@ -10,8 +10,6 @@ public class PlayerController : MonoBehaviour, IKnockable
     [SerializeField] GameConfig config;
     [SerializeField] Color playerColor = new Color(0.3f, 0.85f, 0.6f);
 
-    static readonly Color SlowTint = new Color(0.45f, 0.65f, 1f);
-
     ArenaBounds arena;
     SpriteRenderer spriteRenderer;
     readonly KnockbackMotion knockback = new KnockbackMotion();
@@ -82,11 +80,11 @@ public class PlayerController : MonoBehaviour, IKnockable
         transform.position = arena.Clamp(next, config.playerRadius);
     }
 
-    /// <summary>Yavaşlatılmış oyuncu mavimsi görünür.</summary>
+    /// <summary>Üzerindeki etkilere göre renk: yavaş mavimsi, kalkanlı camgöbeği, uçan açık, görünmez soluk.</summary>
     void UpdateTint()
     {
         if (spriteRenderer == null) return;
-        spriteRenderer.color = State.Status.IsSlowed ? Color.Lerp(playerColor, SlowTint, 0.6f) : playerColor;
+        spriteRenderer.color = StatusTint.Apply(playerColor, State.Status);
     }
 
     /// <summary>WASD / ok tuşlarından yön okur. Çapraz hareket de aynı hızda olur.</summary>

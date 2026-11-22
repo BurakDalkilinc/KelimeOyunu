@@ -24,6 +24,9 @@ public class StatusEffectDisplay : MonoBehaviour
         string text = string.Empty;
         if (status.IsSlowed) text += $"Yavaşladın! ({Mathf.CeilToInt(status.SlowTimeLeft)} sn)";
         if (status.IsPulled) text += (text.Length > 0 ? "  " : string.Empty) + "Çekiliyorsun!";
+        if (status.HasShield) text += (text.Length > 0 ? "  " : string.Empty) + "Kalkan var";
+        if (status.IsStealthed) text += (text.Length > 0 ? "  " : string.Empty) + $"Görünmezsin ({Mathf.CeilToInt(status.StealthTimeLeft)} sn)";
+        if (status.IsFlying) text += (text.Length > 0 ? "  " : string.Empty) + $"Uçuyorsun ({Mathf.CeilToInt(status.FlightTimeLeft)} sn)";
         label.text = text;
     }
 }

@@ -15,6 +15,17 @@ public class PlayerState
     /// <summary>Zar için: üst üste kaç tur seçilmedi. Ne kadar büyükse seçilme şansı o kadar artar.</summary>
     public int MissedTurns { get; set; }
 
+    /// <summary>
+    /// Hasar alır. Kalkan varsa hasarı engeller (hakkı bir azalır, can düşmez). Gerçekten düşen canı döndürür.
+    /// Oyundaki bütün hasar bu yoldan geçer ki kalkan her yerde işlesin.
+    /// </summary>
+    public int TakeDamage(int amount)
+    {
+        if (amount <= 0 || !IsAlive) return 0;
+        if (Status.TryAbsorbHit()) return 0;
+        return Health.TakeDamage(amount);
+    }
+
     /// <summary>Hayatta mı? (Elenenler hayalet olur, zarda seçilmez.)</summary>
     public bool IsAlive => !Health.IsDead;
 
