@@ -36,7 +36,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [x] Global tehdit altyapısı + Atom bombası ve sığınak (sınırlı kapasite): uyarı süresi, alarm yazısı, çözüm alanları, botlar sığınır, patlama
 - [ ] Kalan 4 global tehdit ve çözümleri
   - [x] Tsunami: rastgele kenardan dalga, kuleler (3 × 3 kişi) korur
-  - [ ] Meteor yağmuru (gölge uyarısı, `sky`)
+  - [x] Meteor yağmuru: 12 sn'de 30 meteor, her biri 1,5 sn gölge gösterir, çözüm gölgeleri görüp kaçmak
   - [ ] Zombi sürüsü (evler 4 × 2 kişi)
   - [ ] Ejderha (mağaralar 2 × 4 kişi, `fire`)
 - [ ] Bilinmeyen kelime → "???" yaratığı

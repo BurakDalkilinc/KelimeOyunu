@@ -12,6 +12,7 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
     [SerializeField] GameConfig config;
     [SerializeField] MatchRunner runner;
     [SerializeField] MatchBootstrap bootstrap;
+    [SerializeField] CreatureSpawner spawner;
     [SerializeField] Text banner;
     [SerializeField] Image flash;
 
@@ -56,10 +57,11 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
     {
         if (word == null || word.category != WordEntry.CategoryThreat || word.scope != WordEntry.ScopeGlobal) return;
 
-        var threat = new GlobalThreat(word, writer, config, arena, bootstrap, new System.Random(random.Next()));
+        var threat = new GlobalThreat(word, writer, config, arena, bootstrap, new System.Random(random.Next()), spawner);
         threat.Zones.Added += CreateZoneView;
         threat.Zones.Removed += DestroyZoneView;
-        threat.Impacted += OnImpact;
+        // Ekran parlaması yalnızca çözüm alanı olan (sığınılan) tehditlerde; meteor yağmuru yavaş yavaş başlar.
+        if (ThreatSpec.HasZones(word)) threat.Impacted += OnImpact;
 
         // Alanlar kurucuda eklendi; abone olmadan önce eklenenlerin görüntüsü burada çıkar.
         foreach (SafeZone zone in threat.Zones.Zones) CreateZoneView(zone);
@@ -104,7 +106,9 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
         GlobalThreat urgent = null;
         foreach (GlobalThreat threat in threats)
         {
-            if (threat.Phase != ThreatPhase.Warning) continue;
+            // Uyarıdaki tehditler; ayrıca gölge uyarılı (meteor) tehdit süren etkisi boyunca hatırlatılır.
+            bool shadowsActive = threat.Phase == ThreatPhase.Active && !ThreatSpec.HasZones(threat.Word) && !threat.EffectsFinished;
+            if (threat.Phase != ThreatPhase.Warning && !shadowsActive) continue;
             if (urgent == null || threat.WarningLeft < urgent.WarningLeft) urgent = threat;
         }
 

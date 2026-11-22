@@ -13,6 +13,7 @@ public class MapWideTag : ITagBehaviour, IThreatEffectTag
     {
         // Diğer etiketlere göre etki seçilir; yeni türler sırayla eklenir.
         if (word != null && word.HasTag("water")) return new WaveEffect();
+        if (word != null && word.HasTag("sky")) return new MeteorShowerEffect();
 
         return new MapBlastEffect();
     }

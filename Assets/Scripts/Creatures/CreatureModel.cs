@@ -101,6 +101,9 @@ public class CreatureModel
     /// </summary>
     public float PlacementOffset { get; set; }
 
+    /// <summary>true ise yaratık gökten düşer (ör. meteor): gölge olarak görünür, geri sayım yazısı gösterilmez. "sky" etiketi açar.</summary>
+    public bool IsSky { get; set; }
+
     /// <summary>true ise ekranda fitilin kalan saniyesi yazılır (geri sayım). "explosive" etiketi açar.</summary>
     public bool ShowsCountdown { get; set; }
 
@@ -206,6 +209,13 @@ public class CreatureModel
     {
         if (IsFinished) return;
         LifeLeft = Mathf.Max(LifeLeft, seconds);
+    }
+
+    /// <summary>Ömrü en çok bu kadar saniyeye indirir (uzatmaz). Tek bir meteor gibi, kelimenin süresinden kısa yaşayanlar için.</summary>
+    public void LimitLife(float seconds)
+    {
+        if (IsFinished) return;
+        LifeLeft = Mathf.Min(LifeLeft, Mathf.Max(0.01f, seconds));
     }
 
     /// <summary>Yaratığı doğrudan bir noktaya koyar (arenanın içine sıkıştırılır). Anında vuran yaratığı hedefin üstüne yerleştirmek için.</summary>

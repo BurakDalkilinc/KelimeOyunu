@@ -33,6 +33,9 @@ public class GlobalThreat
     public SafeZoneField Zones => context.Zones;
     public ThreatPhase Phase { get; private set; }
 
+    /// <summary>Etkilerin hepsi işini bitirdi mi? (Toparlanma süresi ayrıdır.)</summary>
+    public bool EffectsFinished => effectsFinished;
+
     /// <summary>Tehdidin etkileri (ekranda çizilecek olanlar için).</summary>
     public IReadOnlyList<IThreatEffect> Effects => effects;
 
@@ -43,7 +46,7 @@ public class GlobalThreat
     public event Action Impacted;
 
     public GlobalThreat(WordEntry word, PlayerState writer, GameConfig config, ArenaBounds arena,
-                        IPlayerLocator world, System.Random random)
+                        IPlayerLocator world, System.Random random, ICreatureSink creatures = null)
     {
         if (word == null) throw new ArgumentNullException(nameof(word));
         if (config == null) throw new ArgumentNullException(nameof(config));
@@ -52,7 +55,7 @@ public class GlobalThreat
         if (random == null) throw new ArgumentNullException(nameof(random));
 
         var zones = new SafeZoneField();
-        context = new ThreatContext(word, writer, config, arena, world, random, zones);
+        context = new ThreatContext(word, writer, config, arena, world, random, zones, creatures);
         effects = TagRegistry.CreateThreatEffects(word);
 
         PlaceZones();

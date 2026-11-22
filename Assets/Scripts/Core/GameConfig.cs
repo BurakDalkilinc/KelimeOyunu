@@ -115,6 +115,11 @@ public class GameConfig : ScriptableObject
     [Tooltip("Kelimede 'duration' yazmıyorsa duvarın duracağı süre (sn).")]
     [Min(1f)] public float wallDefaultSeconds = 10f;
 
+    [Tooltip("Meteorun, rastgele bir oyuncunun yakınına düşme olasılığı (0-1). Kalanı arenanın rastgele bir yerine düşer.")]
+    [Range(0f, 1f)] public float meteorAimedChance = 0.4f;
+    [Tooltip("Oyuncuyu hedefleyen meteor, oyuncudan en fazla bu kadar uzağa düşer (birim).")]
+    [Min(0f)] public float meteorAimSpread = 2f;
+
     [Header("Tur süreleri (saniye)")]
     [Min(0.5f)] public float diceSeconds = 2f;
     [Min(1f)] public float typingSeconds = 10f;

@@ -6,7 +6,7 @@ using UnityEngine;
 /// bilinmeyen kelime zararsız bir "???" yaratığı olur. Tehdit ve koruma kelimeleri sonraki adımlarda eklenecek.
 /// Canlı tehlikeli yaratıkların konumunu botlara "kaçılacak alan" olarak bildirir.
 /// </summary>
-public class CreatureSpawner : MonoBehaviour
+public class CreatureSpawner : MonoBehaviour, ICreatureSink
 {
     [SerializeField] GameConfig config;
     [SerializeField] MatchRunner runner;
@@ -131,6 +131,12 @@ public class CreatureSpawner : MonoBehaviour
         Vector2 spawn = ArenaSpawn.PickPoint(arena, Vector2.zero, 0f, random);
         CreatureModel model = CreatureFactory.CreateUnknown(spawn, config, arena);
         Create(model, unknownColor, UnknownLabel);
+    }
+
+    /// <summary>Tehdit etkilerinin (ör. meteor yağmuru) yaratık koyması için: saldırı rengiyle sahneye koyar.</summary>
+    public void Spawn(CreatureModel model, string label)
+    {
+        Create(model, attackColor, label);
     }
 
     void Create(CreatureModel model, Color color, string label)

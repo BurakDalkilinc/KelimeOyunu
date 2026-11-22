@@ -14,8 +14,11 @@ public class ThreatContext
     /// <summary>Bu tehdidin çözüm alanları ve kimin korunduğu.</summary>
     public SafeZoneField Zones { get; }
 
+    /// <summary>Etkilerin sahneye yaratık koyduğu yer (meteor gibi). Yoksa null; yaratık koyan etkiler bir şey yapmaz.</summary>
+    public ICreatureSink Creatures { get; }
+
     public ThreatContext(WordEntry word, PlayerState writer, GameConfig config, ArenaBounds arena,
-                         IPlayerLocator world, System.Random random, SafeZoneField zones)
+                         IPlayerLocator world, System.Random random, SafeZoneField zones, ICreatureSink creatures = null)
     {
         Word = word;
         Writer = writer;
@@ -24,5 +27,6 @@ public class ThreatContext
         World = world;
         Random = random;
         Zones = zones;
+        Creatures = creatures;
     }
 }

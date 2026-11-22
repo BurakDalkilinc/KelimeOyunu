@@ -157,7 +157,7 @@ public class CreatureView : MonoBehaviour
         fillRenderer.transform.localScale = Vector3.one * (Model.Radius * 2f * Model.StrikeProgress);
 
         // Patlayıcıda fitilin kalan saniyesi kelimenin yanında yazılır (3, 2, 1).
-        if (Model.ShowsCountdown && labelMesh != null && Model.Word != null)
+        if (Model.ShowsCountdown && !Model.IsSky && labelMesh != null && Model.Word != null)
             labelMesh.text = Model.Word.display + " " + Mathf.CeilToInt(Model.StrikeWarningLeft);
     }
 

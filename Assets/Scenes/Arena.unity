@@ -236,7 +236,7 @@ MonoBehaviour:
     m_FontStyle: 1
     m_BestFit: 0
     m_MinSize: 10
-    m_MaxSize: 40
+    m_MaxSize: 56
     m_Alignment: 1
     m_AlignByGeometry: 0
     m_RichText: 1
@@ -925,6 +925,7 @@ MonoBehaviour:
   config: {fileID: 11400000, guid: f5d21aedad610914d94dd3010e9b78e3, type: 2}
   runner: {fileID: 745260175}
   bootstrap: {fileID: 1756778}
+  spawner: {fileID: 2043297870}
   banner: {fileID: 246800520}
   flash: {fileID: 1762381513}
 --- !u!4 &978845757
