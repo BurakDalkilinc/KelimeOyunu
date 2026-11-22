@@ -7,6 +7,7 @@
 
 ## Tur akışı
 1. **Zar (2 sn):** Hayattaki oyunculardan biri seçilir. Animasyon herkesin ekranının üstünde.
+   - Seçilme ağırlığı = 1 + 0,5 × (üst üste kaç tur seçilmedi). Seçilen oyuncunun sayacı sıfırlanır. Elenenler seçilmez.
 2. **Yazma (10 sn):** Seçilen oyuncunun yazı kutusu açılır, karakteri durur. Diğerleri hareket edebilir.
    - Saldırı kelimesiyse yazan kişi hedef seçer (yazmadan önce ya da sonra 3 sn).
    - Süre biterse tur yanar.
@@ -22,9 +23,10 @@
 | Sonuç/kaçış süresi | 15–20 sn (kelimeye göre) |
 | Global tehdit uyarı süresi | en az 5 sn |
 | Sığınak kapasitesi | hayattaki oyuncuların yarısı (aşağı yuvarla, en az 1) |
+| Zar: seçilmeme bonusu | her seçilmeyen tur için +0,5 ağırlık (`diceBonusPerMissedTurn`) |
 
 ## Kurallar
-- Zar sadece kimin yazacağını seçer.
+- Zar sadece kimin yazacağını seçer; uzun süredir seçilmeyenin şansı artar (adalet için).
 - Bir kelime ve eş anlamlıları maçta bir kez kullanılır.
 - Global tehdit = haritada çözüm de çıkar.
 - Bilinmeyen kelime: komik "???" yaratığı (zararsız), tur yanmaz.
@@ -69,7 +71,6 @@
 ## Açık sorular
 - Oyunun adı
 - Grafik tarzı
-- Zar tamamen rastgele mi, uzun süredir seçilmeyenin şansı artsın mı?
 - Hayaletler tam olarak ne yapacak?
 - Yazan kişi kendi tehdidinden etkilenecek mi?
 - Ağ kütüphanesi seçimi (Aşama 3)

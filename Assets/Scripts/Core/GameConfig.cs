@@ -13,11 +13,29 @@ public class GameConfig : ScriptableObject
     [Min(1)] public int minPlayers = 4;
     [Min(1)] public int maxPlayers = 20;
 
+    [Header("Hareket ve arena")]
+    [Tooltip("Oyuncunun saniyedeki hızı (birim/sn).")]
+    [Min(0.1f)] public float playerMoveSpeed = 5f;
+    [Tooltip("Arenanın genişliği ve yüksekliği (birim).")]
+    public Vector2 arenaSize = new Vector2(20f, 12f);
+    [Tooltip("Oyuncunun merkezinin arena kenarından uzak durması gereken mesafe.")]
+    [Min(0f)] public float playerRadius = 0.5f;
+    [Tooltip("Kameranın arenanın etrafında bırakacağı boşluk (birim).")]
+    [Min(0f)] public float cameraPadding = 1f;
+
     [Header("Tur süreleri (saniye)")]
     [Min(0.5f)] public float diceSeconds = 2f;
     [Min(1f)] public float typingSeconds = 10f;
     [Min(1f)] public float resultSecondsMin = 15f;
     [Min(1f)] public float resultSecondsMax = 20f;
+
+    [Header("Zar")]
+    [Tooltip("Üst üste seçilmeyen her tur için oyuncunun seçilme ağırlığına eklenen değer. Temel ağırlık 1'dir.")]
+    [Min(0f)] public float diceBonusPerMissedTurn = 0.5f;
+
+    [Header("Kelime")]
+    [Tooltip("Oyuncunun yazabileceği en uzun kelime (karakter). Daha uzunu reddedilir.")]
+    [Min(1)] public int maxWordLength = 50;
 
     [Header("Global tehdit")]
     [Tooltip("Tehdit geldikten sonra çözüme ulaşmak için en az süre.")]
@@ -31,6 +49,15 @@ public class GameConfig : ScriptableObject
     [Header("Rastgelelik")]
     [Tooltip("0 ise her maç farklı bir seed alır. Sıfırdan farklıysa maç tekrar oynatılabilir.")]
     public int randomSeed = 0;
+
+    /// <summary>
+    /// Maç için rastgele sayı üretici. Seed 0 ise her seferinde farklı; değilse maç tekrar oynatılabilir.
+    /// Oyun mantığı tek bir üretici kullanır, böylece ileride ağda senkronlanabilir.
+    /// </summary>
+    public System.Random CreateRandom()
+    {
+        return randomSeed == 0 ? new System.Random() : new System.Random(randomSeed);
+    }
 
     /// <summary>Hayattaki oyuncu sayısına göre sığınak kapasitesini hesaplar.</summary>
     public int GetShelterCapacity(int alivePlayers)

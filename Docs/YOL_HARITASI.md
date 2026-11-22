@@ -9,12 +9,12 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [x] Klasör yapısı `CLAUDE.md`'deki gibi oluşturuldu, `GameConfig` ScriptableObject'i eklendi
 
 ## Aşama 2 — Yerel prototip (tek bilgisayar, botlarla)
-- [ ] Oyun alanı: sınırları olan düz bir 2D arena, kamera
-- [ ] Oyuncu: WASD hareketi, 3 can, can göstergesi
+- [x] Oyun alanı: sınırları olan düz bir 2D arena, kamera
+- [x] Oyuncu: WASD hareketi, 3 can, can göstergesi
 - [ ] 7 bot oyuncu: rastgele dolaşır, tehditten kaçmaya çalışır
-- [ ] `WordNormalizer`: Türkçe küçük harf, boşluk temizleme, aksansız eşleşme + testleri
-- [ ] `WordDatabase`: words.json'u yükler, alias ile arar, kullanılan kelimeleri kilitler + testleri
-- [ ] `TurnManager`: zar → yazma → sonuç → eleme döngüsü + testleri
+- [x] `WordNormalizer`: Türkçe küçük harf, boşluk temizleme, aksansız eşleşme + testleri
+- [x] `WordDatabase`: words.json'u yükler, alias ile arar, kullanılan kelimeleri kilitler + testleri
+- [x] `TurnManager`: zar → yazma → sonuç → eleme döngüsü + testleri
 - [ ] Zar UI'ı: ekranın üstünde oyuncu isimleri arasında dönen seçim
 - [ ] Yazı kutusu UI'ı: 10 sn sayaç, Enter ile gönder, hedef seçme
 - [ ] Etiket davranışları: `slow`, `fast`, `predator`, `undead`, `swarm`, `instant`, `knockback`
