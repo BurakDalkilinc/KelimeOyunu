@@ -6,7 +6,7 @@ using UnityEngine;
 /// Oyuncu 0 numaradır, botlar 1'den başlar. Tur sistemi (TurnManager) bu maç durumunu kullanacak.
 /// </summary>
 [DefaultExecutionOrder(-100)] // Diğer her şeyden önce çalışır: maç durumu herkesin Awake/OnEnable'ından önce hazır olsun.
-public class MatchBootstrap : MonoBehaviour
+public class MatchBootstrap : MonoBehaviour, IPlayerLocator
 {
     [SerializeField] GameConfig config;
     [SerializeField] PlayerController player;
@@ -17,6 +17,8 @@ public class MatchBootstrap : MonoBehaviour
 
     /// <summary>Maçın tüm oyuncuları.</summary>
     public MatchState Match { get; private set; }
+
+    IReadOnlyList<PlayerState> IPlayerLocator.Players => Match.Players;
 
     /// <summary>Maçın tek rastgelelik kaynağı (zar ve botlar bundan beslenir).</summary>
     public System.Random Random { get; private set; }
@@ -36,6 +38,18 @@ public class MatchBootstrap : MonoBehaviour
         }
 
         position = Vector2.zero;
+        return false;
+    }
+
+    /// <summary>Oyuncunun sahne karakterini fırlatır (kısa bir süreye yayılarak kayar). Oyuncu itilemiyorsa false.</summary>
+    public bool TryApplyKnockback(int playerId, Vector2 distance)
+    {
+        if (avatars.TryGetValue(playerId, out Transform avatar) && avatar != null && avatar.TryGetComponent(out IKnockable knockable))
+        {
+            knockable.ApplyKnockback(distance);
+            return true;
+        }
+
         return false;
     }
 

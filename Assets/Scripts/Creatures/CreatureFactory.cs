@@ -6,9 +6,13 @@ using UnityEngine;
 /// </summary>
 public static class CreatureFactory
 {
-    /// <summary>Saldırı kelimesinden, hedefini kovalayan bir yaratık kurar.</summary>
+    /// <summary>
+    /// Saldırı kelimesinden, hedefini kovalayan bir yaratık kurar. Kelime sürü doğuruyorsa (swarm) her üye için
+    /// ayrı çağrılır; <paramref name="memberIndex"/> üyenin sırası, <paramref name="memberCount"/> toplam sayıdır.
+    /// </summary>
     public static CreatureModel CreateAttack(WordEntry word, PlayerState target, Vector2 position,
-                                             GameConfig config, ArenaBounds arena)
+                                             GameConfig config, ArenaBounds arena,
+                                             int memberIndex = 0, int memberCount = 1)
     {
         if (word == null) throw new System.ArgumentNullException(nameof(word));
         if (target == null) throw new System.ArgumentNullException(nameof(target));
@@ -19,7 +23,7 @@ public static class CreatureFactory
 
         var creature = new CreatureModel(word, target, position, stats.speed, Mathf.RoundToInt(stats.damage),
                                          config.creatureRadius, life, arena);
-        TagRegistry.Apply(creature, word.tags);
+        TagRegistry.Apply(creature, word.tags, new SpawnContext(memberIndex, memberCount, config));
         return creature;
     }
 

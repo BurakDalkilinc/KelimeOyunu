@@ -10,9 +10,13 @@ public class CreatureView : MonoBehaviour
 {
     static readonly IReadOnlyList<DangerZone> NoDangers = new List<DangerZone>();
 
+    readonly List<CreatureHit> hits = new List<CreatureHit>();
+
     GameConfig config;
     MatchBootstrap bootstrap;
     BotBrain wanderBrain;
+    SpriteRenderer bodyRenderer;
+    SpriteRenderer fillRenderer;
 
     /// <summary>Bu yaratığın oyun mantığı.</summary>
     public CreatureModel Model { get; private set; }
@@ -39,6 +43,7 @@ public class CreatureView : MonoBehaviour
 
         Advance(Time.deltaTime);
         transform.position = Model.Position;
+        UpdateStrikeVisual();
 
         if (Model.IsFinished) Destroy(gameObject);
     }
@@ -52,10 +57,21 @@ public class CreatureView : MonoBehaviour
             return;
         }
 
-        if (bootstrap.TryGetPosition(Model.Target.Id, out Vector2 targetPosition))
-            Model.Tick(dt, targetPosition, config.playerRadius, config.creatureHitCooldownSeconds);
-        else
-            Model.Tick(dt, Model.Position, config.playerRadius, config.creatureHitCooldownSeconds);
+        // Anında vuran yaratık (yumruk) koşmaz: uyarı verir, süre dolunca alanındaki herkese vurur.
+        if (Model.IsStrike)
+        {
+            hits.Clear();
+            Model.TickStrike(dt, bootstrap, config.playerRadius, hits);
+            foreach (CreatureHit hit in hits)
+                bootstrap.TryApplyKnockback(hit.Player.Id, hit.Knockback);
+            return;
+        }
+
+        bool hasTarget = bootstrap.TryGetPosition(Model.Target.Id, out Vector2 targetPosition);
+        bool hitSomeone = Model.Tick(dt, hasTarget ? targetPosition : Model.Position, config.playerRadius, config.creatureHitCooldownSeconds);
+
+        if (hitSomeone && Model.LastHit.Knockback != Vector2.zero)
+            bootstrap.TryApplyKnockback(Model.LastHit.Player.Id, Model.LastHit.Knockback);
     }
 
     void BuildBody(Color color, float radius)
@@ -64,14 +80,46 @@ public class CreatureView : MonoBehaviour
         body.transform.SetParent(transform, false);
         body.transform.localScale = Vector3.one * (radius * 2f);
 
-        var renderer = body.AddComponent<SpriteRenderer>();
-        renderer.sprite = SpriteFactory.Circle();
-        renderer.color = color;
-        renderer.sortingOrder = 8;
+        bodyRenderer = body.AddComponent<SpriteRenderer>();
+        bodyRenderer.sprite = SpriteFactory.Circle();
+        bodyRenderer.sortingOrder = 8;
+
+        if (Model.IsStrike)
+        {
+            // Uyarı alanı: soluk bir daire; içindeki dolgu uyarı ilerledikçe büyür.
+            color.a = 0.28f;
+
+            var fill = new GameObject("Fill");
+            fill.transform.SetParent(transform, false);
+            fill.transform.localScale = Vector3.zero;
+            fillRenderer = fill.AddComponent<SpriteRenderer>();
+            fillRenderer.sprite = SpriteFactory.Circle();
+            fillRenderer.color = new Color(color.r, color.g * 0.6f, color.b * 0.6f, 0.6f);
+            fillRenderer.sortingOrder = 9;
+        }
+
+        bodyRenderer.color = color;
+    }
+
+    /// <summary>Anında vuran yaratığın uyarı dolgusunu büyütür; vuruştan sonra darbe izini gösterir.</summary>
+    void UpdateStrikeVisual()
+    {
+        if (!Model.IsStrike || fillRenderer == null) return;
+
+        if (Model.HasStruck)
+        {
+            fillRenderer.enabled = false;
+            bodyRenderer.color = new Color(1f, 1f, 1f, 0.55f); // Darbe izi
+            return;
+        }
+
+        fillRenderer.transform.localScale = Vector3.one * (Model.Radius * 2f * Model.StrikeProgress);
     }
 
     void BuildLabel(string text, float radius)
     {
+        if (string.IsNullOrEmpty(text)) return; // Sürünün diğer üyelerinde yazı olmaz.
+
         var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
         var labelObject = new GameObject("Label");

@@ -8,5 +8,5 @@ public interface ITagBehaviour
     string Tag { get; }
 
     /// <summary>Yaratık doğarken çağrılır; yaratığın ayarlarını bu etikete göre değiştirir.</summary>
-    void Configure(CreatureModel creature);
+    void Configure(CreatureModel creature, SpawnContext context);
 }

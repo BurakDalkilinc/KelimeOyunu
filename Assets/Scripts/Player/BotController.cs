@@ -5,7 +5,7 @@ using UnityEngine;
 /// Bir botu sahnede hareket ettirir: <see cref="BotBrain"/>'in verdiği yöne gider, arenanın içinde kalır.
 /// Elenince durur ve soluklaşır (hayalet modu ileride eklenecek).
 /// </summary>
-public class BotController : MonoBehaviour
+public class BotController : MonoBehaviour, IKnockable
 {
     GameConfig config;
     ArenaBounds arena;
@@ -13,6 +13,7 @@ public class BotController : MonoBehaviour
     SpriteRenderer spriteRenderer;
     IReadOnlyList<DangerZone> dangers;
     Color baseColor;
+    readonly KnockbackMotion knockback = new KnockbackMotion();
 
     /// <summary>Bu botun maçtaki durumu (can, sıra bekleme sayacı...).</summary>
     public PlayerState State { get; private set; }
@@ -47,11 +48,22 @@ public class BotController : MonoBehaviour
     {
         if (brain == null || !State.IsAlive) return;
 
+        Vector2 pushed = knockback.Step(Time.deltaTime);
+        if (pushed != Vector2.zero)
+            transform.position = arena.Clamp((Vector2)transform.position + pushed, config.playerRadius);
+
         Vector2 direction = brain.Think(Time.deltaTime, transform.position, dangers);
         if (direction == Vector2.zero) return;
 
         Vector2 next = (Vector2)transform.position + direction * (config.botMoveSpeed * Time.deltaTime);
         transform.position = arena.Clamp(next, config.playerRadius);
+    }
+
+    /// <summary>Botu kısa bir süreye yayarak kaydırır (bir yaratık fırlattığında).</summary>
+    public void ApplyKnockback(Vector2 distance)
+    {
+        if (config == null) return;
+        knockback.Start(distance, config.knockbackSeconds);
     }
 
     void OnDied()

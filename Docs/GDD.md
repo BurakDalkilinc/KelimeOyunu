@@ -9,7 +9,7 @@
 1. **Zar (2 sn):** Hayattaki oyunculardan biri seçilir. Animasyon herkesin ekranının üstünde.
    - Seçilme ağırlığı = 1 + 0,5 × (üst üste kaç tur seçilmedi). Seçilen oyuncunun sayacı sıfırlanır. Elenenler seçilmez.
 2. **Yazma (10 sn):** Seçilen oyuncunun yazı kutusu açılır, karakteri durur. Diğerleri hareket edebilir.
-   - Saldırı kelimesiyse yazan kişi hedef seçer (yazmadan önce ya da sonra 3 sn).
+   - Saldırı kelimesiyse yazan kişi, kelime kabul edildikten sonra 3 sn içinde fareyle bir oyuncuya tıklayarak hedef seçer. Süre dolarsa rastgele bir rakip seçilir; botlar rastgele seçer. Kimse kendini hedefleyemez.
    - Süre biterse tur yanar.
 3. **Sonuç (15–20 sn):** Kelime ortaya çıkar. Global tehditse çözümü de haritada belirir. Herkes gerçek zamanlı kaçar.
 4. **Eleme:** Canı biten oyuncu hayalet olur.
@@ -30,6 +30,8 @@
 - Bir kelime ve eş anlamlıları maçta bir kez kullanılır.
 - Global tehdit = haritada çözüm de çıkar.
 - Bilinmeyen kelime: komik "???" yaratığı (zararsız), tur yanmaz.
+- Alan etkili saldırılar (ör. Yumruk): yerde uyarı alanı çıkar (hedefin o anki yerinde, hedefi takip etmez), uyarı süresi dolunca alandaki herkese vurur, yazan dahil. Fırlatma (knockback) kısa süreye yayılır.
+- Vur-kaç yaratıklar (ör. Kurt, predator): vurduktan sonra 2 sn geri çekilir, ömrünün son 1,5 sn'sinde sıkılıp gider. Sürü (swarm) üyelerinin ilk vuruşları 0,8 sn arayla kademelidir.
 - Hayaletler: (karar bekliyor) oylama ile sonraki turu etkiler.
 
 ## Etiket listesi (v1)

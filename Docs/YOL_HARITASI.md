@@ -17,12 +17,12 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [x] `TurnManager`: zar → yazma → sonuç → eleme döngüsü + testleri
 - [x] Zar UI'ı: ekranın üstünde oyuncu isimleri arasında dönen seçim
 - [x] Yazı kutusu UI'ı: 10 sn sayaç, Enter ile gönder
-- [ ] Hedef seçme: saldırı kelimesinde yazan kişi hedef seçer (yaratıklarla birlikte yapılacak)
-- [ ] Etiket davranışları: `slow`, `fast`, `predator`, `undead`, `swarm`, `instant`, `knockback`
+- [x] Hedef seçme: saldırı kelimesinde insan oyuncu 3 sn içinde fareyle bir oyuncuya tıklar (süre dolarsa rastgele), botlar rastgele seçer, kimse kendini seçemez
+- [x] Etiket davranışları: `slow`, `fast`, `predator`, `undead`, `swarm`, `instant`, `knockback`
   - [x] Altyapı: yaratık modeli, etiket kayıt defteri, kelimeden yaratık doğması, temas hasarı, botlara tehlike alanı
   - [x] `undead` (kalıcı vuruş), `slow` ve `fast` (hız kelimenin değerinden gelir)
-  - [ ] `predator`, `swarm`
-  - [ ] `instant`, `knockback`
+  - [x] `predator` (vur-kaç, ömrün sonunda sıkılıp gider), `swarm` (sürü, üyelerin ilk vuruşu kademeli)
+  - [x] `instant` (yerde uyarı alanı, süre dolunca alandaki herkese vurur), `knockback` (kısa süreye yayılan fırlatma)
 - [ ] Etiket davranışları: `trap`, `slowdown`, `pull`, `explosive`, `area`, `sky`
 - [ ] Koruma etiketleri: `shield`, `heal`, `wall`, `escape`, `stealth`
 - [ ] Global tehdit altyapısı + Atom bombası ve sığınak (sınırlı kapasite)

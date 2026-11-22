@@ -3,7 +3,7 @@ public class UndeadTag : ITagBehaviour
 {
     public string Tag => "undead";
 
-    public void Configure(CreatureModel creature)
+    public void Configure(CreatureModel creature, SpawnContext context)
     {
         creature.Persistent = true;
     }

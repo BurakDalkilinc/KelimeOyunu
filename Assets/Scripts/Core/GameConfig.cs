@@ -56,6 +56,30 @@ public class GameConfig : ScriptableObject
     [Tooltip("Bilinmeyen kelimenin zararsız '???' yaratığının hızı.")]
     [Min(0f)] public float unknownCreatureSpeed = 1.5f;
 
+    [Tooltip("Avcı (predator) yaratık vurduktan sonra bu kadar süre geri çekilir, sonra tekrar saldırır (sn).")]
+    [Min(0f)] public float predatorRetreatSeconds = 2f;
+    [Tooltip("Avcı yaratık, ömrünün son bu kadar saniyesinde sıkılıp hedeften uzaklaşır ve vurmaz (sn).")]
+    [Min(0f)] public float predatorLeaveSeconds = 1.5f;
+    [Tooltip("Sürüdeki her yaratığın ilk vuruşu, sırasına göre bu kadar saniye ertelenir. Böylece sürü hepsi birden vurup anında öldürmez (sn).")]
+    [Min(0f)] public float swarmHitStaggerSeconds = 0.8f;
+    [Tooltip("Sürü doğarken üyelerin dizildiği halkanın yarıçapı (birim).")]
+    [Min(0f)] public float swarmSpawnRingRadius = 0.8f;
+
+    [Tooltip("Fırlatma (knockback) mesafesi (birim).")]
+    [Min(0f)] public float knockbackDistance = 3f;
+    [Tooltip("Fırlatmanın kaç saniyeye yayılacağı. Ani ışınlanma olmasın diye kısa bir kayma süresi.")]
+    [Min(0.05f)] public float knockbackSeconds = 0.25f;
+    [Tooltip("Anında vuran (instant) yaratığın uyarı süresi en az bu kadardır (sn). Kelimede daha uzunu yazıyorsa o kullanılır.")]
+    [Min(0.1f)] public float strikeMinWarningSeconds = 0.5f;
+    [Tooltip("Vuruştan sonra darbe izinin ekranda kalma süresi (sn).")]
+    [Min(0f)] public float strikeLingerSeconds = 0.4f;
+
+    [Header("Hedef seçme")]
+    [Tooltip("Saldırı kelimesini yazan insan oyuncunun fareyle hedef seçme süresi (sn). Süre dolarsa rastgele bir rakip seçilir.")]
+    [Min(0.5f)] public float targetSelectionSeconds = 3f;
+    [Tooltip("Fare tıklaması, oyuncunun merkezine bu kadar yakınsa o oyuncu seçilmiş sayılır (birim). Oyuncular küçük olduğu için biraz cömert.")]
+    [Min(0.1f)] public float targetClickRadius = 0.9f;
+
     [Header("Tur süreleri (saniye)")]
     [Min(0.5f)] public float diceSeconds = 2f;
     [Min(1f)] public float typingSeconds = 10f;

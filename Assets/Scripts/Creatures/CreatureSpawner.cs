@@ -11,6 +11,7 @@ public class CreatureSpawner : MonoBehaviour
     [SerializeField] GameConfig config;
     [SerializeField] MatchRunner runner;
     [SerializeField] MatchBootstrap bootstrap;
+    [SerializeField] TargetSelector humanTargeting;
     [SerializeField] Color attackColor = new Color(0.95f, 0.35f, 0.3f);
     [SerializeField] Color unknownColor = new Color(0.65f, 0.55f, 0.85f);
 
@@ -51,19 +52,59 @@ public class CreatureSpawner : MonoBehaviour
         }
 
         if (word.category == WordEntry.CategoryAttack && word.scope == WordEntry.ScopeTarget)
-            SpawnAttack(writer, word);
+            BeginAttack(writer, word);
 
         // Tehdit (threat) ve koruma (defense) kelimeleri yol haritasında sonraki adımlarda.
     }
 
-    void SpawnAttack(PlayerState writer, WordEntry word)
+    /// <summary>
+    /// Saldırı kelimesinin hedefini belirler: insan oyuncu fareyle seçer (süre dolarsa rastgele),
+    /// bot hemen rastgele bir rakip seçer. Yazan kendini hedefleyemez.
+    /// </summary>
+    void BeginAttack(PlayerState writer, WordEntry word)
     {
-        PlayerState target = TargetPicker.PickRandomOpponent(bootstrap.Match.Players, writer, random);
-        if (target == null || !bootstrap.TryGetPosition(target.Id, out Vector2 targetPosition)) return;
+        if (!writer.IsBot && humanTargeting != null)
+        {
+            humanTargeting.Begin(writer, chosen => SpawnAttack(writer, word, chosen));
+            return;
+        }
 
-        Vector2 spawn = ArenaSpawn.PickPoint(arena, targetPosition, config.creatureSpawnMinDistance, random);
-        CreatureModel model = CreatureFactory.CreateAttack(word, target, spawn, config, arena);
-        Create(model, attackColor, word.display);
+        PlayerState target = TargetPicker.PickRandomOpponent(bootstrap.Match.Players, writer, random);
+        if (target != null) SpawnAttack(writer, word, target);
+    }
+
+    void SpawnAttack(PlayerState writer, WordEntry word, PlayerState target)
+    {
+        // Hedef seçilirken elenmiş olabilir; öyleyse başka bir rakip seç.
+        if (!target.IsAlive)
+        {
+            target = TargetPicker.PickRandomOpponent(bootstrap.Match.Players, writer, random);
+            if (target == null) return;
+        }
+
+        if (!bootstrap.TryGetPosition(target.Id, out Vector2 targetPosition)) return;
+
+        // Sürü (swarm) kelimesi birden fazla yaratık doğurur; hepsi aynı noktanın etrafında bir halkada başlar.
+        int count = TagRegistry.GetSpawnCount(word);
+        Vector2 center = ArenaSpawn.PickPoint(arena, targetPosition, config.creatureSpawnMinDistance, random);
+
+        for (int i = 0; i < count; i++)
+        {
+            Vector2 spawn = count == 1 ? center : center + RingOffset(i, count, config.swarmSpawnRingRadius);
+            CreatureModel model = CreatureFactory.CreateAttack(word, target, spawn, config, arena, i, count);
+
+            // Anında vuran yaratık (yumruk) uzaktan koşmaz: uyarı alanı hedefin o anki yerine konur.
+            if (model.IsStrike) model.PlaceAt(targetPosition);
+
+            Create(model, attackColor, count == 1 || i == 0 ? word.display : string.Empty);
+        }
+    }
+
+    /// <summary>Sürü üyesinin halka üzerindeki yeri (üyeler eşit aralıkla dizilir).</summary>
+    static Vector2 RingOffset(int index, int count, float radius)
+    {
+        float angle = Mathf.PI * 2f * index / count;
+        return new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
     }
 
     void SpawnUnknown()
@@ -98,7 +139,8 @@ public class CreatureSpawner : MonoBehaviour
                 continue;
             }
 
-            if (view.Model.IsDangerous)
+            // Sıkılıp giden avcı artık tehlike değil; botlar ondan kaçmak zorunda kalmaz.
+            if (view.Model.IsDangerous && !view.Model.IsLeaving)
                 dangers.Add(new DangerZone(view.Model.Position, view.Model.Radius));
         }
     }

@@ -10,7 +10,12 @@ using System.Collections.Generic;
 /// </summary>
 public static class TagRegistry
 {
-    static readonly Dictionary<string, ITagBehaviour> Implemented = Build(new UndeadTag());
+    static readonly Dictionary<string, ITagBehaviour> Implemented = Build(
+        new UndeadTag(),
+        new PredatorTag(),
+        new SwarmTag(),
+        new InstantTag(),
+        new KnockbackTag());
 
     /// <summary>Hız zaten kelimenin değerinden geldiği için ek davranışı olmayan etiketler.</summary>
     public static readonly IReadOnlyCollection<string> LabelOnlyTags = new[] { "slow", "fast" };
@@ -18,7 +23,7 @@ public static class TagRegistry
     /// <summary>Henüz uygulanmamış etiketler. Sıradaki gruplarda tek tek uygulanacak.</summary>
     public static readonly IReadOnlyCollection<string> PendingTags = new[]
     {
-        "flying", "swarm", "predator", "instant", "knockback", "trap", "slowdown", "pull", "armored",
+        "flying", "trap", "slowdown", "pull", "armored",
         "explosive", "area", "water", "fire", "sky", "map_wide", "shield", "heal", "wall", "escape", "stealth"
     };
 
@@ -32,15 +37,32 @@ public static class TagRegistry
     }
 
     /// <summary>Kelimenin etiketlerini yaratığa uygular. Uygulanmamış ya da bilinmeyen etiket yok sayılır.</summary>
-    public static void Apply(CreatureModel creature, IEnumerable<string> tags)
+    public static void Apply(CreatureModel creature, IEnumerable<string> tags, SpawnContext context)
     {
         if (creature == null || tags == null) return;
 
         foreach (string tag in tags)
         {
             if (tag != null && Implemented.TryGetValue(tag, out ITagBehaviour behaviour))
-                behaviour.Configure(creature);
+                behaviour.Configure(creature, context);
         }
+    }
+
+    /// <summary>
+    /// Kelimeden kaç yaratık doğacağını verir (en az 1). Sayıyı değiştiren etiket yoksa 1'dir;
+    /// birden fazla varsa en büyüğü kazanır.
+    /// </summary>
+    public static int GetSpawnCount(WordEntry word)
+    {
+        if (word?.tags == null) return 1;
+
+        int count = 1;
+        foreach (string tag in word.tags)
+        {
+            if (tag != null && Implemented.TryGetValue(tag, out ITagBehaviour behaviour) && behaviour is ISpawnCountTag counter)
+                count = System.Math.Max(count, counter.GetSpawnCount(word));
+        }
+        return count;
     }
 
     static Dictionary<string, ITagBehaviour> Build(params ITagBehaviour[] behaviours)

@@ -33,6 +33,8 @@ public class TagRegistryTests
 
     CreatureModel Blank() => new CreatureModel(null, target, Vector2.zero, 1f, 1, 0.5f, 10f, arena);
 
+    SpawnContext Ctx() => new SpawnContext(0, 1, config);
+
     // ---- Etiketler ----
 
     [Test]
@@ -41,7 +43,7 @@ public class TagRegistryTests
         var creature = Blank();
         Assert.IsFalse(creature.Persistent);
 
-        TagRegistry.Apply(creature, new[] { "undead", "slow" });
+        TagRegistry.Apply(creature, new[] { "undead", "slow" }, Ctx());
 
         Assert.IsTrue(creature.Persistent);
     }
@@ -50,7 +52,7 @@ public class TagRegistryTests
     public void LabelOnlyAndPendingTags_DoNotChangeCreature()
     {
         var creature = Blank();
-        TagRegistry.Apply(creature, new[] { "slow", "fast", "flying", "swarm", "explosive", "totallyUnknown", null });
+        TagRegistry.Apply(creature, new[] { "slow", "fast", "flying", "trap", "explosive", "totallyUnknown", null }, Ctx());
 
         Assert.IsFalse(creature.Persistent);
         Assert.AreEqual(1f, creature.Speed, 0.0001f);
@@ -60,8 +62,8 @@ public class TagRegistryTests
     [Test]
     public void Apply_NullArguments_DoNotThrow()
     {
-        Assert.DoesNotThrow(() => TagRegistry.Apply(null, new[] { "undead" }));
-        Assert.DoesNotThrow(() => TagRegistry.Apply(Blank(), null));
+        Assert.DoesNotThrow(() => TagRegistry.Apply(null, new[] { "undead" }, Ctx()));
+        Assert.DoesNotThrow(() => TagRegistry.Apply(Blank(), null, Ctx()));
     }
 
     [Test]
