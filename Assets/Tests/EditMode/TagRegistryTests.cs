@@ -52,7 +52,7 @@ public class TagRegistryTests
     public void LabelOnlyAndPendingTags_DoNotChangeCreature()
     {
         var creature = Blank();
-        TagRegistry.Apply(creature, new[] { "slow", "fast", "armored", "water", "fire", "sky", "totallyUnknown", null }, Ctx());
+        TagRegistry.Apply(creature, new[] { "slow", "fast", "armored", "totallyUnknown", null }, Ctx());
 
         Assert.IsFalse(creature.Persistent);
         Assert.AreEqual(1f, creature.Speed, 0.0001f);

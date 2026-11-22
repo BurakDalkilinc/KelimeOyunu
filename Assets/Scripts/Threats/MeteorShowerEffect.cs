@@ -18,6 +18,8 @@ public class MeteorShowerEffect : IThreatEffect
 
     public bool IsFinished { get; private set; }
 
+    public bool NeedsWarning => false; // Her meteor kendi gölge uyarısını verir
+
     /// <summary>Şimdiye kadar düşürülen meteor sayısı.</summary>
     public int Spawned => spawned;
 

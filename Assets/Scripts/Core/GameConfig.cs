@@ -123,6 +123,9 @@ public class GameConfig : ScriptableObject
     [Tooltip("Sürüde (swarm) bir üyenin ilk vuruş gecikmesi en çok bu kadar olur (sn). 20 kişilik sürüde sondakiler çok beklemesin diye.")]
     [Min(0f)] public float swarmMaxStaggerSeconds = 4f;
 
+    [Tooltip("Ateş (fire) alanındaki bir oyuncuya iki yanma hasarı arasındaki süre (sn).")]
+    [Min(0.1f)] public float fireDamageIntervalSeconds = 1f;
+
     [Header("Tur süreleri (saniye)")]
     [Min(0.5f)] public float diceSeconds = 2f;
     [Min(1f)] public float typingSeconds = 10f;

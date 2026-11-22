@@ -119,7 +119,11 @@ public class CreatureView : MonoBehaviour
             color = new Color(1f, 0.85f, 0.2f, 0.85f); // Sarı: muz kabuğu
         }
 
-        if (Model.IsArea)
+        if (Model.IsArea && Model.BurnsArea)
+        {
+            color = new Color(1f, 0.45f, 0.1f, 0.38f); // Turuncu: ateş alanı
+        }
+        else if (Model.IsArea)
         {
             // Sürekli alan: büyük, yarı saydam, soğuk renkli bir daire.
             color = new Color(0.55f, 0.7f, 0.95f, 0.32f);

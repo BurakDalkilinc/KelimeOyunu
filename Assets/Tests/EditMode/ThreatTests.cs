@@ -477,8 +477,8 @@ public class ThreatTests
     {
         Assert.AreEqual("ATOM BOMBASI! Sığınağa gir! (5 sn)", ThreatText.GetAlarm(Real("atom_bombasi"), 5));
         Assert.AreEqual("TSUNAMİ! Kuleye çık! (3 sn)", ThreatText.GetAlarm(Real("tsunami"), 3), "Türkçe büyük harf: i → İ");
-        Assert.AreEqual("EJDERHA! Mağaraya gir!", ThreatText.GetAlarm(Real("ejderha"), 0));
-        Assert.AreEqual("ZOMBİ SÜRÜSÜ! Eve gir! (4 sn)", ThreatText.GetAlarm(Real("zombi_suru"), 4), "Türkçe büyük harf: i → İ");
+        Assert.AreEqual("EJDERHA! Mağaraya sığınabilirsin!", ThreatText.GetAlarm(Real("ejderha"), 0));
+        Assert.AreEqual("ZOMBİ SÜRÜSÜ! Eve sığınabilirsin! (4 sn)", ThreatText.GetAlarm(Real("zombi_suru"), 4), "Türkçe büyük harf: i → İ");
         Assert.AreEqual("METEOR YAĞMURU! Gölgelere dikkat!", ThreatText.GetAlarm(Real("meteor_yagmuru"), 0));
     }
 

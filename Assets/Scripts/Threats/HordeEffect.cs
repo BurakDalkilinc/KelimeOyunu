@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Sürü saldırısı (ör. zombi sürüsü): uyarı bitince kelimenin "stats.count" kadar yaratığı arenanın kenarlarından salar.
+/// Sürü saldırısı (ör. zombi sürüsü; tek üyeli olarak ejderha): uyarı bitince kelimenin "stats.count" kadar yaratığı arenanın kenarlarından salar.
 /// Her yaratık kelimenin etiketlerinden kurulur (zombide "undead": kalıcı kovalama, "swarm": kademeli ilk vuruş), rastgele bir
 /// hayattaki oyuncuyu kovalar ve çözüm alanındaki (ev) korunanlara vuramaz. Yaratıklar yaşadığı sürece
 /// ("stats.duration") etki sürer; çözüm alanları o zamana kadar ayakta kalır. Düz C# sınıfı.
@@ -15,6 +15,8 @@ public class HordeEffect : IThreatEffect
     float lifeLeft;
 
     public bool IsFinished { get; private set; }
+
+    public bool NeedsWarning => false; // Yaratıklar hemen görünür; sığınma zorunlu değil
 
     /// <summary>Salınan yaratık sayısı.</summary>
     public int Spawned { get; private set; }
@@ -35,14 +37,19 @@ public class HordeEffect : IThreatEffect
         int count = Mathf.Clamp(stats != null ? stats.count : 0, 1, MaxMembers);
         for (int i = 0; i < count; i++)
         {
-            PlayerState target = PickAlivePlayer();
+            Vector2 position = ArenaSpawn.PickEdgePoint(context.Arena, context.Random);
+
+            // Her yaratık, doğduğu yere en yakın düşmana (oyuncuya) saldırır.
+            PlayerState target = NearestTarget(position);
             if (target == null) break;
 
-            Vector2 position = ArenaSpawn.PickEdgePoint(context.Arena, context.Random);
             CreatureModel member = CreatureFactory.CreateAttack(context.Word, target, position, context.Config, context.Arena, i, count);
-            member.Protection = context.Zones; // Evdekilere (çözüm alanı) vuramaz
+            member.Protection = context.Zones;       // İsteğe bağlı sığınakta (ev, mağara) olanlara vuramaz
+            member.Locator = context.World;          // Hedefi ölünce ya da başkası yaklaşınca yeniden seçebilsin
+            member.TargetsNearest = true;
+            member.RetargetsWhenTargetDies = true;
 
-            context.Creatures.Spawn(member, string.Empty);
+            context.Creatures.Spawn(member, count == 1 ? context.Word.display : string.Empty); // Tek yaratıkta (ejderha) adı yazılır
             Spawned++;
         }
 
@@ -57,19 +64,24 @@ public class HordeEffect : IThreatEffect
         if (lifeLeft <= 0f) IsFinished = true;
     }
 
-    PlayerState PickAlivePlayer()
+    /// <summary>Verilen noktaya en yakın, hayattaki ve görünmez olmayan oyuncu; yoksa null.</summary>
+    PlayerState NearestTarget(Vector2 from)
     {
-        int alive = 0;
-        foreach (PlayerState player in context.World.Players)
-            if (player.IsAlive) alive++;
-        if (alive == 0) return null;
+        PlayerState best = null;
+        float bestDistance = float.MaxValue;
 
-        int pick = context.Random.Next(alive);
         foreach (PlayerState player in context.World.Players)
         {
-            if (!player.IsAlive) continue;
-            if (pick-- == 0) return player;
+            if (!player.IsAlive || player.Status.IsStealthed) continue;
+            if (!context.World.TryGetPosition(player.Id, out Vector2 position)) continue;
+
+            float distance = (position - from).magnitude;
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                best = player;
+            }
         }
-        return null;
+        return best;
     }
 }

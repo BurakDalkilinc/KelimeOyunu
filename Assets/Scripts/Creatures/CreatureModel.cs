@@ -20,7 +20,7 @@ public class CreatureModel
     public WordEntry Word { get; }
 
     /// <summary>Kovaladığı oyuncu; "???" yaratığında null.</summary>
-    public PlayerState Target { get; }
+    public PlayerState Target { get; private set; }
 
     public Vector2 Position { get; private set; }
 
@@ -93,7 +93,7 @@ public class CreatureModel
     /// Anında vuran yaratıklar zaten alan vuruşu yaptığı için bunlarda "area" bir şey değiştirmez.
     /// Alanın uygulayacağı bir etki de olmalı (şimdilik yavaşlatma); etkisiz alan yaratığı eski temas davranışında kalır.
     /// </summary>
-    public bool IsArea => AreaRequested && !IsStrike && SlowSeconds > 0f;
+    public bool IsArea => AreaRequested && !IsStrike && (SlowSeconds > 0f || BurnsArea);
 
     /// <summary>
     /// 0'dan büyükse anında vuran yaratık hedefin üstüne değil, onun bu kadar yanına yerleştirilir (birim).
@@ -109,6 +109,30 @@ public class CreatureModel
 
     /// <summary>Oyuncu bu yaratığa karşı korunuyor mu?</summary>
     bool IsProtectedFromThis(PlayerState player) => Protection != null && Protection.IsProtected(player.Id);
+
+    /// <summary>true ise sürekli alanı ateş püskürtür: yarıçapındaki herkese aralıklarla hasar verir. "fire" etiketi açar.</summary>
+    public bool BurnsArea { get; set; }
+
+    /// <summary>Ateşin aynı oyuncuya iki hasarı arasındaki süre (sn). "fire" etiketi GameConfig'ten ayarlar.</summary>
+    public float AreaDamageIntervalSeconds { get; set; } = 1f;
+
+    /// <summary>true ise sürekli alan yaratığı hedefi elenince başka hayattaki bir oyuncuya geçer (ejderha); değilse kaybolur.</summary>
+    public bool RetargetsWhenTargetDies { get; set; }
+
+    /// <summary>
+    /// true ise yaratık her zaman en yakınındaki oyuncuyu hedefler (hedefi ölünce de en yakına geçer). Tehdit yaratıkları
+    /// (zombi sürüsü, ejderha) bunu kullanır. <see cref="Locator"/> gerekir.
+    /// </summary>
+    public bool TargetsNearest { get; set; }
+
+    /// <summary>Oyuncuların konumunu veren kaynak; en yakın hedefi seçmek için. null ise hedef değişmez.</summary>
+    public IPlayerLocator Locator { get; set; }
+
+    /// <summary>Başka bir oyuncu hedeften bu kadar daha yakın olunca yaratık ona geçer (sürekli kararsız kalmasın).</summary>
+    public const float NearestSwitchMargin = 1.0f;
+
+    float areaClock;
+    readonly System.Collections.Generic.Dictionary<int, float> nextBurnAt = new System.Collections.Generic.Dictionary<int, float>();
 
     /// <summary>true ise yaratık gökten düşer (ör. meteor): gölge olarak görünür, geri sayım yazısı gösterilmez. "sky" etiketi açar.</summary>
     public bool IsSky { get; set; }
@@ -254,6 +278,9 @@ public class CreatureModel
         if (retreatLeft > 0f) retreatLeft -= dt;
         if (Target == null) return false;
 
+        UpdateTarget(Locator);
+        if (IsFinished) return false;
+
         if (!Target.IsAlive)
         {
             IsFinished = true;
@@ -333,13 +360,12 @@ public class CreatureModel
             return 0;
         }
 
-        if (Target != null && !Target.IsAlive)
-        {
-            IsFinished = true;
-            return 0;
-        }
+        UpdateTarget(world);
+        if (IsFinished) return 0;
 
         if (world == null) return 0;
+
+        areaClock += dt;
 
         if (Target != null && world.TryGetPosition(Target.Id, out Vector2 targetPosition))
             MoveToward(targetPosition, 0.1f, dt);
@@ -349,9 +375,11 @@ public class CreatureModel
         {
             if (!player.IsAlive || !world.TryGetPosition(player.Id, out Vector2 playerPosition)) continue;
             if ((playerPosition - Position).magnitude > Radius + playerRadius) continue;
+            if (IsProtectedFromThis(player)) continue; // Çözüm alanındakine (mağara) etki etmez
 
             inside++;
             if (SlowSeconds > 0f) player.Status.ApplySlow(SlowMultiplier, AreaLingerSeconds);
+            if (BurnsArea && Damage > 0) Burn(player);
         }
         return inside;
     }
@@ -419,6 +447,67 @@ public class CreatureModel
 
         if (triggered > 0) IsFinished = true; // Tek kullanımlık
         return triggered;
+    }
+
+    /// <summary>Ateş alanındaki oyuncuya, son yanmasından bu yana yeterli süre geçtiyse hasar verir.</summary>
+    void Burn(PlayerState player)
+    {
+        if (nextBurnAt.TryGetValue(player.Id, out float readyAt) && areaClock < readyAt) return;
+
+        player.TakeDamage(Damage);
+        nextBurnAt[player.Id] = areaClock + Mathf.Max(0.05f, AreaDamageIntervalSeconds);
+    }
+
+    /// <summary>
+    /// Hedefi günceller: hedef öldüyse ve yaratık yeniden hedef seçebiliyorsa en yakına geçer (kimse yoksa kaybolur,
+    /// seçemiyorsa da kaybolur). <see cref="TargetsNearest"/> ise hedeften belirgin şekilde daha yakın biri varsa ona geçer.
+    /// </summary>
+    void UpdateTarget(IPlayerLocator world)
+    {
+        if (Target == null) return;
+
+        if (!Target.IsAlive)
+        {
+            PlayerState next = (RetargetsWhenTargetDies || TargetsNearest) ? NearestAlivePlayer(world) : null;
+            if (next == null)
+            {
+                IsFinished = true;
+                return;
+            }
+            Target = next;
+            return;
+        }
+
+        if (!TargetsNearest || world == null) return;
+
+        PlayerState nearest = NearestAlivePlayer(world);
+        if (nearest == null || nearest == Target) return;
+        if (!world.TryGetPosition(Target.Id, out Vector2 currentPosition) || !world.TryGetPosition(nearest.Id, out Vector2 nearestPosition)) return;
+
+        float toCurrent = (currentPosition - Position).magnitude;
+        float toNearest = (nearestPosition - Position).magnitude;
+        if (toNearest + NearestSwitchMargin < toCurrent) Target = nearest;
+    }
+
+    /// <summary>Konumu bilinen, hayattaki ve görünmez olmayan en yakın oyuncu; yoksa null.</summary>
+    PlayerState NearestAlivePlayer(IPlayerLocator world)
+    {
+        if (world == null) return null;
+
+        PlayerState best = null;
+        float bestDistance = float.MaxValue;
+        foreach (PlayerState player in world.Players)
+        {
+            if (!player.IsAlive || player.Status.IsStealthed || !world.TryGetPosition(player.Id, out Vector2 position)) continue;
+
+            float distance = (position - Position).magnitude;
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                best = player;
+            }
+        }
+        return best;
     }
 
     int Strike(IPlayerLocator world, float playerRadius, List<CreatureHit> hits)

@@ -15,8 +15,8 @@ public static class ThreatText
         {
             case "shelter": return "Sığınağa gir!";
             case "tower": return "Kuleye çık!";
-            case "cave": return "Mağaraya gir!";
-            case "houses": return "Eve gir!";
+            case "cave": return "Mağaraya sığınabilirsin!";
+            case "houses": return "Eve sığınabilirsin!";
             case ThreatSpec.ShadowsType: return "Gölgelere dikkat!";
             default: return "Kaç!";
         }

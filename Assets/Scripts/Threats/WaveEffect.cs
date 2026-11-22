@@ -21,6 +21,8 @@ public class WaveEffect : IThreatEffect
 
     public bool IsFinished { get; private set; }
 
+    public bool NeedsWarning => true;
+
     /// <summary>Etkin ve henüz arenadan çıkmadı mı?</summary>
     public bool IsActive { get; private set; }
 

@@ -100,16 +100,16 @@ public class HordeEffectTests
             Assert.IsTrue(zombie.Persistent, "undead: kalıcı vuruş");
             Assert.AreEqual(2.5f, zombie.Speed, 0.001f);   // words.json: speed 2.5
             Assert.AreEqual(1, zombie.Damage);
-            Assert.AreEqual(20f, zombie.LifeLeft, 0.001f); // words.json: duration 20
+            Assert.AreEqual(10f, zombie.LifeLeft, 0.001f); // words.json: duration 10
             Assert.IsNotNull(zombie.Target);
         }
     }
 
     [Test]
-    public void Zombies_TargetOnlyAlivePlayers_AndSpreadAcrossThem()
+    public void Zombies_EachTargetTheNearestAlivePlayerToWhereTheyEntered()
     {
         var world = Players(5);
-        world.Players[0].Health.TakeDamage(99);
+        world.Players[0].Health.TakeDamage(99); // Elenmiş: hedef olamaz
         var sink = new CollectingSink();
         Start(world, sink, seed: 4);
 
@@ -118,8 +118,78 @@ public class HordeEffectTests
         {
             Assert.IsTrue(zombie.Target.IsAlive);
             targets.Add(zombie.Target.Id);
+
+            // Doğduğu yere en yakın hayattaki oyuncu olmalı.
+            PlayerState expected = null;
+            float best = float.MaxValue;
+            foreach (PlayerState p in world.Players)
+            {
+                if (!p.IsAlive) continue;
+                world.TryGetPosition(p.Id, out Vector2 pos);
+                float d = (pos - zombie.Position).magnitude;
+                if (d < best) { best = d; expected = p; }
+            }
+            Assert.AreSame(expected, zombie.Target);
         }
-        Assert.GreaterOrEqual(targets.Count, 3, "Sürü tek kişiye yığılmaz");
+        Assert.GreaterOrEqual(targets.Count, 2, "Kenarın farklı yerlerinden girenler farklı oyunculara gider");
+    }
+
+    [Test]
+    public void Zombies_IgnoreStealthedPlayersWhenChoosingATarget()
+    {
+        var world = Players(3);
+        world.Players[0].Status.ApplyStealth(10f);
+        var sink = new CollectingSink();
+        Start(world, sink);
+
+        foreach (CreatureModel zombie in sink.Models)
+            Assert.AreNotSame(world.Players[0], zombie.Target, "Görünmezler hedef alınamaz");
+    }
+
+    [Test]
+    public void Zombie_WhenItsTargetDies_SwitchesToTheNextNearest_AndWhenSomeoneGetsMuchCloser_SwitchesToThem()
+    {
+        var world = new FakeWorld();
+        var first = world.Add(1, new Vector2(2f, 0f));
+        var second = world.Add(2, new Vector2(8f, 0f));
+        var zombie = CreatureFactory.CreateAttack(Horde(), first, new Vector2(0f, 0f), config, arena);
+        zombie.Locator = world;
+        zombie.TargetsNearest = true;
+        zombie.RetargetsWhenTargetDies = true;
+
+        zombie.Tick(0.1f, new Vector2(2f, 0f), 0.5f, 1f);
+        Assert.AreSame(first, zombie.Target);
+
+        // İkinci oyuncu çok daha yakına geldi (hedeften 1 birimden fazla yakın): ona geçer.
+        world.Move(2, new Vector2(0.2f, 0f));
+        zombie.Tick(0.1f, new Vector2(2f, 0f), 0.5f, 1f);
+        Assert.AreSame(second, zombie.Target);
+
+        // Hedef ölünce, kalan en yakına geçer.
+        second.Health.TakeDamage(99);
+        zombie.Tick(0.1f, new Vector2(0.2f, 0f), 0.5f, 1f);
+        Assert.AreSame(first, zombie.Target);
+        Assert.IsFalse(zombie.IsFinished);
+
+        // Kimse kalmayınca kaybolur.
+        first.Health.TakeDamage(99);
+        zombie.Tick(0.1f, new Vector2(2f, 0f), 0.5f, 1f);
+        Assert.IsTrue(zombie.IsFinished);
+    }
+
+    [Test]
+    public void Zombie_DoesNotFlipFlopBetweenAlmostEquallyCloseTargets()
+    {
+        var world = new FakeWorld();
+        var a = world.Add(1, new Vector2(3f, 0f));
+        world.Add(2, new Vector2(3f, 0.4f)); // Neredeyse aynı uzaklık
+        var zombie = CreatureFactory.CreateAttack(Horde(), a, new Vector2(0f, 0f), config, arena);
+        zombie.Locator = world;
+        zombie.TargetsNearest = true;
+
+        for (int i = 0; i < 10; i++) zombie.Tick(0.01f, new Vector2(3f, 0f), 0.5f, 1f);
+
+        Assert.AreSame(a, zombie.Target, "Marj (1 birim) içinde kalan fark hedefi değiştirmez");
     }
 
     [Test]
@@ -211,7 +281,7 @@ public class HordeEffectTests
         var sink = new CollectingSink();
         var effect = Start(Players(4), sink);
 
-        effect.Tick(19.9f);
+        effect.Tick(9.9f);
         Assert.IsFalse(effect.IsFinished);
 
         effect.Tick(0.2f);
@@ -237,45 +307,51 @@ public class HordeEffectTests
     // ---- GlobalThreat: gerçek Zombi sürüsü ----
 
     [Test]
-    public void ZombiSuru_AsAGlobalThreat_HasFourHousesOfTwo_AndAHordeEffect()
-    {
-        var world = Players(8);
-        var threat = new GlobalThreat(Horde(), world.Players[0], config, arena, world, new Random(3), new CollectingSink());
-
-        Assert.AreEqual(4, threat.Zones.Zones.Count);
-        foreach (SafeZone house in threat.Zones.Zones)
-        {
-            Assert.AreEqual("houses", house.Type);
-            Assert.AreEqual(2, house.Capacity);
-        }
-        Assert.AreEqual(1, threat.Effects.Count);
-        Assert.IsInstanceOf<HordeEffect>(threat.Effects[0]);
-        Assert.AreEqual(ThreatPhase.Warning, threat.Phase);
-        Assert.AreEqual(5f, threat.WarningLeft, 0.001f);
-    }
-
-    [Test]
-    public void ZombiSuru_Flow_ZombiesAppearOnlyAfterTheWarning_AndHousesStayUntilTheyAreGone()
+    public void ZombiSuru_AsAGlobalThreat_StartsImmediately_WithOptionalHouses()
     {
         var world = Players(8);
         var sink = new CollectingSink();
         var threat = new GlobalThreat(Horde(), world.Players[0], config, arena, world, new Random(3), sink);
 
-        threat.Tick(4.9f);
-        Assert.AreEqual(0, sink.Models.Count, "Uyarı sürerken zombi yok");
+        Assert.AreEqual(4, threat.Zones.Zones.Count, "Evler yine çıkar (isteğe bağlı sığınak)");
+        foreach (SafeZone house in threat.Zones.Zones)
+        {
+            Assert.AreEqual("houses", house.Type);
+            Assert.AreEqual(2, house.Capacity);
+        }
+        Assert.IsInstanceOf<HordeEffect>(threat.Effects[0]);
 
-        threat.Tick(0.2f);
-        Assert.AreEqual(20, sink.Models.Count);
+        Assert.AreEqual(ThreatPhase.Active, threat.Phase, "Uyarı beklenmez: zombiler hemen görünür");
+        Assert.AreEqual(0f, threat.WarningLeft, 0.001f);
+        Assert.AreEqual(20, sink.Models.Count, "Zombiler hemen sahnede");
+    }
+
+    [Test]
+    public void ZombiSuru_Flow_ZombiesAreProtectedFromByHouses_AndEverythingEndsAfter10Seconds()
+    {
+        var world = Players(8);
+        var sink = new CollectingSink();
+        var threat = new GlobalThreat(Horde(), world.Players[0], config, arena, world, new Random(3), sink);
+
         foreach (CreatureModel zombie in sink.Models)
-            Assert.AreSame(threat.Zones, zombie.Protection, "Zombiler bu tehdidin evlerine saygı gösterir");
+            Assert.AreSame(threat.Zones, zombie.Protection, "İsteğe bağlı sığınaktakilere vurmazlar");
 
-        threat.Tick(10f);
+        threat.Tick(5f);
         Assert.AreEqual(4, threat.Zones.Zones.Count, "Zombiler yaşarken evler ayakta");
 
-        threat.Tick(10.5f);   // 20 sn doldu
+        threat.Tick(5.5f);   // 10 sn doldu
         threat.Tick(config.safeZoneLingerSeconds + 0.5f);
         Assert.AreEqual(ThreatPhase.Finished, threat.Phase);
         Assert.AreEqual(0, threat.Zones.Zones.Count);
+    }
+
+    [Test]
+    public void NeedsWarning_BlastAndWaveDo_HordeAndMeteorDoNot()
+    {
+        Assert.IsTrue(new MapBlastEffect().NeedsWarning);
+        Assert.IsTrue(new WaveEffect().NeedsWarning);
+        Assert.IsFalse(new HordeEffect().NeedsWarning);
+        Assert.IsFalse(new MeteorShowerEffect().NeedsWarning);
     }
 
     // ---- Yardımcılar ----

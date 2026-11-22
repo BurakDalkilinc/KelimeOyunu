@@ -23,7 +23,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
   - [x] `undead` (kalıcı vuruş), `slow` ve `fast` (hız kelimenin değerinden gelir)
   - [x] `predator` (vur-kaç, ömrün sonunda sıkılıp gider), `swarm` (sürü, üyelerin ilk vuruşu kademeli)
   - [x] `instant` (yerde uyarı alanı, süre dolunca alandaki herkese vurur), `knockback` (kısa süreye yayılan fırlatma)
-- [ ] Etiket davranışları: `trap`, `slowdown`, `pull`, `explosive`, `area`, `sky`
+- [x] Etiket davranışları: `trap`, `slowdown`, `pull`, `explosive`, `area`, `sky`
   - [x] Durum etkileri altyapısı ve `slowdown` (Fare: hasarsız yavaşlatma, göstergeli)
   - [x] `area` (Bulut: hedefi yavaşça takip eden, içindeki herkesi yavaşlatan sürekli alan)
   - [x] `explosive` (Bomba: hedefin yanına düşer, ekranda geri sayım, süre dolunca alandaki herkese hasar)
@@ -34,11 +34,11 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
   - [x] `shield` (bir sonraki hasarı engeller), `heal` (1 can), `stealth` (6 sn hedef alınamaz), `escape` (5 sn uçma, yerdeki saldırılardan etkilenmez), `flying` (uçan yaratıklar)
   - [x] `wall` (Duvar: yazanın baktığı yönün önüne dik, 4 birim, 10 sn; oyuncu, bot ve yerdeki yaratıkları durdurur, uçanlar geçer)
 - [x] Global tehdit altyapısı + Atom bombası ve sığınak (sınırlı kapasite): uyarı süresi, alarm yazısı, çözüm alanları, botlar sığınır, patlama
-- [ ] Kalan 4 global tehdit ve çözümleri
+- [x] Kalan 4 global tehdit ve çözümleri
   - [x] Tsunami: rastgele kenardan dalga, kuleler (3 × 3 kişi) korur
   - [x] Meteor yağmuru: 12 sn'de 30 meteor, her biri 1,5 sn gölge gösterir, çözüm gölgeleri görüp kaçmak
-  - [x] Zombi sürüsü: 5 sn uyarı, kenarlardan 20 zombi, 4 ev (2 kişilik) korur; evdeki bot evinde kalır
-  - [ ] Ejderha (mağaralar 2 × 4 kişi, `fire`)
+  - [x] Zombi sürüsü: hemen belirir (uyarı yok), kenarlardan 20 zombi en yakındaki oyuncuya saldırır (10 sn); evler isteğe bağlı sığınak, evdeki bot evinde kalır
+  - [x] Ejderha: hemen belirir, en yakındaki oyuncuya saldırır, alanında saniyede 1 ateş hasarı (10 sn); mağaralar isteğe bağlı sığınak
 - [ ] Bilinmeyen kelime → "???" yaratığı
 - [ ] Hayalet modu (eleme sonrası izleme)
 - [ ] Maç sonu ekranı: kazanan, yazılan kelimeler listesi

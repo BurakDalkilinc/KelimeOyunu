@@ -60,7 +60,8 @@ public class GlobalThreat
 
         PlaceZones();
 
-        WarningLeft = ThreatSpec.GetWarningSeconds(word, config);
+        // Uyarı süresi yalnızca ani felaketlerde (patlama, dalga) gerekir; yaratıklar hemen görünür.
+        WarningLeft = effects.Exists(e => e.NeedsWarning) ? ThreatSpec.GetWarningSeconds(word, config) : 0f;
         Phase = ThreatPhase.Warning;
         if (WarningLeft <= 0f) Activate();
     }

@@ -29,16 +29,14 @@ public static class TagRegistry
         new WallTag(),
         new MapWideTag(),
         new WaterTag(),
-        new SkyTag());
+        new SkyTag(),
+        new FireTag());
 
     /// <summary>Hız zaten kelimenin değerinden geldiği için ek davranışı olmayan etiketler.</summary>
     public static readonly IReadOnlyCollection<string> LabelOnlyTags = new[] { "slow", "fast", "armored" };
 
     /// <summary>Henüz uygulanmamış etiketler. Sıradaki gruplarda tek tek uygulanacak.</summary>
-    public static readonly IReadOnlyCollection<string> PendingTags = new[]
-    {
-        "fire"
-    };
+    public static readonly IReadOnlyCollection<string> PendingTags = new string[0];
 
     public static IReadOnlyCollection<string> ImplementedTags => Implemented.Keys;
 

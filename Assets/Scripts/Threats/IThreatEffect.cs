@@ -12,6 +12,12 @@ public interface IThreatEffect
 
     /// <summary>Etki işini bitirdi mi? Tüm etkiler bitince tehdit sona erer.</summary>
     bool IsFinished { get; }
+
+    /// <summary>
+    /// Bu etki başlamadan önce oyunculara uyarı süresi verilmeli mi? Ani felaketlerde (patlama, dalga) evet; yaratıkların
+    /// hemen göründüğü (sürü, ejderha, meteor) etkilerde hayır: yaratıklar görünür ve sığınma zorunlu değil.
+    /// </summary>
+    bool NeedsWarning { get; }
 }
 
 /// <summary>Global tehdit etkisi üreten etiketler bunu uygular.</summary>

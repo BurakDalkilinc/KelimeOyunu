@@ -8,6 +8,8 @@ public class MapBlastEffect : IThreatEffect
 {
     public bool IsFinished { get; private set; }
 
+    public bool NeedsWarning => true;
+
     /// <summary>Patlamanın vurduğu oyuncu sayısı (korunmayanlar).</summary>
     public int Affected { get; private set; }
 

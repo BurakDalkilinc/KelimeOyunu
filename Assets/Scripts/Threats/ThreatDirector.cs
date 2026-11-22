@@ -106,9 +106,9 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
         GlobalThreat urgent = null;
         foreach (GlobalThreat threat in threats)
         {
-            // Uyarıdaki tehditler; ayrıca gölge uyarılı (meteor) tehdit süren etkisi boyunca hatırlatılır.
-            bool shadowsActive = threat.Phase == ThreatPhase.Active && !ThreatSpec.HasZones(threat.Word) && !threat.EffectsFinished;
-            if (threat.Phase != ThreatPhase.Warning && !shadowsActive) continue;
+            // Uyarıdaki tehditler; ayrıca yaratık/gölge tehditleri (meteor, sürü, ejderha) etkisi sürerken hatırlatılır.
+            bool activeAndRunning = threat.Phase == ThreatPhase.Active && !threat.EffectsFinished;
+            if (threat.Phase != ThreatPhase.Warning && !activeAndRunning) continue;
             if (urgent == null || threat.WarningLeft < urgent.WarningLeft) urgent = threat;
         }
 
