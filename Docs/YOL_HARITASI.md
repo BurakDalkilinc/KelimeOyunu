@@ -28,7 +28,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
   - [x] `area` (Bulut: hedefi yavaşça takip eden, içindeki herkesi yavaşlatan sürekli alan)
   - [x] `explosive` (Bomba: hedefin yanına düşer, ekranda geri sayım, süre dolunca alandaki herkese hasar)
   - [x] `trap` (Muz kabuğu: hedefin yanına düşer, basan herkes kayar, tek kullanımlık, botlar görmez)
-  - [ ] `pull` (Mıknatıs: hedefi merkeze çeker)
+  - [x] `pull` (Mıknatıs: arena merkezine düşer, hedefi çeker; yürüyerek direnilebilir)
   - [ ] `sky`: global tehdit adımında (Meteor yağmuru) yapılacak
 - [ ] Koruma etiketleri: `shield`, `heal`, `wall`, `escape`, `stealth`
 - [ ] Global tehdit altyapısı + Atom bombası ve sığınak (sınırlı kapasite)

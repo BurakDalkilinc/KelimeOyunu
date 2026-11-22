@@ -94,6 +94,11 @@ public class GameConfig : ScriptableObject
     [Tooltip("Tuzak (trap) hedefin bu kadar yanına düşer (birim).")]
     [Min(0f)] public float trapDropDistance = 2f;
 
+    [Tooltip("Çekme (pull) etkisi, her karede tazelenir ve mıknatıs kaybolunca bu kadar süre daha sürer (sn).")]
+    [Min(0.05f)] public float pullLingerSeconds = 0.3f;
+    [Tooltip("Kelimede 'pullForce' yazmıyorsa çekme gücü (birim/sn). Oyuncu hızından (5) düşük olduğu için yürüyerek direnilebilir.")]
+    [Min(0.1f)] public float pullDefaultForce = 4f;
+
     [Header("Tur süreleri (saniye)")]
     [Min(0.5f)] public float diceSeconds = 2f;
     [Min(1f)] public float typingSeconds = 10f;

@@ -94,6 +94,9 @@ public class CreatureSpawner : MonoBehaviour
             CreatureModel model = CreatureFactory.CreateAttack(word, target, spawn, config, arena, i, count);
 
             // Anında vuran yaratık (yumruk) uzaktan koşmaz: uyarı alanı hedefin o anki yerine konur.
+            // Mıknatıs arenanın merkezine konur ve hedefi oraya çeker.
+            if (model.IsPull) model.PlaceAt(Vector2.zero);
+
             if (model.PlacesNearTarget)
             {
                 // Yumruk hedefin tam üstüne düşer; patlayıcı (bomba) ve tuzak (muz kabuğu) yanına düşer.

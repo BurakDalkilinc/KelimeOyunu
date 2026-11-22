@@ -19,7 +19,8 @@ public static class TagRegistry
         new SlowdownTag(),
         new AreaTag(),
         new ExplosiveTag(),
-        new TrapTag());
+        new TrapTag(),
+        new PullTag());
 
     /// <summary>Hız zaten kelimenin değerinden geldiği için ek davranışı olmayan etiketler.</summary>
     public static readonly IReadOnlyCollection<string> LabelOnlyTags = new[] { "slow", "fast" };
@@ -27,7 +28,7 @@ public static class TagRegistry
     /// <summary>Henüz uygulanmamış etiketler. Sıradaki gruplarda tek tek uygulanacak.</summary>
     public static readonly IReadOnlyCollection<string> PendingTags = new[]
     {
-        "flying", "pull", "armored",
+        "flying", "armored",
         "water", "fire", "sky", "map_wide", "shield", "heal", "wall", "escape", "stealth"
     };
 

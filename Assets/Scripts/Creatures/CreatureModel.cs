@@ -113,6 +113,18 @@ public class CreatureModel
     /// </summary>
     public bool IsTrap { get; set; }
 
+    /// <summary>
+    /// true ise yaratık bir mıknatıstır: koşmaz, bulunduğu noktaya hedefi çeker (süresi bitene kadar).
+    /// "pull" etiketi açar. Botlar için tehlike alanı değildir (etkisi yalnızca hedefedir).
+    /// </summary>
+    public bool IsPull { get; set; }
+
+    /// <summary>Çekme gücü (birim/sn). "pull" etiketi kelimenin "stats.pullForce" değerinden ayarlar.</summary>
+    public float PullForce { get; set; }
+
+    /// <summary>Çekme etkisinin, mıknatıs kaybolunca ne kadar süre daha kalacağı (sn).</summary>
+    public float PullLingerSeconds { get; set; }
+
     /// <summary>Hedefin yakınına yerleştirilen türden mi (anında vuran ya da tuzak)? Mesafeyi <see cref="PlacementOffset"/> belirler.</summary>
     public bool PlacesNearTarget => IsStrike || IsTrap;
 
@@ -153,7 +165,7 @@ public class CreatureModel
     /// Oyuncuya herhangi bir zarar ya da engel verebilir mi (hasar, fırlatma ya da yavaşlatma)? Botlar bunlardan kaçar.
     /// Anında vuran yaratık vuruşunu yaptıktan sonra artık zararlı değildir.
     /// </summary>
-    public bool IsHarmful => !IsFinished && Target != null && !IsTrap // Botlar tuzakları görmez
+    public bool IsHarmful => !IsFinished && Target != null && !IsTrap && !IsPull // Botlar tuzakları ve mıknatısı görmez
                              && (Damage > 0 || KnockbackDistance > 0f || SlowSeconds > 0f)
                              && !(IsStrike && HasStruck);
 
@@ -197,7 +209,7 @@ public class CreatureModel
     /// </summary>
     public bool Tick(float deltaSeconds, Vector2 targetPosition, float targetRadius, float hitCooldownSeconds)
     {
-        if (IsFinished || IsStrike || IsArea || IsTrap) return false;
+        if (IsFinished || IsStrike || IsArea || IsTrap || IsPull) return false;
 
         float dt = Mathf.Max(0f, deltaSeconds);
         LifeLeft -= dt;
@@ -309,6 +321,32 @@ public class CreatureModel
             if (SlowSeconds > 0f) player.Status.ApplySlow(SlowMultiplier, AreaLingerSeconds);
         }
         return inside;
+    }
+
+    /// <summary>
+    /// Mıknatısın zamanını ilerletir: hedefi, bulunduğu noktaya doğru çekecek etkiyi her karede tazeler.
+    /// Hedef elenirse ya da süre dolarsa mıknatıs kaybolur. Çekiyorsa true döner.
+    /// </summary>
+    public bool TickPull(float deltaSeconds)
+    {
+        if (!IsPull || IsFinished) return false;
+
+        float dt = Mathf.Max(0f, deltaSeconds);
+        LifeLeft -= dt;
+        if (LifeLeft <= 0f)
+        {
+            IsFinished = true;
+            return false;
+        }
+
+        if (Target == null || !Target.IsAlive)
+        {
+            IsFinished = true;
+            return false;
+        }
+
+        Target.Status.ApplyPull(Position, PullForce, PullLingerSeconds);
+        return true;
     }
 
     /// <summary>

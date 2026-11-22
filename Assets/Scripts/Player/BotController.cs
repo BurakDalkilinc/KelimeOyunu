@@ -57,6 +57,10 @@ public class BotController : MonoBehaviour, IKnockable
         if (pushed != Vector2.zero)
             transform.position = arena.Clamp((Vector2)transform.position + pushed, config.playerRadius);
 
+        Vector2 pulled = State.Status.GetPullStep(transform.position, Time.deltaTime);
+        if (pulled != Vector2.zero)
+            transform.position = arena.Clamp((Vector2)transform.position + pulled, config.playerRadius);
+
         Vector2 direction = brain.Think(Time.deltaTime, transform.position, dangers);
         if (direction == Vector2.zero) return;
 

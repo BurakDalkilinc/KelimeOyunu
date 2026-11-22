@@ -15,8 +15,15 @@ public class StatusEffectDisplay : MonoBehaviour
         if (player == null || label == null) return;
 
         StatusEffects status = player.State?.Status;
-        label.text = status != null && status.IsSlowed
-            ? $"Yavaşladın! ({Mathf.CeilToInt(status.SlowTimeLeft)} sn)"
-            : string.Empty;
+        if (status == null)
+        {
+            label.text = string.Empty;
+            return;
+        }
+
+        string text = string.Empty;
+        if (status.IsSlowed) text += $"Yavaşladın! ({Mathf.CeilToInt(status.SlowTimeLeft)} sn)";
+        if (status.IsPulled) text += (text.Length > 0 ? "  " : string.Empty) + "Çekiliyorsun!";
+        label.text = text;
     }
 }

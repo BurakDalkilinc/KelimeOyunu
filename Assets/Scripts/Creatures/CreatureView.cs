@@ -68,6 +68,13 @@ public class CreatureView : MonoBehaviour
             return;
         }
 
+        // Mıknatıs arenanın merkezinde durur ve hedefi çeker.
+        if (Model.IsPull)
+        {
+            Model.TickPull(dt);
+            return;
+        }
+
         // Tuzak (muz kabuğu) yerinde bekler; yarıçapına giren herkesi etkiler ve kaybolur.
         if (Model.IsTrap)
         {
@@ -101,6 +108,11 @@ public class CreatureView : MonoBehaviour
         bodyRenderer = body.AddComponent<SpriteRenderer>();
         bodyRenderer.sprite = SpriteFactory.Circle();
         bodyRenderer.sortingOrder = 8;
+
+        if (Model.IsPull)
+        {
+            color = new Color(0.7f, 0.4f, 0.95f, 0.95f); // Mor: mıknatıs
+        }
 
         if (Model.IsTrap)
         {

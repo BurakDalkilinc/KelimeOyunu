@@ -67,6 +67,11 @@ public class PlayerController : MonoBehaviour, IKnockable
         if (pushed != Vector2.zero)
             transform.position = arena.Clamp((Vector2)transform.position + pushed, config.playerRadius);
 
+        // Mıknatıs çekiyorsa karakter noktaya doğru kayar; kendi hızıyla ters yönde yürüyerek direnebilir.
+        Vector2 pulled = State.Status.GetPullStep(transform.position, Time.deltaTime);
+        if (pulled != Vector2.zero)
+            transform.position = arena.Clamp((Vector2)transform.position + pulled, config.playerRadius);
+
         if (!CanMove) return;
 
         Vector2 input = ReadMoveInput();
