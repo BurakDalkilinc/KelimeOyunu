@@ -19,6 +19,10 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [x] Yazı kutusu UI'ı: 10 sn sayaç, Enter ile gönder
 - [ ] Hedef seçme: saldırı kelimesinde yazan kişi hedef seçer (yaratıklarla birlikte yapılacak)
 - [ ] Etiket davranışları: `slow`, `fast`, `predator`, `undead`, `swarm`, `instant`, `knockback`
+  - [x] Altyapı: yaratık modeli, etiket kayıt defteri, kelimeden yaratık doğması, temas hasarı, botlara tehlike alanı
+  - [x] `undead` (kalıcı vuruş), `slow` ve `fast` (hız kelimenin değerinden gelir)
+  - [ ] `predator`, `swarm`
+  - [ ] `instant`, `knockback`
 - [ ] Etiket davranışları: `trap`, `slowdown`, `pull`, `explosive`, `area`, `sky`
 - [ ] Koruma etiketleri: `shield`, `heal`, `wall`, `escape`, `stealth`
 - [ ] Global tehdit altyapısı + Atom bombası ve sığınak (sınırlı kapasite)

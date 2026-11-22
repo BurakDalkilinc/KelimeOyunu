@@ -46,6 +46,16 @@ public class GameConfig : ScriptableObject
     [Min(0f)] public float botTypingDelayMin = 1.5f;
     [Min(0f)] public float botTypingDelayMax = 6f;
 
+    [Header("Yaratıklar")]
+    [Tooltip("Yaratığın yarıçapı (birim). Oyuncuya bu mesafede değince hasar verir.")]
+    [Min(0.1f)] public float creatureRadius = 0.5f;
+    [Tooltip("Kalıcı yaratığın (ör. zombi) aynı oyuncuya iki vuruşu arasındaki bekleme (sn).")]
+    [Min(0.1f)] public float creatureHitCooldownSeconds = 1f;
+    [Tooltip("Yaratık, hedefinden en az bu kadar uzakta doğar (birim).")]
+    [Min(0f)] public float creatureSpawnMinDistance = 6f;
+    [Tooltip("Bilinmeyen kelimenin zararsız '???' yaratığının hızı.")]
+    [Min(0f)] public float unknownCreatureSpeed = 1.5f;
+
     [Header("Tur süreleri (saniye)")]
     [Min(0.5f)] public float diceSeconds = 2f;
     [Min(1f)] public float typingSeconds = 10f;

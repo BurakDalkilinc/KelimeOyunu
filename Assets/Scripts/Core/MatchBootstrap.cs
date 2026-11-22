@@ -13,6 +13,7 @@ public class MatchBootstrap : MonoBehaviour
 
     readonly List<DangerZone> dangers = new List<DangerZone>();
     readonly List<BotController> bots = new List<BotController>();
+    readonly Dictionary<int, Transform> avatars = new Dictionary<int, Transform>();
 
     /// <summary>Maçın tüm oyuncuları.</summary>
     public MatchState Match { get; private set; }
@@ -24,6 +25,19 @@ public class MatchBootstrap : MonoBehaviour
     public IList<DangerZone> Dangers => dangers;
 
     public IReadOnlyList<BotController> Bots => bots;
+
+    /// <summary>Oyuncunun (insan ya da bot) ekrandaki konumunu verir; oyuncu yoksa false.</summary>
+    public bool TryGetPosition(int playerId, out Vector2 position)
+    {
+        if (avatars.TryGetValue(playerId, out Transform avatar) && avatar != null)
+        {
+            position = avatar.position;
+            return true;
+        }
+
+        position = Vector2.zero;
+        return false;
+    }
 
     void Awake()
     {
@@ -45,6 +59,7 @@ public class MatchBootstrap : MonoBehaviour
 
         Match = new MatchState(states);
         player.Bind(humanState);
+        avatars[humanState.Id] = player.transform;
 
         SpawnBots(states, arena);
     }
@@ -70,6 +85,7 @@ public class MatchBootstrap : MonoBehaviour
             var bot = go.AddComponent<BotController>();
             bot.Initialize(states[i], config, arena, botRandom, dangers, color);
             bots.Add(bot);
+            avatars[states[i].Id] = go.transform;
         }
     }
 }
