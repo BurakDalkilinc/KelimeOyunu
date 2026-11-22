@@ -39,9 +39,9 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
   - [x] Meteor yağmuru: 12 sn'de 30 meteor, her biri 1,5 sn gölge gösterir, çözüm gölgeleri görüp kaçmak
   - [x] Zombi sürüsü: hemen belirir (uyarı yok), kenarlardan 20 zombi en yakındaki oyuncuya saldırır (10 sn); evler isteğe bağlı sığınak, evdeki bot evinde kalır
   - [x] Ejderha: hemen belirir, en yakındaki oyuncuya saldırır, alanında saniyede 1 ateş hasarı (10 sn); mağaralar isteğe bağlı sığınak
-- [ ] Bilinmeyen kelime → "???" yaratığı
+- [x] Bilinmeyen kelime → "???" yaratığı
 - [x] Hayalet modu (eleme sonrası izleme): yarı saydam, WASD ile gezer, duvarlar/yaratıklar/tehditler işlemez, hedef alınamaz (oylama Aşama 4'te)
-- [ ] Maç sonu ekranı: kazanan, yazılan kelimeler listesi
+- [x] Maç sonu ekranı: kazanan, yazılan kelimeler listesi, R ile yeniden başlama
 - [ ] **Test:** 3 arkadaş oynadı, notlar `Docs/TEST_NOTLARI.md`'ye yazıldı
 
 ## Aşama 3 — Online 4–8 kişi
