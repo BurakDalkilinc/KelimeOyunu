@@ -3,10 +3,10 @@
 Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 
 ## Aşama 1 — Kurulum
-- [ ] Unity 6 2D projesi oluşturuldu, bu paket proje klasörüne kopyalandı
-- [ ] Git deposu kuruldu (`.gitignore` Unity için), ilk commit
-- [ ] Unity MCP kuruldu ve Claude Code bağlandı (isteğe bağlı ama önerilir)
-- [ ] Klasör yapısı `CLAUDE.md`'deki gibi oluşturuldu, `GameConfig` ScriptableObject'i eklendi
+- [x] Unity 6 2D projesi oluşturuldu, bu paket proje klasörüne kopyalandı
+- [x] Git deposu kuruldu (`.gitignore` Unity için), ilk commit
+- [x] Unity MCP kuruldu ve Claude Code bağlandı (isteğe bağlı ama önerilir)
+- [x] Klasör yapısı `CLAUDE.md`'deki gibi oluşturuldu, `GameConfig` ScriptableObject'i eklendi
 
 ## Aşama 2 — Yerel prototip (tek bilgisayar, botlarla)
 - [ ] Oyun alanı: sınırları olan düz bir 2D arena, kamera
