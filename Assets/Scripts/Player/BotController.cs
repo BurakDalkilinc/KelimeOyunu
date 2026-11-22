@@ -15,6 +15,9 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
     Color baseColor;
     readonly KnockbackMotion knockback = new KnockbackMotion();
 
+    /// <summary>Tehdit varken botun sığınacağı yeri söyleyen kaynak (yoksa bot gezinmeye devam eder).</summary>
+    public IRefugeProvider Refuge { get; set; }
+
     /// <summary>İçinden geçilemeyen engeller (duvarlar). Uçarken (kanat) engeller yok sayılır.</summary>
     public IObstacleField Obstacles { get; set; }
 
@@ -91,7 +94,11 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         Vector2 pulled = State.Status.GetPullStep(transform.position, Time.deltaTime);
         if (pulled != Vector2.zero) MoveBy(pulled);
 
-        Vector2 direction = brain.Think(Time.deltaTime, transform.position, dangers);
+        Vector2? refuge = null;
+        if (Refuge != null && Refuge.TryGetRefuge(State, transform.position, out Vector2 refugePoint))
+            refuge = refugePoint;
+
+        Vector2 direction = brain.Think(Time.deltaTime, transform.position, dangers, refuge);
         if (direction == Vector2.zero) return;
 
         FacingDirection = direction;

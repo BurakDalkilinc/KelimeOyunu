@@ -26,15 +26,16 @@ public static class TagRegistry
         new ShieldTag(),
         new StealthTag(),
         new EscapeTag(),
-        new WallTag());
+        new WallTag(),
+        new MapWideTag());
 
     /// <summary>Hız zaten kelimenin değerinden geldiği için ek davranışı olmayan etiketler.</summary>
-    public static readonly IReadOnlyCollection<string> LabelOnlyTags = new[] { "slow", "fast" };
+    public static readonly IReadOnlyCollection<string> LabelOnlyTags = new[] { "slow", "fast", "armored" };
 
     /// <summary>Henüz uygulanmamış etiketler. Sıradaki gruplarda tek tek uygulanacak.</summary>
     public static readonly IReadOnlyCollection<string> PendingTags = new[]
     {
-        "armored", "water", "fire", "sky", "map_wide"
+        "water", "fire", "sky"
     };
 
     public static IReadOnlyCollection<string> ImplementedTags => Implemented.Keys;
@@ -73,6 +74,26 @@ public static class TagRegistry
                 count = System.Math.Max(count, counter.GetSpawnCount(word));
         }
         return count;
+    }
+
+    /// <summary>
+    /// Global tehdit kelimesinin etkilerini etiketlerinden kurar (ör. "map_wide" → tüm haritayı vuran etki).
+    /// Etki üreten etiketi olmayan kelimede liste boş döner.
+    /// </summary>
+    public static List<IThreatEffect> CreateThreatEffects(WordEntry word)
+    {
+        var effects = new List<IThreatEffect>();
+        if (word?.tags == null) return effects;
+
+        foreach (string tag in word.tags)
+        {
+            if (tag != null && Implemented.TryGetValue(tag, out ITagBehaviour behaviour) && behaviour is IThreatEffectTag source)
+            {
+                IThreatEffect effect = source.CreateEffect(word);
+                if (effect != null) effects.Add(effect);
+            }
+        }
+        return effects;
     }
 
     /// <summary>

@@ -32,11 +32,30 @@ public class BotBrain
     /// </summary>
     public Vector2 Think(float deltaSeconds, Vector2 position, IReadOnlyList<DangerZone> dangers)
     {
+        return Think(deltaSeconds, position, dangers, null);
+    }
+
+    /// <summary>
+    /// Yönü verir. Öncelik: yakındaki tehlikeden kaçmak, sonra (varsa) <paramref name="refuge"/> sığınağına gitmek,
+    /// yoksa gezinmek. Sığınağa varınca (merkeze yaklaşınca) durur.
+    /// </summary>
+    public Vector2 Think(float deltaSeconds, Vector2 position, IReadOnlyList<DangerZone> dangers, Vector2? refuge)
+    {
         if (TryFlee(position, dangers, out Vector2 fleeDirection))
         {
             hasTarget = false; // Kaçtıktan sonra yeni bir hedef seçilsin.
             pauseLeft = 0f;
             return fleeDirection;
+        }
+
+        if (refuge.HasValue)
+        {
+            hasTarget = false;
+            pauseLeft = 0f;
+
+            Vector2 toRefuge = refuge.Value - position;
+            if (toRefuge.magnitude <= config.botArrivalDistance) return Vector2.zero; // Vardı, orada kalır.
+            return toRefuge.normalized;
         }
 
         return Wander(deltaSeconds, position);

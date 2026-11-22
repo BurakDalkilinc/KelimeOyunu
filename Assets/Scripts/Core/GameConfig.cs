@@ -137,6 +137,16 @@ public class GameConfig : ScriptableObject
     [Tooltip("Tehdit geldikten sonra çözüme ulaşmak için en az süre.")]
     [Min(1f)] public float globalThreatWarningSeconds = 5f;
 
+    [Header("Çözüm alanları (sığınak, kule, mağara, ev)")]
+    [Tooltip("Çözüm alanının yarıçapı (birim). Oyuncunun merkezi bu daireye girince korunur (kapasite varsa).")]
+    [Min(0.5f)] public float safeZoneRadius = 1.6f;
+    [Tooltip("Çözüm alanları arena kenarından en az bu kadar içeride çıkar (birim).")]
+    [Min(0f)] public float safeZoneEdgeMargin = 2.5f;
+    [Tooltip("Aynı tehdidin çözüm alanları birbirinden en az bu kadar uzakta çıkar (birim).")]
+    [Min(0f)] public float safeZoneSeparation = 5f;
+    [Tooltip("Tehdit bittikten sonra çözüm alanlarının ekranda kalma süresi (sn).")]
+    [Min(0f)] public float safeZoneLingerSeconds = 2f;
+
     [Header("Sığınak")]
     [Tooltip("Kapasite = hayattaki oyuncu sayısı x bu oran (aşağı yuvarlanır).")]
     [Range(0.1f, 1f)] public float shelterCapacityRatio = 0.5f;

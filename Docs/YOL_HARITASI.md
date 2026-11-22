@@ -33,7 +33,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [x] Koruma etiketleri: `shield`, `heal`, `wall`, `escape`, `stealth`
   - [x] `shield` (bir sonraki hasarı engeller), `heal` (1 can), `stealth` (6 sn hedef alınamaz), `escape` (5 sn uçma, yerdeki saldırılardan etkilenmez), `flying` (uçan yaratıklar)
   - [x] `wall` (Duvar: yazanın baktığı yönün önüne dik, 4 birim, 10 sn; oyuncu, bot ve yerdeki yaratıkları durdurur, uçanlar geçer)
-- [ ] Global tehdit altyapısı + Atom bombası ve sığınak (sınırlı kapasite)
+- [x] Global tehdit altyapısı + Atom bombası ve sığınak (sınırlı kapasite): uyarı süresi, alarm yazısı, çözüm alanları, botlar sığınır, patlama
 - [ ] Kalan 4 global tehdit ve çözümleri
 - [ ] Bilinmeyen kelime → "???" yaratığı
 - [ ] Hayalet modu (eleme sonrası izleme)
