@@ -35,6 +35,10 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
   - [x] `wall` (Duvar: yazanın baktığı yönün önüne dik, 4 birim, 10 sn; oyuncu, bot ve yerdeki yaratıkları durdurur, uçanlar geçer)
 - [x] Global tehdit altyapısı + Atom bombası ve sığınak (sınırlı kapasite): uyarı süresi, alarm yazısı, çözüm alanları, botlar sığınır, patlama
 - [ ] Kalan 4 global tehdit ve çözümleri
+  - [x] Tsunami: rastgele kenardan dalga, kuleler (3 × 3 kişi) korur
+  - [ ] Meteor yağmuru (gölge uyarısı, `sky`)
+  - [ ] Zombi sürüsü (evler 4 × 2 kişi)
+  - [ ] Ejderha (mağaralar 2 × 4 kişi, `fire`)
 - [ ] Bilinmeyen kelime → "???" yaratığı
 - [ ] Hayalet modu (eleme sonrası izleme)
 - [ ] Maç sonu ekranı: kazanan, yazılan kelimeler listesi

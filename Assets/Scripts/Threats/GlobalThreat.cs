@@ -33,6 +33,9 @@ public class GlobalThreat
     public SafeZoneField Zones => context.Zones;
     public ThreatPhase Phase { get; private set; }
 
+    /// <summary>Tehdidin etkileri (ekranda çizilecek olanlar için).</summary>
+    public IReadOnlyList<IThreatEffect> Effects => effects;
+
     /// <summary>Etkinin başlamasına kalan süre (sn). Etkin ya da bittiyse 0.</summary>
     public float WarningLeft { get; private set; }
 

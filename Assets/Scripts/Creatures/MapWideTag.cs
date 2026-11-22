@@ -12,6 +12,8 @@ public class MapWideTag : ITagBehaviour, IThreatEffectTag
     public IThreatEffect CreateEffect(WordEntry word)
     {
         // Diğer etiketlere göre etki seçilir; yeni türler sırayla eklenir.
+        if (word != null && word.HasTag("water")) return new WaveEffect();
+
         return new MapBlastEffect();
     }
 }

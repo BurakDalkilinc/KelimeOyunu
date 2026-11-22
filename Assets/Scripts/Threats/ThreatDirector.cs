@@ -17,6 +17,7 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
 
     readonly List<GlobalThreat> threats = new List<GlobalThreat>();
     readonly Dictionary<SafeZone, GameObject> zoneViews = new Dictionary<SafeZone, GameObject>();
+    readonly HashSet<WaveEffect> waveViews = new HashSet<WaveEffect>();
     TurnManager turns;
     ArenaBounds arena;
     System.Random random;
@@ -74,9 +75,27 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
             if (threats[i].Phase == ThreatPhase.Finished) threats.RemoveAt(i);
         }
 
+        CreateEffectViews();
         UpdateBanner();
 
         if (flashAlpha > 0f) SetFlash(Mathf.Max(0f, flashAlpha - Time.deltaTime * 1.5f));
+    }
+
+    /// <summary>Etkinleşen dalgalar için (bir kez) görüntü oluşturur.</summary>
+    void CreateEffectViews()
+    {
+        foreach (GlobalThreat threat in threats)
+        {
+            foreach (IThreatEffect effect in threat.Effects)
+            {
+                if (effect is WaveEffect wave && wave.IsActive && waveViews.Add(wave))
+                {
+                    var go = new GameObject("Dalga görüntüsü");
+                    go.transform.SetParent(transform, false);
+                    go.AddComponent<WaveView>().Initialize(wave, arena);
+                }
+            }
+        }
     }
 
     /// <summary>En acil uyarıyı (etkinleşmeye en az süresi kalan) ekranın üstüne yazar.</summary>

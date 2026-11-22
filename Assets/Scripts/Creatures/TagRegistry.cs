@@ -27,7 +27,8 @@ public static class TagRegistry
         new StealthTag(),
         new EscapeTag(),
         new WallTag(),
-        new MapWideTag());
+        new MapWideTag(),
+        new WaterTag());
 
     /// <summary>Hız zaten kelimenin değerinden geldiği için ek davranışı olmayan etiketler.</summary>
     public static readonly IReadOnlyCollection<string> LabelOnlyTags = new[] { "slow", "fast", "armored" };
@@ -35,7 +36,7 @@ public static class TagRegistry
     /// <summary>Henüz uygulanmamış etiketler. Sıradaki gruplarda tek tek uygulanacak.</summary>
     public static readonly IReadOnlyCollection<string> PendingTags = new[]
     {
-        "water", "fire", "sky"
+        "fire", "sky"
     };
 
     public static IReadOnlyCollection<string> ImplementedTags => Implemented.Keys;
