@@ -80,6 +80,11 @@ public class GameConfig : ScriptableObject
     [Tooltip("Fare tıklaması, oyuncunun merkezine bu kadar yakınsa o oyuncu seçilmiş sayılır (birim). Oyuncular küçük olduğu için biraz cömert.")]
     [Min(0.1f)] public float targetClickRadius = 0.9f;
 
+    [Tooltip("Yavaşlatılan oyuncunun hız çarpanı (0.5 = yarı hız). İki yavaşlatma üst üste binmez; en güçlüsü geçerlidir, süre tazelenir.")]
+    [Range(0.05f, 1f)] public float slowdownSpeedMultiplier = 0.5f;
+    [Tooltip("Kelimede 'slowSeconds' yazmıyorsa yavaşlatma süresi (sn).")]
+    [Min(0.1f)] public float slowdownDefaultSeconds = 3f;
+
     [Header("Tur süreleri (saniye)")]
     [Min(0.5f)] public float diceSeconds = 2f;
     [Min(1f)] public float typingSeconds = 10f;

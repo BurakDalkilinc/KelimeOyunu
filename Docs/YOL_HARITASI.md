@@ -24,6 +24,12 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
   - [x] `predator` (vur-kaç, ömrün sonunda sıkılıp gider), `swarm` (sürü, üyelerin ilk vuruşu kademeli)
   - [x] `instant` (yerde uyarı alanı, süre dolunca alandaki herkese vurur), `knockback` (kısa süreye yayılan fırlatma)
 - [ ] Etiket davranışları: `trap`, `slowdown`, `pull`, `explosive`, `area`, `sky`
+  - [x] Durum etkileri altyapısı ve `slowdown` (Fare: hasarsız yavaşlatma, göstergeli)
+  - [ ] `area` (Bulut: hedefi takip eden, içindekileri yavaşlatan alan)
+  - [ ] `explosive` (Bomba: yanına düşer, fitil, alan patlaması)
+  - [ ] `trap` (Muz kabuğu: yerde bekler, basanı kaydırır)
+  - [ ] `pull` (Mıknatıs: hedefi merkeze çeker)
+  - [ ] `sky`: global tehdit adımında (Meteor yağmuru) yapılacak
 - [ ] Koruma etiketleri: `shield`, `heal`, `wall`, `escape`, `stealth`
 - [ ] Global tehdit altyapısı + Atom bombası ve sığınak (sınırlı kapasite)
 - [ ] Kalan 4 global tehdit ve çözümleri

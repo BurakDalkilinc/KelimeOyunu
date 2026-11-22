@@ -61,6 +61,14 @@ public class CreatureModel
     public float KnockbackDistance { get; set; }
 
     /// <summary>
+    /// 0'dan büyükse vurduğu oyuncuyu bu kadar saniye yavaşlatır (hasarı olmasa da). "slowdown" etiketi ayarlar.
+    /// </summary>
+    public float SlowSeconds { get; set; }
+
+    /// <summary>Yavaşlatılan oyuncunun hız çarpanı (0.5 = yarı hız). "slowdown" etiketi ayarlar.</summary>
+    public float SlowMultiplier { get; set; } = 1f;
+
+    /// <summary>
     /// 0'dan büyükse yaratık "anında vuran"dır: koşmaz, bu kadar saniye uyarı verir, sonra yarıçapındaki herkese vurur.
     /// "instant" etiketi ayarlar. Değer atanınca uyarı sayacı baştan başlar.
     /// </summary>
@@ -106,6 +114,14 @@ public class CreatureModel
     /// Zarar verebilir mi? Anında vuran yaratık vuruşunu yaptıktan sonra artık tehlike değildir.
     /// </summary>
     public bool IsDangerous => !IsFinished && Damage > 0 && Target != null && !(IsStrike && HasStruck);
+
+    /// <summary>
+    /// Oyuncuya herhangi bir zarar ya da engel verebilir mi (hasar, fırlatma ya da yavaşlatma)? Botlar bunlardan kaçar.
+    /// Anında vuran yaratık vuruşunu yaptıktan sonra artık zararlı değildir.
+    /// </summary>
+    public bool IsHarmful => !IsFinished && Target != null
+                             && (Damage > 0 || KnockbackDistance > 0f || SlowSeconds > 0f)
+                             && !(IsStrike && HasStruck);
 
     public CreatureModel(WordEntry word, PlayerState target, Vector2 position, float speed, int damage,
                          float radius, float life, ArenaBounds arena)
@@ -178,10 +194,11 @@ public class CreatureModel
         MoveToward(targetPosition, reach * 0.8f, dt);
 
         bool touching = (targetPosition - Position).magnitude <= reach;
-        bool hasEffect = Damage > 0 || KnockbackDistance > 0f; // Hasarsız ama fırlatan yaratık da etki eder.
+        bool hasEffect = Damage > 0 || KnockbackDistance > 0f || SlowSeconds > 0f; // Hasarsız ama fırlatan/yavaşlatan da etki eder.
         if (!touching || !hasEffect || hitCooldownLeft > 0f) return false;
 
         if (Damage > 0) Target.Health.TakeDamage(Damage);
+        if (SlowSeconds > 0f) Target.Status.ApplySlow(SlowMultiplier, SlowSeconds);
 
         Vector2 push = KnockbackDistance > 0f ? DirectionAway(Position, targetPosition) * KnockbackDistance : Vector2.zero;
         LastHit = new CreatureHit(Target, push);
@@ -230,6 +247,7 @@ public class CreatureModel
             if ((playerPosition - Position).magnitude > Radius + playerRadius) continue;
 
             if (Damage > 0) player.Health.TakeDamage(Damage);
+            if (SlowSeconds > 0f) player.Status.ApplySlow(SlowMultiplier, SlowSeconds);
             affected++;
 
             if (KnockbackDistance > 0f && hits != null)

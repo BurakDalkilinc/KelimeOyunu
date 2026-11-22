@@ -13,6 +13,8 @@ public class BotController : MonoBehaviour, IKnockable
     SpriteRenderer spriteRenderer;
     IReadOnlyList<DangerZone> dangers;
     Color baseColor;
+    static readonly Color SlowTint = new Color(0.45f, 0.65f, 1f);
+
     readonly KnockbackMotion knockback = new KnockbackMotion();
 
     /// <summary>Bu botun maçtaki durumu (can, sıra bekleme sayacı...).</summary>
@@ -48,6 +50,9 @@ public class BotController : MonoBehaviour, IKnockable
     {
         if (brain == null || !State.IsAlive) return;
 
+        State.Status.Tick(Time.deltaTime);
+        spriteRenderer.color = State.Status.IsSlowed ? Color.Lerp(baseColor, SlowTint, 0.6f) : baseColor; // Yavaşlatılmış bot mavimsi
+
         Vector2 pushed = knockback.Step(Time.deltaTime);
         if (pushed != Vector2.zero)
             transform.position = arena.Clamp((Vector2)transform.position + pushed, config.playerRadius);
@@ -55,7 +60,7 @@ public class BotController : MonoBehaviour, IKnockable
         Vector2 direction = brain.Think(Time.deltaTime, transform.position, dangers);
         if (direction == Vector2.zero) return;
 
-        Vector2 next = (Vector2)transform.position + direction * (config.botMoveSpeed * Time.deltaTime);
+        Vector2 next = (Vector2)transform.position + direction * (config.botMoveSpeed * State.Status.SpeedMultiplier * Time.deltaTime);
         transform.position = arena.Clamp(next, config.playerRadius);
     }
 

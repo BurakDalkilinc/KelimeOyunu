@@ -9,6 +9,9 @@ public class PlayerState
     public bool IsBot { get; }
     public Health Health { get; }
 
+    /// <summary>Üzerindeki süreli etkiler (yavaşlama...). Süreyi karakterin kendisi ilerletir.</summary>
+    public StatusEffects Status { get; } = new StatusEffects();
+
     /// <summary>Zar için: üst üste kaç tur seçilmedi. Ne kadar büyükse seçilme şansı o kadar artar.</summary>
     public int MissedTurns { get; set; }
 

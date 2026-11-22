@@ -10,7 +10,10 @@ public class PlayerController : MonoBehaviour, IKnockable
     [SerializeField] GameConfig config;
     [SerializeField] Color playerColor = new Color(0.3f, 0.85f, 0.6f);
 
+    static readonly Color SlowTint = new Color(0.45f, 0.65f, 1f);
+
     ArenaBounds arena;
+    SpriteRenderer spriteRenderer;
     readonly KnockbackMotion knockback = new KnockbackMotion();
 
     /// <summary>Oyuncunun maçtaki durumu. <see cref="Bind"/> çağrılana kadar null.</summary>
@@ -36,7 +39,8 @@ public class PlayerController : MonoBehaviour, IKnockable
 
         arena = new ArenaBounds(config.arenaSize);
 
-        var sr = GetComponent<SpriteRenderer>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        var sr = spriteRenderer;
         if (sr != null)
         {
             sr.sprite = SpriteFactory.Circle();
@@ -55,6 +59,9 @@ public class PlayerController : MonoBehaviour, IKnockable
     {
         if (State == null) return;
 
+        State.Status.Tick(Time.deltaTime);
+        UpdateTint();
+
         // Fırlatılma, yazarken ya da hareket kilitliyken de olur.
         Vector2 pushed = knockback.Step(Time.deltaTime);
         if (pushed != Vector2.zero)
@@ -65,8 +72,16 @@ public class PlayerController : MonoBehaviour, IKnockable
         Vector2 input = ReadMoveInput();
         if (input == Vector2.zero) return;
 
-        Vector2 next = (Vector2)transform.position + input * (config.playerMoveSpeed * Time.deltaTime);
+        float speed = config.playerMoveSpeed * State.Status.SpeedMultiplier; // Yavaşlatılmışsa daha yavaş
+        Vector2 next = (Vector2)transform.position + input * (speed * Time.deltaTime);
         transform.position = arena.Clamp(next, config.playerRadius);
+    }
+
+    /// <summary>Yavaşlatılmış oyuncu mavimsi görünür.</summary>
+    void UpdateTint()
+    {
+        if (spriteRenderer == null) return;
+        spriteRenderer.color = State.Status.IsSlowed ? Color.Lerp(playerColor, SlowTint, 0.6f) : playerColor;
     }
 
     /// <summary>WASD / ok tuşlarından yön okur. Çapraz hareket de aynı hızda olur.</summary>

@@ -126,7 +126,7 @@ public class CreatureSpawner : MonoBehaviour
 
     void LateUpdate()
     {
-        // Botlara kaçılacak alanları bildir: yalnızca canlı ve tehlikeli yaratıklar.
+        // Botlara kaçılacak alanları bildir: yalnızca canlı ve zararlı (hasar, fırlatma ya da yavaşlatma) yaratıklar.
         IList<DangerZone> dangers = bootstrap.Dangers;
         dangers.Clear();
 
@@ -140,7 +140,7 @@ public class CreatureSpawner : MonoBehaviour
             }
 
             // Sıkılıp giden avcı artık tehlike değil; botlar ondan kaçmak zorunda kalmaz.
-            if (view.Model.IsDangerous && !view.Model.IsLeaving)
+            if (view.Model.IsHarmful && !view.Model.IsLeaving)
                 dangers.Add(new DangerZone(view.Model.Position, view.Model.Radius));
         }
     }
