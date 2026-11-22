@@ -15,8 +15,9 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [x] `WordNormalizer`: Türkçe küçük harf, boşluk temizleme, aksansız eşleşme + testleri
 - [x] `WordDatabase`: words.json'u yükler, alias ile arar, kullanılan kelimeleri kilitler + testleri
 - [x] `TurnManager`: zar → yazma → sonuç → eleme döngüsü + testleri
-- [ ] Zar UI'ı: ekranın üstünde oyuncu isimleri arasında dönen seçim
-- [ ] Yazı kutusu UI'ı: 10 sn sayaç, Enter ile gönder, hedef seçme
+- [x] Zar UI'ı: ekranın üstünde oyuncu isimleri arasında dönen seçim
+- [x] Yazı kutusu UI'ı: 10 sn sayaç, Enter ile gönder
+- [ ] Hedef seçme: saldırı kelimesinde yazan kişi hedef seçer (yaratıklarla birlikte yapılacak)
 - [ ] Etiket davranışları: `slow`, `fast`, `predator`, `undead`, `swarm`, `instant`, `knockback`
 - [ ] Etiket davranışları: `trap`, `slowdown`, `pull`, `explosive`, `area`, `sky`
 - [ ] Koruma etiketleri: `shield`, `heal`, `wall`, `escape`, `stealth`

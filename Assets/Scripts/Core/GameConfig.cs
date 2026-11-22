@@ -42,6 +42,10 @@ public class GameConfig : ScriptableObject
     [Tooltip("Duvardan uzak durma kuvveti (kaçış kuvvetine göre).")]
     [Min(0f)] public float botWallAvoidWeight = 1.5f;
 
+    [Tooltip("Yazma sırası bota gelince, kelimeyi göndermeden önce bu iki değer arasında rastgele bekler (sn).")]
+    [Min(0f)] public float botTypingDelayMin = 1.5f;
+    [Min(0f)] public float botTypingDelayMax = 6f;
+
     [Header("Tur süreleri (saniye)")]
     [Min(0.5f)] public float diceSeconds = 2f;
     [Min(1f)] public float typingSeconds = 10f;
@@ -55,6 +59,10 @@ public class GameConfig : ScriptableObject
     [Header("Kelime")]
     [Tooltip("Oyuncunun yazabileceği en uzun kelime (karakter). Daha uzunu reddedilir.")]
     [Min(1)] public int maxWordLength = 50;
+    [Tooltip("Yazı kutusu açıldıktan sonra bu kadar süre klavye yazısı yok sayılır (sn). Hareket tuşu hâlâ basılıyken kutuya 'wwww' dolmasın diye.")]
+    [Min(0f)] public float typingInputGraceSeconds = 0.25f;
+    [Tooltip("Reddedilen kelime mesajının (ör. 'Bu kelime kullanıldı') ekranda kalma süresi (sn).")]
+    [Min(0.5f)] public float typingFeedbackSeconds = 2f;
 
     [Header("Global tehdit")]
     [Tooltip("Tehdit geldikten sonra çözüme ulaşmak için en az süre.")]

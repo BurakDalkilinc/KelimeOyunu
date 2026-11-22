@@ -224,6 +224,58 @@ public class WordDatabaseTests
         }
     }
 
+    [TestCase("dragon", "ejderha")]
+    [TestCase("DRAGON", "ejderha")]
+    [TestCase("Wyvern", "ejderha")]
+    [TestCase("nuke", "atom_bombasi")]
+    [TestCase("Nuclear Bomb", "atom_bombasi")]
+    [TestCase("A-Bomb", "atom_bombasi")]
+    [TestCase("atomic bomb", "atom_bombasi")]
+    [TestCase("tidal wave", "tsunami")]
+    [TestCase("flood", "tsunami")]
+    [TestCase("asteroid", "meteor_yagmuru")]
+    [TestCase("Meteor Shower", "meteor_yagmuru")]
+    [TestCase("zombie", "zombi")]
+    [TestCase("ghoul", "zombi")]
+    [TestCase("zombie horde", "zombi_suru")]
+    [TestCase("zombies", "zombi_suru")]
+    [TestCase("wasp", "ari")]
+    [TestCase("hornet", "ari")]
+    [TestCase("rat", "fare")]
+    [TestCase("banana peel", "muz_kabugu")]
+    [TestCase("turtle", "kaplumbaga")]
+    [TestCase("tortoise", "kaplumbaga")]
+    [TestCase("magnet", "miknatis")]
+    [TestCase("grenade", "bomba")]
+    [TestCase("dynamite", "bomba")]
+    [TestCase("potion", "can")]
+    [TestCase("healing", "can")]
+    [TestCase("barricade", "duvar")]
+    [TestCase("wings", "kanat")]
+    [TestCase("invisibility", "gorunmezlik")]
+    [TestCase("INVISIBLE", "gorunmezlik")]
+    [TestCase("force field", "kalkan")]
+    [TestCase("punch", "yumruk")]
+    [TestCase("wolf", "kurt")]
+    [TestCase("storm cloud", "bulut")]
+    public void RealWordsFile_EnglishWordsAndSynonymsWork(string typed, string expectedId)
+    {
+        var db = WordDatabase.LoadFromResources(MaxLength);
+        var result = db.Lookup(typed);
+
+        Assert.AreEqual(WordLookupStatus.Found, result.Status, typed + " bulunamadı");
+        Assert.AreEqual(expectedId, result.Entry.id);
+    }
+
+    [Test]
+    public void RealWordsFile_EveryWordHasAtLeastOneEnglishStyleAlias()
+    {
+        // Her kelimenin eş anlamlıları arasında, kendi id/görünen adından farklı en az 3 yazım olmalı.
+        var db = WordDatabase.LoadFromResources(MaxLength);
+        foreach (WordEntry entry in db.Words)
+            Assert.GreaterOrEqual(entry.aliases.Length, 3, entry.id + ": eş anlamlı az");
+    }
+
     [Test]
     public void RealWordsFile_ZombiAndZombiSurusuAreDifferentWords()
     {

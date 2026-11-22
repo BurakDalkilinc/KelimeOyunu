@@ -5,6 +5,7 @@ using UnityEngine;
 /// Maçı sahnede kurar: oyuncuyu ve botları <see cref="MatchState"/> içine koyar, botları arenanın içine dizer.
 /// Oyuncu 0 numaradır, botlar 1'den başlar. Tur sistemi (TurnManager) bu maç durumunu kullanacak.
 /// </summary>
+[DefaultExecutionOrder(-100)] // Diğer her şeyden önce çalışır: maç durumu herkesin Awake/OnEnable'ından önce hazır olsun.
 public class MatchBootstrap : MonoBehaviour
 {
     [SerializeField] GameConfig config;
