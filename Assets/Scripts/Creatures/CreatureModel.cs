@@ -156,6 +156,12 @@ public class CreatureModel
 
     public bool IsFinished { get; private set; }
 
+    /// <summary>
+    /// Yaratığın hareketini sınırlayan engeller (duvarlar). Uçan yaratıklar ve sürekli alanlar (bulut) engellerden geçer.
+    /// null ise engel yoktur.
+    /// </summary>
+    public IObstacleField Obstacles { get; set; }
+
     /// <summary>Ömrünün sonunda sıkılıp gidiyor mu? (Bu sırada vurmaz.)</summary>
     public bool IsLeaving => !IsFinished && LeaveBeforeEndSeconds > 0f && LifeLeft <= LeaveBeforeEndSeconds;
 
@@ -427,7 +433,7 @@ public class CreatureModel
             return;
         }
 
-        Position = arena.Clamp(Position + direction * (Speed * dt), 0f);
+        Position = Constrain(Position, Position + direction * (Speed * dt));
     }
 
     /// <summary>Hedefe, ona <paramref name="stopDistance"/> kadar yaklaşana dek ilerler; hedefi aşmaz.</summary>
@@ -437,13 +443,20 @@ public class CreatureModel
         if (distance <= stopDistance) return;
 
         float step = Mathf.Min(Speed * dt, distance - stopDistance);
-        Position = arena.Clamp(Vector2.MoveTowards(Position, targetPosition, step), 0f);
+        Position = Constrain(Position, Vector2.MoveTowards(Position, targetPosition, step));
     }
 
     /// <summary>Hedeften hızıyla uzaklaşır. Tam üst üstelerse sağa doğru gider.</summary>
     void MoveAway(Vector2 targetPosition, float dt)
     {
-        Position = arena.Clamp(Position + DirectionAway(targetPosition, Position) * (Speed * dt), 0f);
+        Position = Constrain(Position, Position + DirectionAway(targetPosition, Position) * (Speed * dt));
+    }
+
+    /// <summary>Yeni konumu arenanın içinde tutar ve (uçan değilse) duvarların dışına iter.</summary>
+    Vector2 Constrain(Vector2 from, Vector2 to)
+    {
+        IObstacleField obstacles = Obstacles != null && !IsFlying && !IsArea ? Obstacles : null;
+        return ObstacleMover.Move(from, to, Radius, arena, 0f, obstacles);
     }
 
     /// <summary>"from" noktasından "to" noktasına doğru birim yön. Aynı noktadalarsa sağa (belirli bir yön).</summary>

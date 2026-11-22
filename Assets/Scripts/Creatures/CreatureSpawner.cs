@@ -56,7 +56,12 @@ public class CreatureSpawner : MonoBehaviour
 
         // Koruma kelimeleri yazana uygulanır: can, kalkan, görünmezlik, uçma...
         if (word.category == WordEntry.CategoryDefense && word.scope == WordEntry.ScopeSelf)
-            TagRegistry.ApplySelfEffects(word, new SelfEffectContext(writer, word, config));
+        {
+            // Duvar gibi yer isteyen etkiler için yazanın konumu ve baktığı yön de verilir.
+            bootstrap.TryGetPosition(writer.Id, out Vector2 writerPosition);
+            Vector2 facing = bootstrap.TryGetFacing(writer.Id, out Vector2 f) ? f : Vector2.up;
+            TagRegistry.ApplySelfEffects(word, new SelfEffectContext(writer, word, config, writerPosition, facing, bootstrap.Walls));
+        }
 
         // Tehdit (threat) kelimeleri yol haritasında sonraki adımlarda.
     }
@@ -130,6 +135,8 @@ public class CreatureSpawner : MonoBehaviour
 
     void Create(CreatureModel model, Color color, string label)
     {
+        model.Obstacles = bootstrap.Walls; // Uçmayan yaratıklar duvardan geçemez
+
         var go = new GameObject("Yaratık: " + label);
         go.transform.SetParent(transform, false);
 

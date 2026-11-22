@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 /// Oyuncuyu WASD (ve ok tuşları) ile hareket ettirir, arenanın içinde tutar.
 /// Canı <see cref="Health"/> sınıfı tutar. Yazı kutusu açıkken hareket kapatılabilir (<see cref="CanMove"/>).
 /// </summary>
-public class PlayerController : MonoBehaviour, IKnockable
+public class PlayerController : MonoBehaviour, IKnockable, IFacing
 {
     [SerializeField] GameConfig config;
     [SerializeField] Color playerColor = new Color(0.3f, 0.85f, 0.6f);
@@ -19,6 +19,12 @@ public class PlayerController : MonoBehaviour, IKnockable
 
     /// <summary>Oyuncunun canı (bağlanmadıysa null).</summary>
     public Health Health => State?.Health;
+
+    /// <summary>İçinden geçilemeyen engeller (duvarlar). Uçarken (kanat) engeller yok sayılır.</summary>
+    public IObstacleField Obstacles { get; set; }
+
+    /// <summary>Son yürüdüğü yön (duvar önünde belirsin diye). Henüz yürümediyse yukarı.</summary>
+    public Vector2 FacingDirection { get; private set; } = Vector2.up;
 
     /// <summary>Yazı kutusu açıkken ya da oyuncu elenince false yapılır.</summary>
     public bool CanMove { get; set; } = true;
@@ -57,27 +63,53 @@ public class PlayerController : MonoBehaviour, IKnockable
     {
         if (State == null) return;
 
+        Step();
+        ResolveObstacles();
+    }
+
+    /// <summary>
+    /// Karakteri verilen miktar kadar oynatır: arenanın içinde kalır ve (uçmuyorsa) duvarların içinden geçmez.
+    /// Hareket alt adımlara bölünür, böylece ağır bir karede bile duvar atlanmaz.
+    /// </summary>
+    void MoveBy(Vector2 delta)
+    {
+        Vector2 from = transform.position;
+        IObstacleField obstacles = State.Status.IsFlying ? null : Obstacles;
+        transform.position = ObstacleMover.Move(from, from + delta, config.playerRadius, arena, config.playerRadius, obstacles);
+    }
+
+    /// <summary>Karakter bir duvarın içine girmişse (duvar tam üstüne çıktı ya da fırlatıldı) dışarı iter.</summary>
+    void ResolveObstacles()
+    {
+        if (Obstacles == null || State.Status.IsFlying) return;
+
+        Vector2 position = transform.position;
+        Vector2 resolved = Obstacles.Resolve(position, config.playerRadius);
+        if (resolved != position)
+            transform.position = arena.Clamp(resolved, config.playerRadius);
+    }
+
+    void Step()
+    {
         State.Status.Tick(Time.deltaTime);
         UpdateTint();
 
         // Fırlatılma, yazarken ya da hareket kilitliyken de olur.
         Vector2 pushed = knockback.Step(Time.deltaTime);
-        if (pushed != Vector2.zero)
-            transform.position = arena.Clamp((Vector2)transform.position + pushed, config.playerRadius);
+        if (pushed != Vector2.zero) MoveBy(pushed);
 
         // Mıknatıs çekiyorsa karakter noktaya doğru kayar; kendi hızıyla ters yönde yürüyerek direnebilir.
         Vector2 pulled = State.Status.GetPullStep(transform.position, Time.deltaTime);
-        if (pulled != Vector2.zero)
-            transform.position = arena.Clamp((Vector2)transform.position + pulled, config.playerRadius);
+        if (pulled != Vector2.zero) MoveBy(pulled);
 
         if (!CanMove) return;
 
         Vector2 input = ReadMoveInput();
         if (input == Vector2.zero) return;
 
+        FacingDirection = input;
         float speed = config.playerMoveSpeed * State.Status.SpeedMultiplier; // Yavaşlatılmışsa daha yavaş
-        Vector2 next = (Vector2)transform.position + input * (speed * Time.deltaTime);
-        transform.position = arena.Clamp(next, config.playerRadius);
+        MoveBy(input * (speed * Time.deltaTime));
     }
 
     /// <summary>Üzerindeki etkilere göre renk: yavaş mavimsi, kalkanlı camgöbeği, uçan açık, görünmez soluk.</summary>

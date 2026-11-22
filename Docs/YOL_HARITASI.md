@@ -30,9 +30,9 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
   - [x] `trap` (Muz kabuğu: hedefin yanına düşer, basan herkes kayar, tek kullanımlık, botlar görmez)
   - [x] `pull` (Mıknatıs: arena merkezine düşer, hedefi çeker; yürüyerek direnilebilir)
   - [ ] `sky`: global tehdit adımında (Meteor yağmuru) yapılacak
-- [ ] Koruma etiketleri: `shield`, `heal`, `wall`, `escape`, `stealth`
+- [x] Koruma etiketleri: `shield`, `heal`, `wall`, `escape`, `stealth`
   - [x] `shield` (bir sonraki hasarı engeller), `heal` (1 can), `stealth` (6 sn hedef alınamaz), `escape` (5 sn uçma, yerdeki saldırılardan etkilenmez), `flying` (uçan yaratıklar)
-  - [ ] `wall` (Duvar: önüne 10 sn duran engel)
+  - [x] `wall` (Duvar: yazanın baktığı yönün önüne dik, 4 birim, 10 sn; oyuncu, bot ve yerdeki yaratıkları durdurur, uçanlar geçer)
 - [ ] Global tehdit altyapısı + Atom bombası ve sığınak (sınırlı kapasite)
 - [ ] Kalan 4 global tehdit ve çözümleri
 - [ ] Bilinmeyen kelime → "???" yaratığı

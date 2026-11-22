@@ -15,6 +15,9 @@ public class MatchBootstrap : MonoBehaviour, IPlayerLocator
     readonly List<BotController> bots = new List<BotController>();
     readonly Dictionary<int, Transform> avatars = new Dictionary<int, Transform>();
 
+    /// <summary>Haritadaki duvarlar. Karakterler ve yaratıklar bunların içinden geçemez (uçanlar hariç).</summary>
+    public WallField Walls { get; } = new WallField();
+
     /// <summary>Maçın tüm oyuncuları.</summary>
     public MatchState Match { get; private set; }
 
@@ -41,6 +44,19 @@ public class MatchBootstrap : MonoBehaviour, IPlayerLocator
         return false;
     }
 
+    /// <summary>Oyuncunun baktığı (son yürüdüğü) yönü verir; karakter yönü bilmiyorsa false.</summary>
+    public bool TryGetFacing(int playerId, out Vector2 direction)
+    {
+        if (avatars.TryGetValue(playerId, out Transform avatar) && avatar != null && avatar.TryGetComponent(out IFacing facing))
+        {
+            direction = facing.FacingDirection;
+            return true;
+        }
+
+        direction = Vector2.up;
+        return false;
+    }
+
     /// <summary>Oyuncunun sahne karakterini fırlatır (kısa bir süreye yayılarak kayar). Oyuncu itilemiyorsa false.</summary>
     public bool TryApplyKnockback(int playerId, Vector2 distance)
     {
@@ -51,6 +67,11 @@ public class MatchBootstrap : MonoBehaviour, IPlayerLocator
         }
 
         return false;
+    }
+
+    void Update()
+    {
+        Walls.Tick(Time.deltaTime);
     }
 
     void Awake()
@@ -73,6 +94,7 @@ public class MatchBootstrap : MonoBehaviour, IPlayerLocator
 
         Match = new MatchState(states);
         player.Bind(humanState);
+        player.Obstacles = Walls;
         avatars[humanState.Id] = player.transform;
 
         SpawnBots(states, arena);
@@ -99,6 +121,7 @@ public class MatchBootstrap : MonoBehaviour, IPlayerLocator
             var bot = go.AddComponent<BotController>();
             bot.Initialize(states[i], config, arena, botRandom, dangers, color);
             bots.Add(bot);
+            bot.Obstacles = Walls;
             avatars[states[i].Id] = go.transform;
         }
     }

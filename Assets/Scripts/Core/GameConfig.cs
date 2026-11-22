@@ -106,6 +106,15 @@ public class GameConfig : ScriptableObject
     [Tooltip("Kelimede 'duration' yazmıyorsa uçma (kanat) süresi (sn).")]
     [Min(1f)] public float flightDefaultSeconds = 5f;
 
+    [Tooltip("Duvar, yazanın baktığı yönün bu kadar önünde belirir (birim).")]
+    [Min(0.5f)] public float wallDistanceInFront = 1.8f;
+    [Tooltip("Duvarın kalınlığı (birim).")]
+    [Min(0.1f)] public float wallThickness = 0.5f;
+    [Tooltip("Kelimede 'length' yazmıyorsa duvarın uzunluğu (birim).")]
+    [Min(0.5f)] public float wallDefaultLength = 4f;
+    [Tooltip("Kelimede 'duration' yazmıyorsa duvarın duracağı süre (sn).")]
+    [Min(1f)] public float wallDefaultSeconds = 10f;
+
     [Header("Tur süreleri (saniye)")]
     [Min(0.5f)] public float diceSeconds = 2f;
     [Min(1f)] public float typingSeconds = 10f;
