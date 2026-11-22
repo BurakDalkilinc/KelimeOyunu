@@ -29,7 +29,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
   - [x] `explosive` (Bomba: hedefin yanına düşer, ekranda geri sayım, süre dolunca alandaki herkese hasar)
   - [x] `trap` (Muz kabuğu: hedefin yanına düşer, basan herkes kayar, tek kullanımlık, botlar görmez)
   - [x] `pull` (Mıknatıs: arena merkezine düşer, hedefi çeker; yürüyerek direnilebilir)
-  - [ ] `sky`: global tehdit adımında (Meteor yağmuru) yapılacak
+  - [x] `sky` (Meteor yağmuruyla birlikte yapıldı: gökten düşen gölge uyarılı yaratıklar)
 - [x] Koruma etiketleri: `shield`, `heal`, `wall`, `escape`, `stealth`
   - [x] `shield` (bir sonraki hasarı engeller), `heal` (1 can), `stealth` (6 sn hedef alınamaz), `escape` (5 sn uçma, yerdeki saldırılardan etkilenmez), `flying` (uçan yaratıklar)
   - [x] `wall` (Duvar: yazanın baktığı yönün önüne dik, 4 birim, 10 sn; oyuncu, bot ve yerdeki yaratıkları durdurur, uçanlar geçer)
