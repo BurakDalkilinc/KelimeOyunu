@@ -24,7 +24,8 @@
 | Global tehdit uyarı süresi | en az 5 sn |
 | Sığınak kapasitesi | hayattaki oyuncuların yarısı (aşağı yuvarla, en az 1) |
 | Zar: seçilmeme bonusu | her seçilmeyen tur için +0,5 ağırlık (`diceBonusPerMissedTurn`) |
-| Harita | 34 × 19 birim (20 oyuncu için geniş; kamera 640×360 piksel referansıyla tamamını gösterir) |
+| Harita | 34 × 19 birim (20 oyuncu için geniş) |
+| Kamera | Oyuncuyu yakından izler (384×216 piksel görüş, arenanın dışını göstermez). Hedef seçerken ve çözüm alanı (sığınak, kule, mağara, ev) çıkınca tüm arenayı gösterir (640×360) |
 
 ## Kurallar
 - Zar sadece kimin yazacağını seçer; uzun süredir seçilmeyenin şansı artar (adalet için).

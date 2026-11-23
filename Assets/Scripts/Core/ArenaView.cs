@@ -80,7 +80,8 @@ public class ArenaView : MonoBehaviour
         float halfWidth = config.arenaSize.x * 0.5f + borderThickness + config.cameraPadding;
         float halfHeight = config.arenaSize.y * 0.5f + borderThickness + config.cameraPadding;
 
-        targetCamera.transform.position = new Vector3(0f, 0f, -10f);
+        // Takip kamerası (CameraFollow) konumu kendisi sürer; yoksa arenanın ortasına koy.
+        if (targetCamera.GetComponent<CameraFollow>() == null) targetCamera.transform.position = new Vector3(0f, 0f, -10f);
 
         // Pixel Perfect Camera varsa boyutu kendisi yönetir; ona karışma.
         if (targetCamera.GetComponent("PixelPerfectCamera") != null) return;

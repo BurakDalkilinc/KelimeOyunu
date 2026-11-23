@@ -143,6 +143,17 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
         }
     }
 
+    /// <summary>Şu an haritada çözüm alanı (sığınak, kule, mağara, ev) var mı? Kamera bu sırada tüm arenayı gösterir.</summary>
+    public bool HasZones
+    {
+        get
+        {
+            foreach (GlobalThreat threat in threats)
+                if (threat.Zones.Zones.Count > 0) return true;
+            return false;
+        }
+    }
+
     /// <summary>Oyuncu herhangi bir tehdidin çözüm alanında şu an korunuyor mu?</summary>
     public bool IsSheltered(PlayerState player)
     {
