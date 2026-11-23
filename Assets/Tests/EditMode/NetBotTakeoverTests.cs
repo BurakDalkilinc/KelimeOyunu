@@ -214,4 +214,30 @@ public class NetBotTakeoverTests
         Assert.IsTrue(sim.IsSelectingTarget);
         Assert.AreEqual(0, sim.CreatureCount);
     }
+
+    // ---- Maç sonu özeti ----
+
+    [Test]
+    public void Client_KeepsThePlayedWords_ForTheMatchSummary()
+    {
+        Build();
+        AdvanceUntilHumanWriter(1);
+
+        host.Submit(1, "kurt");
+
+        Assert.AreEqual(1, client.PlayedWords.Count);
+        Assert.AreEqual("kurt", client.PlayedWords[0].id);
+        StringAssert.Contains("Kurt", MatchSummary.GetWordsText(client.PlayedWords));
+    }
+
+    [Test]
+    public void Client_UnknownWords_AreNotInTheSummary()
+    {
+        Build();
+        AdvanceUntilHumanWriter(1);
+
+        host.Submit(1, "zzzzqqq");
+
+        Assert.AreEqual(0, client.PlayedWords.Count);
+    }
 }

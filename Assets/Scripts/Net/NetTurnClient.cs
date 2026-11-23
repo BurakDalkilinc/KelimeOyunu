@@ -10,6 +10,7 @@ public class NetTurnClient
 {
     readonly WordDatabase words;
     readonly Dictionary<int, PlayerState> players = new Dictionary<int, PlayerState>();
+    readonly List<WordEntry> playedWords = new List<WordEntry>();
 
     public event Action<TurnPhase> PhaseChanged;
     public event Action<PlayerState> WriterSelected;
@@ -23,6 +24,9 @@ public class NetTurnClient
     public float PhaseTimeLeft { get; private set; }
     public int TurnNumber { get; private set; }
     public PlayerState Winner { get; private set; }
+
+    /// <summary>Maçta oynanan bilinen kelimeler, oynanma sırasıyla (maç sonu özeti için). Bilinmeyen ("???") kelimeler girmez.</summary>
+    public IReadOnlyList<WordEntry> PlayedWords => playedWords;
 
     /// <summary>Host'un bildirdiği oyuncular (numaraya göre).</summary>
     public IReadOnlyDictionary<int, PlayerState> Players => players;
@@ -57,7 +61,10 @@ public class NetTurnClient
         switch (message.Kind)
         {
             case TurnMessageKind.WriterSelected: WriterSelected?.Invoke(Writer); break;
-            case TurnMessageKind.WordPlayed: WordPlayed?.Invoke(Writer, CurrentWord); break;
+            case TurnMessageKind.WordPlayed:
+                if (CurrentWord != null) playedWords.Add(CurrentWord);
+                WordPlayed?.Invoke(Writer, CurrentWord);
+                break;
             case TurnMessageKind.TurnSkipped: TurnSkipped?.Invoke(Writer); break;
             case TurnMessageKind.MatchEnded: MatchEnded?.Invoke(Winner); break;
         }

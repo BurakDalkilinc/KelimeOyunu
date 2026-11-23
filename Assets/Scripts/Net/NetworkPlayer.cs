@@ -93,6 +93,24 @@ public class NetworkPlayer : NetworkBehaviour
         botBrain = new BotBrain(config, arena ?? new ArenaBounds(config.arenaSize), new System.Random(playerId.Value * 7919 + 1));
     }
 
+    /// <summary>
+    /// Yeni maç için sıfırlar: can tam, etkiler ve fırlatma silinir, karakter başlangıç yerine döner (yalnızca host'ta, insan karakterler).
+    /// </summary>
+    public void ResetOnServer()
+    {
+        if (!IsServer || isBot.Value || config == null) return;
+
+        knockback.Start(Vector2.zero, 0.01f);
+        serverInput = Vector2.zero;
+        health.Value = config.startingHealth;
+        statusFlags.Value = 0;
+
+        int slot = (int)(OwnerClientId % (ulong)Palette.Length);
+        Vector2 start = new Vector2((slot - 3.5f) * 1.5f, 0f);
+        position.Value = start;
+        transform.position = start;
+    }
+
     /// <summary>Karakteri kısa bir süreye yayarak kaydırır (bir yaratık fırlattığında). Yalnızca host'ta.</summary>
     public void ApplyKnockback(Vector2 distance)
     {

@@ -66,6 +66,8 @@ public class NetTurnPanel : MonoBehaviour
 
         if (!string.IsNullOrEmpty(channel.Feedback)) GUILayout.Label(channel.Feedback, smallStyle);
 
+        if (client.Phase == TurnPhase.MatchOver) DrawMatchSummary(client);
+
         string targeting = TargetingText(client);
         if (targeting.Length > 0) GUILayout.Label(targeting, bigStyle);
 
@@ -85,6 +87,21 @@ public class NetTurnPanel : MonoBehaviour
         var style = new GUIStyle(bigStyle) { alignment = TextAnchor.LowerLeft };
         string text = mine.IsGhost ? "Elendin! Hayalet olarak izliyorsun." : "Can: " + mine.Health;
         GUI.Label(new Rect(12, Screen.height - 54, 520, 44), text, style);
+    }
+
+    /// <summary>Maç bitince: yazılan kelimeler (tek kişilik sahnedeki özetle aynı metin) ve host için "Yeni maç" düğmesi.</summary>
+    void DrawMatchSummary(NetTurnClient client)
+    {
+        GUILayout.Label(MatchSummary.GetWordsText(client.PlayedWords), smallStyle);
+
+        if (channel.CanRestart)
+        {
+            if (GUILayout.Button("Yeni maç için hazırla", GUILayout.Width(300))) channel.RestartMatch();
+        }
+        else
+        {
+            GUILayout.Label("Host'un yeni maçı başlatması bekleniyor...", smallStyle);
+        }
     }
 
     /// <summary>Hedef seçilirken: seçen oyuncuya talimat, diğerlerine kimin seçtiği.</summary>

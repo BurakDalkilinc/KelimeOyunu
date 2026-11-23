@@ -145,6 +145,32 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         }
     }
 
+    /// <summary>Maç bitti mi? (Yeni maç başlatılabilir.)</summary>
+    public bool CanRestart => IsServer && host != null && host.Turns.Phase == TurnPhase.MatchOver;
+
+    /// <summary>
+    /// Bitmiş maçı kapatıp yeni maça hazırlar (yalnızca host): bot karakterleri (kopanlar dahil) silinir, insanlar tam canla
+    /// başlangıç yerine döner, herkesin ekranı temizlenir. Sonra "Maçı başlat" yeniden kullanılır.
+    /// </summary>
+    public bool RestartMatch()
+    {
+        if (!CanRestart) return false;
+
+        host = null;
+        Sim = null;
+
+        // Bot karakterleri sil (liste değişeceği için kopyadan git).
+        foreach (NetworkPlayer avatar in new List<NetworkPlayer>(NetworkPlayer.All))
+        {
+            if (avatar == null) continue;
+            if (avatar.IsBot) { if (avatar.NetworkObject.IsSpawned) avatar.NetworkObject.Despawn(); }
+            else avatar.ResetOnServer();
+        }
+
+        ResetMatchRpc();
+        return true;
+    }
+
     /// <summary>Hedef seçen oyuncu bir rakibe tıkladı: host'a bildirir (geçerli mi, host karar verir).</summary>
     public void ChooseTarget(int targetPlayerId)
     {
@@ -324,6 +350,22 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         if (ZoneSnapshotCodec.TryDecode(packedZones, out List<ZoneSnapshot> zones)) latestZones = zones;
         if (ThreatStatusCodec.TryDecode(packedStatus, out ThreatStatus status)) LatestThreat = status;
         ThreatVersion++;
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    void ResetMatchRpc()
+    {
+        Client = null;
+        Feedback = "";
+        latestCreatures = new List<CreatureSnapshot>();
+        CreaturesVersion++;
+        latestWalls = new List<WallSnapshot>();
+        WallsVersion++;
+        latestZones = new List<ZoneSnapshot>();
+        LatestThreat = new ThreatStatus { AlarmWordId = "" };
+        ThreatVersion++;
+        TargetingWriterId = -1;
+        TargetingTimeLeft = 0f;
     }
 
     [Rpc(SendTo.ClientsAndHost)]
