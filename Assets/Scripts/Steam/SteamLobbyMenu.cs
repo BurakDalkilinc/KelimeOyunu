@@ -16,7 +16,7 @@ public class SteamLobbyMenu : MonoBehaviour
 {
     const string GameKey = "game";
     const string GameValue = "KelimeBattleRoyale";
-    const int MaxMembers = 8;
+    const int MaxMembers = NetTurnChannel.MaxPlayers;
 
     [SerializeField] FacepunchTransport steamTransport;
     [SerializeField] uint appId = 480;

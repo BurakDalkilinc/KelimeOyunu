@@ -2,7 +2,8 @@
     "name": "KelimeOyunu.Steam",
     "rootNamespace": "",
     "references": [
-        "Unity.Netcode.Runtime"
+        "Unity.Netcode.Runtime",
+        "KelimeOyunu.Runtime"
     ],
     "includePlatforms": [
         "Editor",

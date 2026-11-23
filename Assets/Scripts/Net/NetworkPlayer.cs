@@ -11,11 +11,8 @@ using UnityEngine.InputSystem;
 /// </summary>
 public class NetworkPlayer : NetworkBehaviour
 {
-    static readonly Color[] Palette =
-    {
-        new Color(0.95f, 0.45f, 0.45f), new Color(0.45f, 0.7f, 0.95f), new Color(0.55f, 0.9f, 0.55f), new Color(0.95f, 0.85f, 0.4f),
-        new Color(0.75f, 0.55f, 0.95f), new Color(0.95f, 0.65f, 0.35f), new Color(0.5f, 0.9f, 0.85f), new Color(0.95f, 0.6f, 0.8f),
-    };
+    /// <summary>İnsan oyuncuların başlangıç halkası (botların halkasının içinde).</summary>
+    const float HumanRingFraction = 0.4f;
 
     static readonly IReadOnlyList<DangerZone> NoDangers = new List<DangerZone>();
 
@@ -37,6 +34,9 @@ public class NetworkPlayer : NetworkBehaviour
     readonly NetworkVariable<int> statusFlags = new NetworkVariable<int>(0);
 
     readonly KnockbackMotion knockback = new KnockbackMotion();
+
+    /// <summary>Yön mesajı hız sınırı: normal oyunda yalnızca tuş değişince gider; seli engeller.</summary>
+    readonly RpcRateLimiter moveLimiter = new RpcRateLimiter(30f, 30f);
 
     SpriteRenderer spriteRenderer;
     ArenaBounds arena;
@@ -105,8 +105,7 @@ public class NetworkPlayer : NetworkBehaviour
         health.Value = config.startingHealth;
         statusFlags.Value = 0;
 
-        int slot = (int)(OwnerClientId % (ulong)Palette.Length);
-        Vector2 start = new Vector2((slot - 3.5f) * 1.5f, 0f);
+        Vector2 start = HumanStart();
         position.Value = start;
         transform.position = start;
     }
@@ -169,18 +168,23 @@ public class NetworkPlayer : NetworkBehaviour
             // Bağlantısı koparsa karakter silinmesin (sahipliği host'a geçer), bot devralsın.
             NetworkObject.DontDestroyWithOwner = true;
             playerId.Value = (int)OwnerClientId;
-            int slot = (int)(OwnerClientId % (ulong)Palette.Length);
-            position.Value = new Vector2((slot - 3.5f) * 1.5f, 0f);
+            position.Value = HumanStart();
         }
 
         registeredId = playerId.Value;
         ServerAvatars[registeredId] = this;
     }
 
+    /// <summary>İnsan oyuncunun başlangıç yeri: bağlantı numarasına göre iç halkada bir nokta.</summary>
+    Vector2 HumanStart()
+    {
+        return SpawnRing.Point(arena ?? new ArenaBounds(config.arenaSize), (int)OwnerClientId, RosterBuilder.MaxPlayers, HumanRingFraction);
+    }
+
     void ApplyLook()
     {
         if (spriteRenderer == null) return;
-        Color color = Palette[Mathf.Max(0, playerId.Value) % Palette.Length];
+        Color color = PlayerColors.For(playerId.Value);
         spriteRenderer.color = IsGhost ? StatusTint.Ghost(color) : StatusFlagsUtil.Tint(color, Status);
     }
 
@@ -310,6 +314,7 @@ public class NetworkPlayer : NetworkBehaviour
     void MoveInputRpc(Vector2 input)
     {
         if (isBot.Value) return;
+        if (!moveLimiter.Allow(0, Time.unscaledTime)) return; // Bu karakterin tek sahibi var; tek kova yeter.
         serverInput = AvatarMover.SanitizeInput(input);
     }
 }

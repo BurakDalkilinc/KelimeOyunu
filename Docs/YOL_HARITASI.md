@@ -55,10 +55,10 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [ ] **Test:** Arkadaşlarla kopmadan 10 maç
 
 ## Aşama 4 — 20 kişi
-- [ ] Lobi 4–20 kişi, eksikler bot
-- [ ] Hayalet oylama sistemi
-- [ ] 20 oyuncu performans testi
-- [ ] Hile kontrolleri (sunucu doğrulama listesi)
+- [x] Lobi 4–20 kişi, eksikler bot (host lobide oyuncu sayısını ayarlar; Steam odası 20 kişi; geç bağlanan reddedilir)
+- [x] Hayalet oylama sistemi ("Yeniden canlanma" kelimesi: hayaletler kimin döneceğini oylar; `GhostVote`)
+- [x] 20 oyuncu performans testi (`NetPerformanceTests`; Editor'da 20 oyuncu + 49 yaratıkla ~167 kare/sn)
+- [x] Hile kontrolleri (sunucu doğrulama listesi: `Docs/HILE_KONTROLLERI.md`, hız sınırı, boyut sınırı)
 
 ## Aşama 5 — Steam sayfası ve demo
 - [ ] Oyun adı, logo, kapsül görselleri

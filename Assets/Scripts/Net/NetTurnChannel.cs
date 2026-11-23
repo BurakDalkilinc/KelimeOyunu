@@ -11,11 +11,22 @@ using UnityEngine;
 /// </summary>
 public class NetTurnChannel : NetworkBehaviour, INetAvatars
 {
-    /// <summary>Maç en az bu kadar oyuncuyla başlar; eksikler botla doldurulur.</summary>
-    const int MinPlayers = 4;
-
     /// <summary>Bot numaraları bağlantı numaralarıyla çakışmasın diye bu sayıdan başlar.</summary>
-    public const int FirstBotId = 100;
+    public const int FirstBotId = RosterBuilder.FirstBotId;
+
+    /// <summary>Bir maçtaki en çok oyuncu.</summary>
+    public const int MaxPlayers = RosterBuilder.MaxPlayers;
+
+    /// <summary>
+    /// İstemciden gelen kelime metninin en uzun kabul edilen uzunluğu (karakter). Gerçek sınır oyunun kelime uzunluğudur
+    /// (<see cref="GameConfig.maxWordLength"/>); bu, sınırı aşan dev metinlerin hiç işlenmemesi için kaba bir güvenlik duvarıdır.
+    /// </summary>
+    public const int MaxIncomingTextLength = 200;
+
+    // Gönderen başına hız sınırları: normal oyun bunlara asla takılmaz, mesaj seli engellenir.
+    readonly RpcRateLimiter submitLimiter = new RpcRateLimiter(5f, 2f);
+    readonly RpcRateLimiter targetLimiter = new RpcRateLimiter(8f, 4f);
+    readonly RpcRateLimiter voteLimiter = new RpcRateLimiter(8f, 4f);
 
     [SerializeField] GameConfig config;
     [SerializeField] NetworkObject avatarPrefab;
@@ -34,6 +45,21 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     /// <see cref="TurnPhase.NotStarted"/>'tır.
     /// </summary>
     public NetTurnClient Client { get; private set; }
+
+    /// <summary>
+    /// Maçın toplam oyuncu sayısı hedefi (host lobide ayarlar): bağlı insanlar + eksikleri tamamlayan botlar.
+    /// 2 ile <see cref="MaxPlayers"/> arasındadır.
+    /// </summary>
+    public int TargetPlayers
+    {
+        get => targetPlayers;
+        set => targetPlayers = RosterBuilder.ClampTarget(value);
+    }
+
+    int targetPlayers = RosterBuilder.DefaultTargetPlayers;
+
+    /// <summary>Bağlı insan oyuncu sayısı (yalnızca host'ta anlamlı).</summary>
+    public int ConnectedHumans => NetworkManager != null ? NetworkManager.ConnectedClientsIds.Count : 0;
 
     /// <summary>Maç başladı mı (istemci tur mesajı aldı)?</summary>
     public bool MatchActive => Client != null && Client.Phase != TurnPhase.NotStarted;
@@ -105,11 +131,8 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     {
         if (!IsServer || host != null) return false;
 
-        var roster = new List<RosterEntry>();
-        foreach (ulong clientId in NetworkManager.ConnectedClientsIds)
-            roster.Add(new RosterEntry((int)clientId, "Oyuncu " + clientId, false));
-        for (int bot = 0; roster.Count < MinPlayers; bot++)
-            roster.Add(new RosterEntry(FirstBotId + bot, "Bot " + (bot + 1), true));
+        var humans = new List<ulong>(NetworkManager.ConnectedClientsIds);
+        List<RosterEntry> roster = RosterBuilder.Build(humans, TargetPlayers);
 
         host = new NetTurnHost(config, words, config.CreateRandom(), roster);
         host.MessageReady += Broadcast;
@@ -139,7 +162,6 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         }
 
         var arena = new ArenaBounds(config.arenaSize);
-        float ringRadius = Mathf.Min(arena.HalfSize.x, arena.HalfSize.y) * 0.6f;
         int botCount = roster.FindAll(r => r.IsBot).Count;
         int index = 0;
 
@@ -147,8 +169,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         {
             if (!entry.IsBot) continue;
 
-            float angle = Mathf.PI * 2f * index / Mathf.Max(1, botCount);
-            Vector3 spot = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * ringRadius;
+            Vector3 spot = SpawnRing.Point(arena, index, botCount, 0.75f);
             index++;
 
             NetworkObject avatar = Instantiate(avatarPrefab, spot, Quaternion.identity);
@@ -280,7 +301,29 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
 
     public override void OnNetworkSpawn()
     {
-        if (IsServer) NetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
+        if (!IsServer) return;
+
+        NetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
+        NetworkManager.OnClientConnectedCallback += OnClientConnected;
+    }
+
+    void ForgetRateLimits(ulong clientId)
+    {
+        submitLimiter.Forget(clientId);
+        targetLimiter.Forget(clientId);
+        voteLimiter.Forget(clientId);
+    }
+
+    /// <summary>
+    /// Maç başladıktan sonra ya da oyuncu sınırı dolduktan sonra bağlanan oyuncu kabul edilmez (kadroda yeri yok);
+    /// nedeni bağlantı kesilirken söylenir.
+    /// </summary>
+    void OnClientConnected(ulong clientId)
+    {
+        if (clientId == NetworkManager.ServerClientId) return;
+
+        if (host != null) NetworkManager.DisconnectClient(clientId, "Maç başladı, bir sonraki maçı bekle.");
+        else if (NetworkManager.ConnectedClientsIds.Count > MaxPlayers) NetworkManager.DisconnectClient(clientId, "Oda dolu (en çok " + MaxPlayers + " oyuncu).");
     }
 
     /// <summary>
@@ -290,6 +333,8 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     void OnClientDisconnected(ulong clientId)
     {
         if (clientId == NetworkManager.ServerClientId) return; // Host giderse oyun zaten biter.
+
+        ForgetRateLimits(clientId);
 
         int playerId = (int)clientId;
         bool avatarFound = NetworkPlayer.TryFind(playerId, out NetworkPlayer avatar);
@@ -309,7 +354,11 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
 
     public override void OnNetworkDespawn()
     {
-        if (IsServer && NetworkManager != null) NetworkManager.OnClientDisconnectCallback -= OnClientDisconnected;
+        if (IsServer && NetworkManager != null)
+        {
+            NetworkManager.OnClientDisconnectCallback -= OnClientDisconnected;
+            NetworkManager.OnClientConnectedCallback -= OnClientConnected;
+        }
         host = null;
         Sim = null;
         Client?.Reset();
@@ -452,8 +501,11 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     {
         if (Sim == null) return;
 
+        ulong sender = rpcParams.Receive.SenderClientId;
+        if (!voteLimiter.Allow(sender, Time.unscaledTime)) return;
+
         // Oy veren bağlantıdan bulunur; yalnızca elenmiş insan oyuncular oy verebilir.
-        Sim.TryVote((int)rpcParams.Receive.SenderClientId, candidatePlayerId);
+        Sim.TryVote((int)sender, candidatePlayerId);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
@@ -481,8 +533,11 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     {
         if (Sim == null) return;
 
+        ulong sender = rpcParams.Receive.SenderClientId;
+        if (!targetLimiter.Allow(sender, Time.unscaledTime)) return;
+
         // Seçen kişi bağlantıdan bulunur; yalnızca sırası olan yazan seçebilir.
-        Sim.TryChooseTarget((int)rpcParams.Receive.SenderClientId, targetPlayerId);
+        Sim.TryChooseTarget((int)sender, targetPlayerId);
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -492,7 +547,12 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
 
         // Kimin yazdığı bağlantıdan bulunur; istemcinin kendi söylediğine güvenilmez.
         ulong sender = rpcParams.Receive.SenderClientId;
-        SubmitStatus status = host.Submit((int)sender, text);
+        if (!submitLimiter.Allow(sender, Time.unscaledTime)) return; // Mesaj seli: sessizce yok sayılır
+
+        // Dev metinler hiç işlenmez; oyuncuya "çok uzun" denir.
+        SubmitStatus status = text != null && text.Length > MaxIncomingTextLength
+            ? SubmitStatus.TooLong
+            : host.Submit((int)sender, text);
         FeedbackRpc((int)status, RpcTarget.Single(sender, RpcTargetUse.Temp));
     }
 

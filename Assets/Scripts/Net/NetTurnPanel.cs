@@ -42,11 +42,14 @@ public class NetTurnPanel : MonoBehaviour
 
     void DrawBeforeMatch(NetworkManager manager)
     {
-        GUILayout.BeginArea(new Rect(Screen.width - 312, 12, 300, 160), GUI.skin.box);
+        GUILayout.BeginArea(new Rect(Screen.width - 312, 12, 300, 190), GUI.skin.box);
         GUILayout.Label("Maç henüz başlamadı.");
         if (manager.IsHost)
         {
-            GUILayout.Label("Herkes bağlanınca başlat. Eksik yerler bot olur.");
+            int humans = channel.ConnectedHumans;
+            int target = Mathf.Max(channel.TargetPlayers, humans);
+            GUILayout.Label($"Oyuncu sayısı: {target}  ({humans} insan + {Mathf.Max(0, target - humans)} bot)");
+            channel.TargetPlayers = Mathf.RoundToInt(GUILayout.HorizontalSlider(channel.TargetPlayers, RosterBuilder.MinPlayers, RosterBuilder.MaxPlayers));
             if (GUILayout.Button("Maçı başlat")) channel.StartMatch();
         }
         else
