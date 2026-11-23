@@ -46,7 +46,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [ ] **Test:** 3 arkadaş oynadı, notlar `Docs/TEST_NOTLARI.md`'ye yazıldı
 
 ## Aşama 3 — Online 4–8 kişi
-- [ ] Ağ kütüphanesi seçildi ve GDD'ye yazıldı
+- [x] Ağ kütüphanesi seçildi ve GDD'ye yazıldı (Netcode for GameObjects, host yetkili)
 - [ ] Steamworks entegrasyonu, Steam lobisi, arkadaş daveti
 - [ ] TurnManager sunucuda çalışıyor, istemciler olayları alıyor
 - [ ] Oyuncu hareketi senkronizasyonu

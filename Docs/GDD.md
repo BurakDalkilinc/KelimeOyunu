@@ -80,9 +80,15 @@
 | `shadows` | Meteor yağmuru (çözüm = gölgeleri görmek) |
 | `houses` | Zombi sürüsü |
 
+## Ağ mimarisi (Aşama 3 kararı)
+- **Kütüphane:** Netcode for GameObjects (Unity'nin resmi çözümü). Bağlantı katmanı (transport) önce Unity Transport ile yerel ağda denenir; Steam lobisi/daveti en sona kalır (Steamworks entegrasyonu, test için App ID 480).
+- **Model:** Host yetkilidir (sunucu + oyuncu aynı kopyada). Zar, tur sırası, kelime doğrulaması, yaratık/tehdit sonuçları ve eleme sadece host'ta hesaplanır; istemci yalnızca girdi (hareket, yazılan kelime, hedef tıklaması) gönderir ve olayları alıp gösterir.
+- **Kod kuralı:** Oyun mantığı (TurnManager, Dice, CreatureModel, ThreatDirector...) ağdan bağımsız düz C# olarak kalır; ağ katmanı onu sarar, mantığa ağ kodu karışmaz.
+- **Kopan oyuncu:** Bot devralır (BotController).
+- **Sıra:** 1) paket + yerel host/istemci bağlantısı, 2) TurnManager host'ta, olaylar istemcilere, 3) hareket senkronu, 4) yaratık/tehdit senkronu, 5) Steam lobisi, 6) kopan oyuncu → bot.
+
 ## Açık sorular
 - Oyunun adı
 - Grafik tarzı
 - Hayaletler tam olarak ne yapacak?
 - Yazan kişi kendi tehdidinden etkilenecek mi?
-- Ağ kütüphanesi seçimi (Aşama 3)
