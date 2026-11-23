@@ -173,6 +173,15 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider
         return true;
     }
 
+    /// <summary>
+    /// Bir oyuncu bota dönüştü (bağlantısı koptu). Hedef seçiyorsa seçim rastgele bir rakiple tamamlanır,
+    /// çünkü artık kimse tıklayamaz. Oyuncunun kendisinin bota çevrilmesi <see cref="NetTurnHost.ReplaceWithBot"/>'tadır.
+    /// </summary>
+    public void OnPlayerBecameBot(int playerId)
+    {
+        if (IsSelectingTarget && selection.Writer.Id == playerId) CompleteSelection(forceRandom: true);
+    }
+
     void CompleteSelection(bool forceRandom)
     {
         PlayerState writer = selection.Writer;

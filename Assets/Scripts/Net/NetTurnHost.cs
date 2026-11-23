@@ -78,17 +78,39 @@ public class NetTurnHost
         return Turns.SubmitWord(senderPlayerId, text);
     }
 
-    void OnPhaseChanged(TurnPhase phase)
+    /// <summary>
+    /// Bağlantısı kopan insan oyuncuyu bota çevirir. Sırası o oyuncudaysa ve yazma aşamasındaysa kelimeyi bot yazar.
+    /// Oyuncu yoksa ya da zaten botsa false.
+    /// </summary>
+    public bool ReplaceWithBot(int playerId)
     {
-        botWaiting = phase == TurnPhase.Typing && Turns.Writer != null && Turns.Writer.IsBot;
-        if (botWaiting)
-        {
-            float min = Math.Min(config.botTypingDelayMin, config.botTypingDelayMax);
-            float max = Math.Max(config.botTypingDelayMin, config.botTypingDelayMax);
-            botWaitLeft = min + (float)botRandom.NextDouble() * (max - min);
-        }
+        PlayerState player = null;
+        foreach (PlayerState candidate in Match.Players)
+            if (candidate.Id == playerId) player = candidate;
+
+        if (player == null || player.IsBot) return false;
+
+        player.BecomeBot();
+        if (Turns.Phase == TurnPhase.Typing && Turns.Writer == player) ArmBotTyping();
 
         Publish(TurnMessageKind.State);
+        return true;
+    }
+
+    void OnPhaseChanged(TurnPhase phase)
+    {
+        botWaiting = false;
+        if (phase == TurnPhase.Typing && Turns.Writer != null && Turns.Writer.IsBot) ArmBotTyping();
+
+        Publish(TurnMessageKind.State);
+    }
+
+    void ArmBotTyping()
+    {
+        float min = Math.Min(config.botTypingDelayMin, config.botTypingDelayMax);
+        float max = Math.Max(config.botTypingDelayMin, config.botTypingDelayMax);
+        botWaiting = true;
+        botWaitLeft = min + (float)botRandom.NextDouble() * (max - min);
     }
 
     void TickBotTyping(float deltaSeconds)

@@ -6,7 +6,8 @@ public class PlayerState
 {
     public int Id { get; }
     public string Name { get; }
-    public bool IsBot { get; }
+    /// <summary>Bot mu? İnsan oyuncu maç sırasında koparsa bota dönüşür (<see cref="BecomeBot"/>).</summary>
+    public bool IsBot { get; private set; }
     public Health Health { get; }
 
     /// <summary>Üzerindeki süreli etkiler (yavaşlama...). Süreyi karakterin kendisi ilerletir.</summary>
@@ -31,6 +32,12 @@ public class PlayerState
 
     /// <summary>Hayatta mı? (Elenenler hayalet olur, zarda seçilmez.)</summary>
     public bool IsAlive => !Health.IsDead;
+
+    /// <summary>Oyuncuyu bota çevirir (bağlantısı koptu): bundan sonra tur sırası gelince kelimeyi bot yazar, hedefi bot seçer.</summary>
+    public void BecomeBot()
+    {
+        IsBot = true;
+    }
 
     public PlayerState(int id, string name, int startingHealth, bool isBot = false)
     {

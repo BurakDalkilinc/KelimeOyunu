@@ -70,6 +70,12 @@ public class NetTurnClient
         PhaseTimeLeft = Math.Max(0f, PhaseTimeLeft - deltaSeconds);
     }
 
+    /// <summary>Host oyuncunun bota dönüştüğünü bildirdi (bağlantısı koptu).</summary>
+    public void MarkBot(int playerId)
+    {
+        if (players.TryGetValue(playerId, out PlayerState player)) player.BecomeBot();
+    }
+
     PlayerState Find(int id)
     {
         return id != TurnMessage.NoPlayer && players.TryGetValue(id, out PlayerState player) ? player : null;

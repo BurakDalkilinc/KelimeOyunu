@@ -51,7 +51,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [x] TurnManager sunucuda çalışıyor, istemciler olayları alıyor (`NetTurnHost`/`NetTurnClient`)
 - [x] Oyuncu hareketi senkronizasyonu (host yetkili, `AvatarMover`)
 - [x] Yaratık ve tehdit senkronizasyonu (`NetMatchSim`; host tarafı Play'de denendi, iki pencereyle denemesi sürüyor)
-- [ ] Kopan oyuncu → bot devralır
+- [x] Kopan oyuncu → bot devralır (host tarafı denendi; gerçek bağlantı kopması iki pencereyle denenecek)
 - [ ] **Test:** Arkadaşlarla kopmadan 10 maç
 
 ## Aşama 4 — 20 kişi

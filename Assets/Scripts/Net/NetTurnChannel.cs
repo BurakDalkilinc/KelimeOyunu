@@ -14,7 +14,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     const int MinPlayers = 4;
 
     /// <summary>Bot numaraları bağlantı numaralarıyla çakışmasın diye bu sayıdan başlar.</summary>
-    const int FirstBotId = 100;
+    public const int FirstBotId = 100;
 
     [SerializeField] GameConfig config;
     [SerializeField] NetworkObject avatarPrefab;
@@ -188,8 +188,38 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         ThreatsRpc(ZoneSnapshotCodec.Encode(zoneBuffer), ThreatStatusCodec.Encode(Sim.GetThreatStatus()));
     }
 
+    public override void OnNetworkSpawn()
+    {
+        if (IsServer) NetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
+    }
+
+    /// <summary>
+    /// Bir oyuncunun bağlantısı koptu. Maç başlamadıysa karakteri silinir; başladıysa bot devralır:
+    /// tur sırası, hedef seçimi ve karakterin hareketi bota geçer, herkese haber verilir.
+    /// </summary>
+    void OnClientDisconnected(ulong clientId)
+    {
+        if (clientId == NetworkManager.ServerClientId) return; // Host giderse oyun zaten biter.
+
+        int playerId = (int)clientId;
+        bool avatarFound = NetworkPlayer.TryFind(playerId, out NetworkPlayer avatar);
+
+        if (host == null)
+        {
+            if (avatarFound && avatar.NetworkObject.IsSpawned) avatar.NetworkObject.Despawn();
+            return;
+        }
+
+        if (!host.ReplaceWithBot(playerId)) return;
+
+        Sim.OnPlayerBecameBot(playerId);
+        if (avatarFound) avatar.BecomeBotOnServer();
+        PlayerBecameBotRpc(playerId);
+    }
+
     public override void OnNetworkDespawn()
     {
+        if (IsServer && NetworkManager != null) NetworkManager.OnClientDisconnectCallback -= OnClientDisconnected;
         host = null;
         Sim = null;
         Client = null;
@@ -294,6 +324,12 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         if (ZoneSnapshotCodec.TryDecode(packedZones, out List<ZoneSnapshot> zones)) latestZones = zones;
         if (ThreatStatusCodec.TryDecode(packedStatus, out ThreatStatus status)) LatestThreat = status;
         ThreatVersion++;
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    void PlayerBecameBotRpc(int playerId)
+    {
+        if (Client != null) Client.MarkBot(playerId);
     }
 
     [Rpc(SendTo.ClientsAndHost)]

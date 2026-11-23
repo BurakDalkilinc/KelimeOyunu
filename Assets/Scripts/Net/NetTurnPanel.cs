@@ -101,7 +101,9 @@ public class NetTurnPanel : MonoBehaviour
 
     string HeadlineFor(NetTurnClient client)
     {
-        string writer = client.Writer == null ? "" : client.Writer.Name + (client.Writer.Id == channel.LocalPlayerId ? " (SEN)" : "");
+        string writer = client.Writer == null ? "" : client.Writer.Name
+            + (client.Writer.Id == channel.LocalPlayerId ? " (SEN)" : "")
+            + (client.Writer.IsBot && client.Writer.Id < NetTurnChannel.FirstBotId ? " (bot devraldı)" : ""); // Normal bot numarası FirstBotId ve üstü; altındaki bot, koparak botlaşan insandır
 
         switch (client.Phase)
         {

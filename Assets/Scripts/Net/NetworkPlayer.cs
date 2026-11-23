@@ -81,6 +81,18 @@ public class NetworkPlayer : NetworkBehaviour
         preparedBotId = botPlayerId;
     }
 
+    /// <summary>
+    /// Sahibinin bağlantısı koptu: karakter olduğu yerde kalır ve bundan sonra bot gibi gezer (yalnızca host'ta).
+    /// </summary>
+    public void BecomeBotOnServer()
+    {
+        if (!IsServer || isBot.Value || config == null) return;
+
+        isBot.Value = true;
+        serverInput = Vector2.zero;
+        botBrain = new BotBrain(config, arena ?? new ArenaBounds(config.arenaSize), new System.Random(playerId.Value * 7919 + 1));
+    }
+
     /// <summary>Karakteri kısa bir süreye yayarak kaydırır (bir yaratık fırlattığında). Yalnızca host'ta.</summary>
     public void ApplyKnockback(Vector2 distance)
     {
@@ -136,6 +148,8 @@ public class NetworkPlayer : NetworkBehaviour
         else
         {
             // İnsan: bağlantı numarasıyla aynı. Oyuncular yan yana dizilir.
+            // Bağlantısı koparsa karakter silinmesin (sahipliği host'a geçer), bot devralsın.
+            NetworkObject.DontDestroyWithOwner = true;
             playerId.Value = (int)OwnerClientId;
             int slot = (int)(OwnerClientId % (ulong)Palette.Length);
             position.Value = new Vector2((slot - 3.5f) * 1.5f, 0f);
