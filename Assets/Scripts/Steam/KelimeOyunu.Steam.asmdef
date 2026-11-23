@@ -1,0 +1,21 @@
+{
+    "name": "KelimeOyunu.Steam",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Netcode.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "WindowsStandalone64"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Facepunch.Steamworks.Win64.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

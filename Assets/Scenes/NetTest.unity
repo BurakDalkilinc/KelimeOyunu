@@ -500,6 +500,52 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1065721692
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1065721694}
+  - component: {fileID: 1065721693}
+  m_Layer: 0
+  m_Name: SteamLobbyMenu
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1065721693
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1065721692}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db243289dadbad7409f8d76542fedda6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: KelimeOyunu.Steam::SteamLobbyMenu
+  steamTransport: {fileID: 1218908614}
+  appId: 480
+--- !u!4 &1065721694
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1065721692}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1218908610
 GameObject:
   m_ObjectHideFlags: 0
@@ -511,6 +557,7 @@ GameObject:
   - component: {fileID: 1218908613}
   - component: {fileID: 1218908612}
   - component: {fileID: 1218908611}
+  - component: {fileID: 1218908614}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -605,6 +652,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1218908614
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1218908610}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14fe52b8dbe3fd14489da1b8a0440fce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: KelimeOyunu.Steam::Netcode.Transports.Facepunch.FacepunchTransport
+  steamAppId: 480
+  targetSteamId: 0
+  userSteamId: 0
 --- !u!1 &1461242314
 GameObject:
   m_ObjectHideFlags: 0
@@ -2241,3 +2303,4 @@ SceneRoots:
   - {fileID: 8545132797592552135}
   - {fileID: 1461242316}
   - {fileID: 1633160657}
+  - {fileID: 1065721694}

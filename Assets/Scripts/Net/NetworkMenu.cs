@@ -54,6 +54,9 @@ public class NetworkMenu : MonoBehaviour
         var transport = manager.GetComponent<UnityTransport>();
         if (transport == null) { error = "UnityTransport bulunamadı."; return; }
 
+        // Steam lobisi aktarım katmanını değiştirmiş olabilir; yerel ağ için yeniden UnityTransport'a dön.
+        manager.NetworkConfig.NetworkTransport = transport;
+
         if (host)
         {
             // Host herkesten (0.0.0.0) bağlantı kabul eder.
