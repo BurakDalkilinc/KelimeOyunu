@@ -37,11 +37,20 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
         random = new System.Random(runner.Random.Next());
         revival = new GhostRevival(bootstrap.Match.Players, config, new System.Random(runner.Random.Next()));
         turns.WordPlayed += OnWordPlayed;
+        bootstrap.CreatureSource = Models;
+    }
+
+    /// <summary>Sahnedeki canlı yaratıkların modelleri (arazi bunlara bakıp tutuşturur).</summary>
+    IEnumerable<CreatureModel> Models()
+    {
+        foreach (CreatureView view in creatures)
+            if (view != null) yield return view.Model;
     }
 
     void OnDisable()
     {
         if (turns != null) turns.WordPlayed -= OnWordPlayed;
+        if (bootstrap != null && bootstrap.CreatureSource == (System.Func<IEnumerable<CreatureModel>>)Models) bootstrap.CreatureSource = null;
     }
 
     /// <summary>Kelime kabul edilince: türüne göre yaratık doğur. Bilinmeyen kelimede <paramref name="word"/> null'dır.</summary>
@@ -113,7 +122,7 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
 
     void Create(CreatureModel model, Color color, string label)
     {
-        model.Obstacles = bootstrap.Walls; // Uçmayan yaratıklar duvardan geçemez
+        model.Obstacles = bootstrap.Obstacles; // Uçmayan yaratıklar duvardan (oyuncu duvarları ve ev duvarları) geçemez
 
         var go = new GameObject("Yaratık: " + label);
         go.transform.SetParent(transform, false);
@@ -142,5 +151,8 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
             if (view.Model.IsHarmful && !view.Model.IsLeaving)
                 dangers.Add(new DangerZone(view.Model.Position, view.Model.Radius));
         }
+
+        // Yanan haritalar da tehlikedir: botlar alevden kaçar.
+        bootstrap.AppendFireDangers(dangers);
     }
 }

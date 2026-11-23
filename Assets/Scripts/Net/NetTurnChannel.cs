@@ -75,6 +75,14 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     public int CreaturesVersion { get; private set; }
 
     List<CreatureSnapshot> latestCreatures = new List<CreatureSnapshot>();
+    bool terrainSendPending;
+
+    /// <summary>Host'tan gelen son harita durumu (her karo için bir harf; yanan karo büyük harf). Boşsa harita henüz gelmedi.</summary>
+    public string LatestTerrain { get; private set; } = "";
+
+    /// <summary>Yeni harita durumu geldikçe artar.</summary>
+    public int TerrainVersion { get; private set; }
+
     List<WallSnapshot> latestWalls = new List<WallSnapshot>();
     List<ZoneSnapshot> latestZones = new List<ZoneSnapshot>();
     readonly List<ZoneSnapshot> zoneBuffer = new List<ZoneSnapshot>();
@@ -134,10 +142,20 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         List<RosterEntry> roster = RosterBuilder.Build(humans, TargetPlayers);
 
         host = new NetTurnHost(config, words, config.CreateRandom(), roster);
+
+        // Arazi: harita tohumdan üretilir; istemcilere tam durum yayılır (karo türleri + yangın).
+        System.Random terrainRandom = config.CreateRandom();
+        int terrainSeed = config.terrainSeed != 0 ? config.terrainSeed : terrainRandom.Next(1, int.MaxValue);
+        var terrain = new TerrainSim(config, terrainSeed, new System.Random(terrainRandom.Next()));
         host.MessageReady += Broadcast;
 
         // Kabul edilen kelime host'ta yaratığa dönüşür (ilk zar atılmadan önce abone ol).
-        Sim = new NetMatchSim(config, host.Match, this, config.CreateRandom());
+        Sim = new NetMatchSim(config, host.Match, this, config.CreateRandom(), terrain);
+        terrainSendPending = true;
+
+        // İnsan karakterler güvenli karelere taşınır (lavda, duvarda doğmasın).
+        foreach (NetworkPlayer avatar in NetworkPlayer.All)
+            if (avatar != null && avatar.IsSpawned) avatar.ServerSetPosition(terrain.NearestSafe(avatar.ServerPosition));
         host.Turns.WordPlayed += Sim.OnWordPlayed;
         Sim.TargetingStarted += (writerId, seconds) => TargetingStartRpc(writerId, seconds);
         Sim.TargetingEnded += () => TargetingEndRpc();
@@ -166,7 +184,9 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         {
             if (!entry.IsBot) continue;
 
-            Vector3 spot = SpawnRing.Point(arena, index, botCount, 0.75f);
+            Vector3 spot = Sim != null && Sim.Terrain != null
+                ? (Vector3)Sim.Terrain.NearestSafe(SpawnRing.Point(arena, index, botCount, 0.75f))
+                : (Vector3)SpawnRing.Point(arena, index, botCount, 0.75f);
             index++;
 
             NetworkObject avatar = Instantiate(avatarPrefab, spot, Quaternion.identity);
@@ -288,7 +308,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
             if (!bodySolid[i]) continue;
 
             Vector2 resolved = bodyPositions[i];
-            IObstacleField obstacles = MovementRules.EffectiveObstacles(bodyStates[i], Sim.Walls);
+            IObstacleField obstacles = MovementRules.EffectiveObstacles(bodyStates[i], Sim.Obstacles);
             if (obstacles != null) resolved = arena.Clamp(obstacles.Resolve(resolved, config.playerRadius), config.playerRadius);
 
             if (resolved != bodyAvatars[i].ServerPosition) bodyAvatars[i].ServerSetPosition(resolved);
@@ -306,6 +326,14 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
 
         Sim.SnapshotWalls(wallBuffer);
         WallsRpc(WallSnapshotCodec.Encode(wallBuffer));
+
+        // Harita yalnızca değişince (yangın yayıldı, tahta kömürleşti) yayılır.
+        if (Sim.Terrain != null && (terrainSendPending || Sim.Terrain.Dirty))
+        {
+            terrainSendPending = false;
+            Sim.Terrain.Dirty = false;
+            TerrainRpc(Sim.Terrain.Map.Encode(Sim.Terrain.Fire.IsBurning));
+        }
 
         Sim.SnapshotZones(zoneBuffer);
         ThreatsRpc(ZoneSnapshotCodec.Encode(zoneBuffer), ThreatStatusCodec.Encode(Sim.GetThreatStatus()));
@@ -397,6 +425,13 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         return false;
     }
 
+    bool INetAvatars.TryTeleport(int playerId, Vector2 position)
+    {
+        if (!NetworkPlayer.TryFind(playerId, out NetworkPlayer avatar)) return false;
+        avatar.ServerSetPosition(position);
+        return true;
+    }
+
     bool INetAvatars.TryGetFacing(int playerId, out Vector2 direction)
     {
         if (NetworkPlayer.TryFind(playerId, out NetworkPlayer avatar))
@@ -459,6 +494,13 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     }
 
     [Rpc(SendTo.ClientsAndHost)]
+    void TerrainRpc(string encodedTerrain)
+    {
+        LatestTerrain = encodedTerrain ?? "";
+        TerrainVersion++;
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
     void WallsRpc(string packedWalls)
     {
         if (!WallSnapshotCodec.TryDecode(packedWalls, out List<WallSnapshot> list)) return;
@@ -477,6 +519,8 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     [Rpc(SendTo.ClientsAndHost)]
     void ResetMatchRpc()
     {
+        LatestTerrain = ""; // Harita bir sonraki maçta yeniden gelir
+        TerrainVersion++;
         Client.Reset();
         Feedback = "";
         latestCreatures = new List<CreatureSnapshot>();

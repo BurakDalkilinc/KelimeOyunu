@@ -432,6 +432,165 @@ def make_border():
     return c
 
 
+# ---------------- Arazi karoları (tam opak, t_ öneki: harita zemini) ----------------
+import random as _random
+
+
+def _fill(c, color):
+    for yy in range(16):
+        for xx in range(16):
+            c.px[yy][xx] = color
+
+
+def make_t_grass(variant):
+    rnd = _random.Random(10 + variant)
+    c = Canvas()
+    base, dark, light = (52, 98, 62), (44, 86, 56), (66, 120, 74)
+    _fill(c, base)
+    for _ in range(14):
+        c.set(rnd.randrange(16), rnd.randrange(16), dark)
+    for _ in range(9):                      # ot tutamları (2 piksel yükseklik)
+        x, y = rnd.randrange(15), rnd.randrange(1, 16)
+        c.set(x, y, light)
+        c.set(x, y - 1, light)
+    return c
+
+
+def make_t_path():
+    rnd = _random.Random(31)
+    c = Canvas()
+    base, dark, light = (148, 112, 78), (126, 94, 64), (170, 134, 98)
+    _fill(c, base)
+    for _ in range(18):
+        c.set(rnd.randrange(16), rnd.randrange(16), dark)
+    for _ in range(8):
+        c.set(rnd.randrange(16), rnd.randrange(16), light)
+    for _ in range(3):                      # küçük taşlar
+        x, y = rnd.randrange(1, 14), rnd.randrange(1, 14)
+        c.rect(x, y, x + 1, y, (176, 168, 156))
+        c.rect(x, y + 1, x + 1, y + 1, (120, 112, 104))
+    return c
+
+
+def make_t_wood():
+    c = Canvas()
+    plank, gap, light, nail = (176, 124, 72), (112, 74, 42), (196, 146, 90), (84, 56, 32)
+    _fill(c, plank)
+    for yy in range(16):
+        if yy % 4 == 3:                     # tahta araları
+            for xx in range(16):
+                c.px[yy][xx] = gap
+        elif yy % 4 == 0:                   # tahta üst parlaması
+            for xx in range(16):
+                c.px[yy][xx] = light
+    for row in range(4):                    # dikey birleşim çizgileri (satır başına kaydırılmış)
+        x = (3 + row * 5) % 16
+        for yy in range(row * 4, row * 4 + 3):
+            c.px[yy][x] = gap
+        c.px[row * 4 + 1][(x + 8) % 16] = nail
+        c.px[row * 4 + 1][(x + 11) % 16] = nail
+    return c
+
+
+def make_t_woodwall():
+    c = Canvas()
+    log, dark, light, end = (122, 78, 44), (78, 48, 26), (158, 106, 64), (96, 60, 34)
+    _fill(c, log)
+    for yy in range(16):
+        if yy % 4 == 0:
+            for xx in range(16):
+                c.px[yy][xx] = light
+        elif yy % 4 == 3:
+            for xx in range(16):
+                c.px[yy][xx] = dark
+    for row in range(4):                    # kütük uçları (yuvarlak kesit)
+        y = row * 4 + 1
+        c.px[y][0] = end
+        c.px[y][1] = dark
+        c.px[y + 1][0] = end
+        c.px[y][15] = end
+        c.px[y][14] = dark
+        c.px[y + 1][15] = end
+    return c
+
+
+def make_t_lava(frame):
+    rnd = _random.Random(77)
+    c = Canvas()
+    base, hot, crust, bright = (214, 72, 28), (247, 140, 36), (112, 30, 22), (254, 214, 90)
+    _fill(c, base)
+    for _ in range(26):
+        x, y = rnd.randrange(16), rnd.randrange(16)
+        c.set(x, y, hot)
+    for i in range(5):                      # kabuk lekeleri
+        x, y = rnd.randrange(1, 14), rnd.randrange(1, 14)
+        c.rect(x, y, x + 1, y + 1, crust)
+    shift = frame * 2
+    for i in range(6):                      # parlak damarlar: iki karede kayar
+        x, y = (i * 5 + shift) % 16, (i * 7 + frame * 3) % 16
+        c.set(x, y, bright)
+        c.set((x + 1) % 16, y, bright)
+    return c
+
+
+def make_t_chasm(edge):
+    rnd = _random.Random(55)
+    c = Canvas()
+    deep, mid, shadow = (14, 12, 26), (24, 20, 40), (6, 5, 14)
+    _fill(c, deep)
+    for yy in range(16):
+        for xx in range(16):
+            if rnd.random() < 0.18:
+                c.px[yy][xx] = mid
+    if edge:                                 # üstteki karo çimen/zemin: kaya dudağı ve gölge
+        for xx in range(16):
+            c.px[0][xx] = (104, 90, 80)
+            c.px[1][xx] = (84, 72, 66)
+            c.px[2][xx] = (46, 40, 44)
+            c.px[3][xx] = shadow
+    return c
+
+
+def make_t_charred():
+    rnd = _random.Random(91)
+    c = Canvas()
+    base, dark, ember = (50, 44, 46), (34, 30, 32), (122, 64, 44)
+    _fill(c, base)
+    for _ in range(30):
+        c.set(rnd.randrange(16), rnd.randrange(16), dark)
+    for yy in range(16):                    # yanmış tahta izleri
+        if yy % 4 == 3:
+            for xx in range(16):
+                if rnd.random() < 0.7:
+                    c.px[yy][xx] = dark
+    for _ in range(5):
+        c.set(rnd.randrange(16), rnd.randrange(16), ember)
+    return c
+
+
+def make_t_fire(frame):
+    """Karonun üstüne bindirilen alev (saydam zemin): iki karede dilleri oynar."""
+    c = Canvas()
+    red, orange, yellow = (228, 59, 68), (247, 118, 34), (254, 231, 97)
+    tongues = [(3, 10), (8, 13), (12, 9)] if frame == 0 else [(4, 12), (7, 9), (12, 12)]
+    for cx, height in tongues:
+        for k in range(height):
+            y = 15 - k
+            half = max(0, int(2.2 * (1 - k / float(height))))
+            for xx in range(cx - half, cx + half + 1):
+                if 0 <= xx < 16 and 0 <= y < 16:
+                    c.px[y][xx] = red if k < height * 0.45 else orange
+            if k > 1 and k < height - 3:
+                c.set(cx, y, orange)
+        c.set(cx, 15 - height // 2, yellow)
+        c.set(cx, 15 - height // 2 + 1, yellow)
+    for xx in range(1, 15):                 # tabanda kor
+        c.set(xx, 15, red)
+        if xx % 2 == frame:
+            c.set(xx, 14, orange)
+    return c
+
+
 def main():
     animated = {
         "char": make_char, "zombi": make_zombi, "ari": make_ari, "fare": make_fare, "kurt": make_kurt,
@@ -441,6 +600,12 @@ def main():
         "yumruk": make_yumruk, "muz_kabugu": make_muz, "miknatis": make_miknatis, "bomba": make_bomba,
         "shelter": make_shelter, "tower": make_tower, "cave": make_cave, "houses": make_houses,
         "floor": make_floor, "wall": make_wall, "border": make_border,
+        "t_grass": lambda: make_t_grass(0), "t_grass_alt": lambda: make_t_grass(1), "t_path": make_t_path,
+        "t_wood": make_t_wood, "t_woodwall": make_t_woodwall,
+        "t_lava": lambda: make_t_lava(0), "t_lava_b": lambda: make_t_lava(1),
+        "t_chasm": lambda: make_t_chasm(False), "t_chasm_edge": lambda: make_t_chasm(True),
+        "t_charred": make_t_charred,
+        "t_fire": lambda: make_t_fire(0), "t_fire_b": lambda: make_t_fire(1),
     }
     for name, fn in animated.items():
         save_animated(fn(), name)

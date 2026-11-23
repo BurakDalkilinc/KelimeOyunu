@@ -68,7 +68,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 
 ## Aşama 6 — İçerik ve çıkış
 - [ ] 300+ kelime
-- [ ] 3 farklı harita
+- [ ] 3 farklı harita (1. harita hazır: tahta köyler, lav, uçurum, yangın; `MapRecipe` ile yenileri eklenir)
 - [ ] Koleksiyon defteri
 - [ ] Ayarlar, ses, Türkçe/İngilizce dil desteği
 - [ ] Çıkış

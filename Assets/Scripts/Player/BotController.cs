@@ -21,6 +21,12 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
     /// <summary>İçinden geçilemeyen engeller (duvarlar). Uçarken (kanat) engeller yok sayılır.</summary>
     public IObstacleField Obstacles { get; set; }
 
+    /// <summary>
+    /// Botun kendi isteğiyle yürürken uyduğu engeller: <see cref="Obstacles"/> + lav, uçurum, yanan kareler. Böylece bot oralara girmez,
+    /// ama itilir ya da fırlatılırsa (<see cref="Obstacles"/> geçerli) girebilir.
+    /// </summary>
+    public IObstacleField VoluntaryObstacles { get; set; }
+
     /// <summary>İtiş için maç bağlantısı (<see cref="MatchBootstrap"/> atar).</summary>
     public MatchBootstrap Bootstrap { get; set; }
 
@@ -96,10 +102,10 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
     /// Botu verilen miktar kadar oynatır: arenanın içinde kalır ve (uçmuyorsa) duvarların içinden geçmez.
     /// Hareket alt adımlara bölünür, böylece ağır bir karede bile duvar atlanmaz.
     /// </summary>
-    void MoveBy(Vector2 delta)
+    void MoveBy(Vector2 delta, bool voluntary = false)
     {
         Vector2 from = transform.position;
-        IObstacleField obstacles = MovementRules.EffectiveObstacles(State, Obstacles);
+        IObstacleField obstacles = MovementRules.EffectiveObstacles(State, voluntary && VoluntaryObstacles != null ? VoluntaryObstacles : Obstacles);
         transform.position = ObstacleMover.Move(from, from + delta, config.playerRadius, arena, config.playerRadius, obstacles);
     }
 
@@ -134,7 +140,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         if (direction == Vector2.zero) return;
 
         FacingDirection = direction;
-        MoveBy(direction * (config.botMoveSpeed * State.Status.SpeedMultiplier * Time.deltaTime));
+        MoveBy(direction * (config.botMoveSpeed * State.Status.SpeedMultiplier * Time.deltaTime), voluntary: true);
     }
 
     /// <summary>Botu kısa bir süreye yayarak kaydırır (bir yaratık fırlattığında).</summary>

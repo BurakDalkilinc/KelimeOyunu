@@ -60,6 +60,8 @@ public static class MapGenerator
         var random = new System.Random(seed);
         var villages = new List<Box>();
 
+        // Önce köyler (yerleşmeleri zor), sonra lav ve uçurum kalan boşlukta. Lav, köyün yürüyüş yoluna değebilir:
+        // yoldaki tahta tutuşunca yangın köye doğru yayılır.
         PlaceVillages(map, random, recipe.Villages, villages);
         ConnectVillagesWithPaths(map, villages, random);
         PlaceLava(map, random, recipe.LavaPools, villages);
@@ -80,13 +82,13 @@ public static class MapGenerator
         {
             for (int attempt = 0; attempt < 80; attempt++)
             {
-                int margin = EdgeMargin + 3;
+                int margin = EdgeMargin + 1; // Yürüyüş yolları köyün 2 kare dışına taşar: kenarda 1 kare boşluk kalır
                 int x0 = random.Next(margin, Math.Max(margin + 1, map.Width - villageW - margin));
                 int y0 = random.Next(margin, Math.Max(margin + 1, map.Height - villageH - margin));
                 var box = new Box { X0 = x0, Y0 = y0, X1 = x0 + villageW - 1, Y1 = y0 + villageH - 1 };
 
                 if (box.X1 >= map.Width - EdgeMargin || box.Y1 >= map.Height - EdgeMargin) continue;
-                if (villages.Exists(v => v.Overlaps(box, 3))) continue;
+                if (villages.Exists(v => v.Overlaps(box, 2))) continue;
 
                 BuildVillage(map, box, random);
                 villages.Add(box);
@@ -170,18 +172,16 @@ public static class MapGenerator
     {
         for (int i = 0; i < count; i++)
         {
-            for (int attempt = 0; attempt < 60; attempt++)
+            for (int attempt = 0; attempt < 250; attempt++)
             {
-                float rx = 1.3f + (float)random.NextDouble() * 1.1f;
-                float ry = 1.0f + (float)random.NextDouble() * 1.0f;
-                int cx = Roll(random, EdgeMargin + 3, map.Width - EdgeMargin - 3);
-                int cy = Roll(random, EdgeMargin + 3, map.Height - EdgeMargin - 3);
+                float rx = 1.2f + (float)random.NextDouble() * 0.8f;
+                float ry = 1.0f + (float)random.NextDouble() * 0.8f;
+                int cx = Roll(random, EdgeMargin + 2, map.Width - EdgeMargin - 2);
+                int cy = Roll(random, EdgeMargin + 2, map.Height - EdgeMargin - 2);
 
-                int reach = Mathf.CeilToInt(Mathf.Max(rx, ry)) + 1;
-                bool clear = true;
-                foreach (Box v in villages)
-                    if (v.Contains(cx - reach, cy - reach, 2) || v.Contains(cx + reach, cy + reach, 2) || v.Contains(cx, cy, reach + 2)) clear = false;
-                if (!clear || HasHazardNear(map, cx, cy, reach + 2)) continue;
+                int reach = Mathf.CeilToInt(Mathf.Max(rx, ry));
+                var lavaBox = new Box { X0 = cx - reach, Y0 = cy - reach, X1 = cx + reach, Y1 = cy + reach };
+                if (villages.Exists(v => v.Overlaps(lavaBox, 1)) || HasHazardNear(map, cx, cy, reach + 1)) continue;
 
                 for (int y = cy - reach; y <= cy + reach; y++)
                 {
@@ -202,19 +202,17 @@ public static class MapGenerator
     {
         for (int i = 0; i < count; i++)
         {
-            for (int attempt = 0; attempt < 60; attempt++)
+            for (int attempt = 0; attempt < 250; attempt++)
             {
                 bool horizontal = random.Next(2) == 0;
-                int length = random.Next(5, 9);
+                int length = random.Next(6, 11);
                 int thickness = random.Next(1, 3);
-                int x0 = Roll(random, EdgeMargin + 3, map.Width - EdgeMargin - 3 - (horizontal ? length : thickness));
-                int y0 = Roll(random, EdgeMargin + 3, map.Height - EdgeMargin - 3 - (horizontal ? thickness : length));
+                int x0 = Roll(random, EdgeMargin, map.Width - EdgeMargin - (horizontal ? length : thickness));
+                int y0 = Roll(random, EdgeMargin, map.Height - EdgeMargin - (horizontal ? thickness : length));
 
                 int w = horizontal ? length : thickness, h = horizontal ? thickness : length;
-                bool clear = true;
-                foreach (Box v in villages)
-                    if (v.Overlaps(new Box { X0 = x0, Y0 = y0, X1 = x0 + w - 1, Y1 = y0 + h - 1 }, 2)) clear = false;
-                if (!clear || HasHazardNear(map, x0 + w / 2, y0 + h / 2, Math.Max(w, h) / 2 + 3)) continue;
+                var chasmBox = new Box { X0 = x0, Y0 = y0, X1 = x0 + w - 1, Y1 = y0 + h - 1 };
+                if (villages.Exists(v => v.Overlaps(chasmBox, 1)) || HasHazardNear(map, x0 + w / 2, y0 + h / 2, Math.Max(w, h) / 2 + 2)) continue;
 
                 for (int y = y0; y < y0 + h; y++)
                 {

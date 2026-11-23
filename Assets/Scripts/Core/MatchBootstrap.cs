@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -14,6 +15,18 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
     readonly List<DangerZone> dangers = new List<DangerZone>();
     readonly List<BotController> bots = new List<BotController>();
     readonly Dictionary<int, Transform> avatars = new Dictionary<int, Transform>();
+
+    /// <summary>Maçın arazisi (harita, yangın, lav, uçurum). Awake'te kurulur.</summary>
+    public TerrainSim Terrain { get; private set; }
+
+    /// <summary>Herkesin (karakterler, itilenler, yaratıklar) içinden geçemediği engeller: oyuncu duvarları + haritadaki tahta duvarlar.</summary>
+    public IObstacleField Obstacles { get; private set; }
+
+    /// <summary>Botların kendi isteğiyle yürürken kaçındığı engeller: <see cref="Obstacles"/> + lav, uçurum, yanan kareler.</summary>
+    public IObstacleField BotObstacles { get; private set; }
+
+    /// <summary>Şu anki yaratık modelleri (arazi bunlara bakıp tutuşturur). <see cref="CreatureSpawner"/> atar.</summary>
+    public Func<IEnumerable<CreatureModel>> CreatureSource { get; set; }
 
     /// <summary>Haritadaki duvarlar. Karakterler ve yaratıklar bunların içinden geçemez (uçanlar hariç).</summary>
     public WallField Walls { get; } = new WallField();
@@ -79,6 +92,26 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
     {
         Walls.Tick(Time.deltaTime);
         foreach (ShoveCooldown cooldown in shoveCooldowns.Values) cooldown.Tick(Time.deltaTime);
+        TickTerrain(Time.deltaTime);
+    }
+
+    /// <summary>Yangını, yaratıkların tutuşturmasını ve lav/ateş/uçurum hasarını ilerletir.</summary>
+    void TickTerrain(float dt)
+    {
+        if (Terrain == null || Match == null) return;
+
+        Terrain.Tick(dt, CreatureSource != null ? CreatureSource() : null, Match.Players,
+            id => avatars.TryGetValue(id, out Transform t) && t != null ? (Vector2?)(Vector2)t.position : null,
+            (id, to) =>
+            {
+                if (avatars.TryGetValue(id, out Transform t) && t != null) t.position = new Vector3(to.x, to.y, t.position.z);
+            });
+    }
+
+    /// <summary>Yanan karoları botların kaçacağı alanlar olarak listeye ekler (en çok 60).</summary>
+    public void AppendFireDangers(IList<DangerZone> into)
+    {
+        if (Terrain != null) Terrain.AppendFireDangers(into);
     }
 
     ShoveCooldown ShoveCooldownOf(int playerId)
@@ -166,7 +199,7 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
             if (!bodySolid[i]) continue;
 
             Vector2 resolved = bodyPositions[i];
-            IObstacleField obstacles = MovementRules.EffectiveObstacles(bodyStates[i], Walls);
+            IObstacleField obstacles = MovementRules.EffectiveObstacles(bodyStates[i], Obstacles);
             if (obstacles != null) resolved = arena.Clamp(obstacles.Resolve(resolved, config.playerRadius), config.playerRadius);
 
             bodyTransforms[i].position = new Vector3(resolved.x, resolved.y, bodyTransforms[i].position.z);
@@ -185,6 +218,12 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
         Random = config.CreateRandom();
         var arena = new ArenaBounds(config.arenaSize);
 
+        // Arazi: haritayı üret, engelleri (oyuncu duvarları + haritadaki duvarlar) birleştir.
+        int terrainSeed = config.terrainSeed != 0 ? config.terrainSeed : Random.Next(1, int.MaxValue);
+        Terrain = new TerrainSim(config, terrainSeed, new System.Random(Random.Next()));
+        Obstacles = new CompositeObstacles(Walls, Terrain.SolidObstacles);
+        BotObstacles = new CompositeObstacles(Walls, Terrain.AvoidingObstacles);
+
         var states = new List<PlayerState>();
         var humanState = new PlayerState(0, "Sen", config.startingHealth);
         states.Add(humanState);
@@ -194,7 +233,8 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
         Match = new MatchState(states);
         player.Bind(humanState);
         player.Bootstrap = this;
-        player.Obstacles = Walls;
+        player.Obstacles = Obstacles;
+        player.transform.position = Terrain.NearestSafe(player.transform.position);
         avatars[humanState.Id] = player.transform;
 
         SpawnBots(states, arena);
@@ -208,7 +248,7 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
         for (int i = 1; i < states.Count; i++)
         {
             float angle = Mathf.PI * 2f * (i - 1) / Mathf.Max(1, config.botCount);
-            Vector2 position = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * ringRadius;
+            Vector2 position = Terrain.NearestSafe(new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * ringRadius);
 
             var go = new GameObject(states[i].Name);
             go.transform.SetParent(transform, false);
@@ -222,7 +262,8 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
             bot.Initialize(states[i], config, arena, botRandom, dangers, color);
             bot.Bootstrap = this;
             bots.Add(bot);
-            bot.Obstacles = Walls;
+            bot.Obstacles = Obstacles;
+            bot.VoluntaryObstacles = BotObstacles;
             avatars[states[i].Id] = go.transform;
         }
     }

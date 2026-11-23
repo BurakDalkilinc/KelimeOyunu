@@ -52,8 +52,11 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
     WordEntry selectionWord;
     readonly GhostRevival revival;
 
-    public NetMatchSim(GameConfig config, MatchState match, INetAvatars avatars, Random random)
+    public NetMatchSim(GameConfig config, MatchState match, INetAvatars avatars, Random random, TerrainSim terrain = null)
     {
+        Terrain = terrain;
+        Obstacles = new CompositeObstacles(Walls, terrain?.SolidObstacles);
+        BotObstacles = new CompositeObstacles(Walls, terrain?.AvoidingObstacles);
         this.config = config ?? throw new ArgumentNullException(nameof(config));
         this.match = match ?? throw new ArgumentNullException(nameof(match));
         this.avatars = avatars ?? throw new ArgumentNullException(nameof(avatars));
@@ -64,6 +67,15 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
 
     /// <summary>Devam eden büyük tehditler (uyarıda ya da etkisi sürenler).</summary>
     public IReadOnlyList<GlobalThreat> Threats => threats;
+
+    /// <summary>Maçın arazisi (harita, yangın, lav, uçurum); yoksa null (düz arena).</summary>
+    public TerrainSim Terrain { get; }
+
+    /// <summary>Herkesin içinden geçemediği engeller: oyuncu duvarları + haritadaki tahta duvarlar.</summary>
+    public IObstacleField Obstacles { get; }
+
+    /// <summary>Botların kendi isteğiyle yürürken kaçındığı engeller: <see cref="Obstacles"/> + lav, uçurum, yanan kareler.</summary>
+    public IObstacleField BotObstacles { get; }
 
     /// <summary>Haritadaki duvarlar. Karakterler ve yerdeki yaratıklar bunların içinden geçemez.</summary>
     public WallField Walls { get; } = new WallField();
@@ -128,7 +140,8 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
     /// <summary>Büyük tehdidi başlatır: çözüm alanları çıkar, uyarı sayılır, süre dolunca etki başlar (mevcut <see cref="GlobalThreat"/>).</summary>
     void BeginThreat(PlayerState writer, WordEntry word)
     {
-        var threat = new GlobalThreat(word, writer, config, arena, this, new Random(random.Next()), this);
+        var threat = new GlobalThreat(word, writer, config, arena, this, new Random(random.Next()), this,
+                                      Terrain != null ? (Func<Vector2, bool>)Terrain.IsBlocked : null);
         // Ekran parlaması yalnızca çözüm alanı olan (sığınılan) tehditlerde; meteor yağmuru yavaş yavaş başlar.
         if (ThreatSpec.HasZones(word)) threat.Impacted += () => impactCount++;
         threats.Add(threat);
@@ -237,7 +250,7 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
     void Add(CreatureModel model, string label, bool wanders)
     {
         model.Locator = this; // Hedefi ölünce ya da başkası yaklaşınca yeniden seçebilsin
-        model.Obstacles = Walls; // Uçmayan yaratıklar duvardan geçemez
+        model.Obstacles = Obstacles; // Uçmayan yaratıklar duvardan (oyuncu duvarları ve ev duvarları) geçemez
 
         creatures.Add(new SimCreature
         {
@@ -268,6 +281,11 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
             if (threats[i].Phase == ThreatPhase.Finished) threats.RemoveAt(i);
         }
 
+        // Arazi: yangın, yaratıkların tutuşturması, lav/ateş/uçurum hasarı.
+        Terrain?.Tick(deltaSeconds, Models(), match.Players,
+            id => avatars.TryGetPosition(id, out Vector2 at) ? at : (Vector2?)null,
+            (id, to) => avatars.TryTeleport(id, to));
+
         dangers.Clear();
         for (int i = creatures.Count - 1; i >= 0; i--)
         {
@@ -283,6 +301,13 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
             // Sıkılıp giden avcı artık tehlike değil; botlar ondan kaçmak zorunda kalmaz.
             if (model.IsHarmful && !model.IsLeaving) dangers.Add(new DangerZone(model.Position, model.Radius));
         }
+
+        Terrain?.AppendFireDangers(dangers); // Botlar alevden kaçar
+    }
+
+    IEnumerable<CreatureModel> Models()
+    {
+        foreach (SimCreature creature in creatures) yield return creature.Model;
     }
 
     void TickSelection(float deltaSeconds)

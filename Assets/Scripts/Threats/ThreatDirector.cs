@@ -57,7 +57,8 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
     {
         if (word == null || word.category != WordEntry.CategoryThreat || word.scope != WordEntry.ScopeGlobal) return;
 
-        var threat = new GlobalThreat(word, writer, config, arena, bootstrap, new System.Random(random.Next()), spawner);
+        var threat = new GlobalThreat(word, writer, config, arena, bootstrap, new System.Random(random.Next()), spawner,
+                                       bootstrap.Terrain != null ? (System.Func<Vector2, bool>)bootstrap.Terrain.IsBlocked : null);
         threat.Zones.Added += CreateZoneView;
         threat.Zones.Removed += DestroyZoneView;
         // Ekran parlaması yalnızca çözüm alanı olan (sığınılan) tehditlerde; meteor yağmuru yavaş yavaş başlar.

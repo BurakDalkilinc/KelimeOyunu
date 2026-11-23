@@ -46,6 +46,17 @@ public class TerrainSim
         Fire.BurnChanged += (_, __) => Dirty = true;
     }
 
+    /// <summary>Yanan karoları botların kaçacağı tehlike alanları olarak listeye ekler (en çok 60).</summary>
+    public void AppendFireDangers(IList<DangerZone> into)
+    {
+        int added = 0;
+        foreach (int index in Fire.BurningCells)
+        {
+            if (added++ >= 60) break;
+            into.Add(new DangerZone(Map.CellCenter(index % Map.Width, index / Map.Width), 0.9f));
+        }
+    }
+
     /// <summary>Dünya noktası duvar, lav ya da uçurum karosunda mı? (Kule/sığınak yerleşimi buradan kaçınır.)</summary>
     public bool IsBlocked(Vector2 point) => Map.IsBlockedPoint(point);
 

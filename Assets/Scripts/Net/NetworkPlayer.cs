@@ -253,7 +253,10 @@ public class NetworkPlayer : NetworkBehaviour
         if (!frozenBot)
         {
             // Hayalet ve uçan karakter duvarlardan geçer; diğerleri takılır.
-            IObstacleField obstacles = sim != null ? MovementRules.EffectiveObstacles(state, sim.Walls) : null;
+            IObstacleField obstacles = sim != null ? MovementRules.EffectiveObstacles(state, sim.Obstacles) : null;
+
+            // Botlar kendi isteğiyle lava, uçuruma ve yanan karolara yürümez; itilen ya da fırlatılan girebilir.
+            IObstacleField voluntary = sim != null ? MovementRules.EffectiveObstacles(state, isBot.Value ? sim.BotObstacles : sim.Obstacles) : null;
 
             if (state != null)
             {
@@ -270,7 +273,7 @@ public class NetworkPlayer : NetworkBehaviour
             if (input != Vector2.zero) facing = input.normalized;
 
             float speed = (isBot.Value ? config.botMoveSpeed : config.playerMoveSpeed) * speedMultiplier;
-            next = AvatarMover.Step(next, input, speed, dt, config.playerRadius, arena, obstacles);
+            next = AvatarMover.Step(next, input, speed, dt, config.playerRadius, arena, voluntary);
 
             // Duvar tam üstüne çıktıysa karakter dışarı itilir.
             if (obstacles != null)

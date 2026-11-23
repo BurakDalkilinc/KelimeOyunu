@@ -78,6 +78,14 @@
 | `revive` | Elenenlerden biri yeniden doğar |
 | `ignite` | Haritadaki tahtaları tutuşturur (yangın yayılır) |
 
+## Harita ve arazi
+Harita 34 × 19 karelik bir ızgaradır (kare = 1 birim, 16×16 piksel). Her maçta tohumdan üretilir (`terrainSeed` 0 ise rastgele); ağ maçında host üretir, herkese durum gider.
+- **Tahta köyler** (3 adet): tahta meydan ve yürüyüş yolları, içinden geçilemeyen **tahta ev duvarları** (kapılı evler), tahta zemin. Köyler patikalarla bağlanır.
+- **Lav havuzu** (2): üstünde duran saniyede 1 hasar alır (kalkan engeller). Bitişiğindeki tahtayı ara sıra tutuşturur.
+- **Uçurum yarığı** (2): düşen 1 can kaybeder ve en yakın güvenli kareye döner (itişle uçuruma itmek hasar verir). Kanatla uçan ve hayaletler lav/uçurumdan etkilenmez.
+- **Yangın:** "Ateş" kelimesi (uyarılı alev, hasar verir) ve Ejderha tahtaları tutuşturur. Yanan tahta komşu tahtalara saniyede ~%45 olasılıkla yayılır, 5 sn yanar, sonra **kömürleşir** (tahta zemin kömür zemin olur, tahta ev duvarı çöker ve geçilebilir olur). Yanan karede duran saniyede 1 hasar alır. Çimen/patika/kömür yanmaz (üstüne düşen alev 2,5 sn kalır, yayılmaz).
+- Botlar kendi isteğiyle lava, uçuruma, yanan karelere girmez ve alevden kaçar; ama itilirlerse girebilir. Kule/sığınak lav, uçurum ve duvar üstüne konmaz.
+
 ## Çözüm (counter) türleri
 | Tür | Kullanan tehdit |
 | --- | --- |

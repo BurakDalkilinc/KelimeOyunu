@@ -13,8 +13,8 @@ Oyun şu an tek bilgisayarda oynanıyor (sen + 7 bot). Arkadaşlar sırayla klav
 ## Denenecek kelimeler
 | Tür | Kelimeler |
 | --- | --- |
-| Saldırı | zombi, kurt, arı, yumruk, bomba, bulut, fare, muz kabuğu, mıknatıs, kaplumbağa |
-| Koruma | kalkan, can, duvar, kanat, görünmezlik |
+| Saldırı | zombi, kurt, arı, yumruk, bomba, bulut, fare, muz kabuğu, mıknatıs, kaplumbağa, **ateş** (tahtalar yanar, yayılır) |
+| Koruma | kalkan, can, duvar, kanat, görünmezlik, yeniden canlanma |
 | Büyük tehdit | atom bombası, tsunami, meteor yağmuru, zombi sürüsü, ejderha |
 
 ## Sorular (maçtan sonra sor)
