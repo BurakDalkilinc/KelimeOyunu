@@ -17,6 +17,7 @@ public class NetTurnChannel : NetworkBehaviour
     const int FirstBotId = 100;
 
     [SerializeField] GameConfig config;
+    [SerializeField] NetworkObject avatarPrefab;
 
     WordDatabase words;
     NetTurnHost host;
@@ -50,9 +51,39 @@ public class NetTurnChannel : NetworkBehaviour
         host = new NetTurnHost(config, words, config.CreateRandom(), roster);
         host.MessageReady += Broadcast;
 
+        SpawnBotAvatars(roster);
+
         RosterRpc(RosterCodec.Encode(host.Roster));
         host.Start();
         return true;
+    }
+
+    /// <summary>Bot oyuncular için arenanın içinde bir halka üzerine karakter doğurur (hareketlerini host sürer).</summary>
+    void SpawnBotAvatars(List<RosterEntry> roster)
+    {
+        if (avatarPrefab == null)
+        {
+            Debug.LogError("NetTurnChannel: avatarPrefab atanmamış, botlar görünmez.", this);
+            return;
+        }
+
+        var arena = new ArenaBounds(config.arenaSize);
+        float ringRadius = Mathf.Min(arena.HalfSize.x, arena.HalfSize.y) * 0.6f;
+        int botCount = roster.FindAll(r => r.IsBot).Count;
+        int index = 0;
+
+        foreach (RosterEntry entry in roster)
+        {
+            if (!entry.IsBot) continue;
+
+            float angle = Mathf.PI * 2f * index / Mathf.Max(1, botCount);
+            Vector3 spot = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f) * ringRadius;
+            index++;
+
+            NetworkObject avatar = Instantiate(avatarPrefab, spot, Quaternion.identity);
+            avatar.GetComponent<NetworkPlayer>().PrepareAsBot(entry.Id);
+            avatar.Spawn();
+        }
     }
 
     /// <summary>Bu bilgisayardaki oyuncu bir kelime yazdı: host'a gönderir.</summary>

@@ -134,3 +134,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: KelimeOyunu.Runtime::NetworkPlayer
   ShowTopMostFoldoutHeaderGroup: 1
+  config: {fileID: 11400000, guid: f5d21aedad610914d94dd3010e9b78e3, type: 2}

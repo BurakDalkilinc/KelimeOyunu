@@ -16,7 +16,7 @@ public class NetworkMenu : MonoBehaviour
         var manager = NetworkManager.Singleton;
         if (manager == null) { GUILayout.Label("NetworkManager yok."); return; }
 
-        GUILayout.BeginArea(new Rect(12, 12, 280, 220), GUI.skin.box);
+        GUILayout.BeginArea(new Rect(12, 12, 280, manager.IsListening ? 80 : 220), GUI.skin.box);
 
         if (manager.IsListening) DrawConnected(manager);
         else DrawStart(manager);
