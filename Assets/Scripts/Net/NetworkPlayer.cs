@@ -189,7 +189,7 @@ public class NetworkPlayer : NetworkBehaviour
             }
 
             float speedMultiplier = state != null ? state.Status.SpeedMultiplier : 1f;
-            Vector2 input = isBot.Value ? BotDirection(dt, next, sim) : serverInput;
+            Vector2 input = isBot.Value ? BotDirection(dt, next, sim, state) : serverInput;
             if (input != Vector2.zero) facing = input.normalized;
 
             float speed = (isBot.Value ? config.botMoveSpeed : config.playerMoveSpeed) * speedMultiplier;
@@ -215,10 +215,16 @@ public class NetworkPlayer : NetworkBehaviour
         }
     }
 
-    Vector2 BotDirection(float dt, Vector2 at, NetMatchSim sim)
+    Vector2 BotDirection(float dt, Vector2 at, NetMatchSim sim, PlayerState state)
     {
         if (botBrain == null) return Vector2.zero;
-        return botBrain.Think(dt, at, sim != null ? sim.Dangers : NoDangers);
+        if (sim == null || state == null) return botBrain.Think(dt, at, NoDangers);
+
+        // Büyük tehdit varken bot en yakın boş sığınağa koşar; sığındıysa orada kalır.
+        IRefugeProvider refugeProvider = sim;
+        Vector2? refuge = refugeProvider.TryGetRefuge(state, at, out Vector2 point) ? point : (Vector2?)null;
+        bool sheltered = refugeProvider.IsSheltered(state);
+        return botBrain.Think(dt, at, sim.Dangers, refuge, sheltered);
     }
 
     Vector2 MoveBy(Vector2 from, Vector2 delta, IObstacleField obstacles)

@@ -48,9 +48,9 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 ## Aşama 3 — Online 4–8 kişi
 - [x] Ağ kütüphanesi seçildi ve GDD'ye yazıldı (Netcode for GameObjects, host yetkili)
 - [ ] Steamworks entegrasyonu, Steam lobisi, arkadaş daveti
-- [ ] TurnManager sunucuda çalışıyor, istemciler olayları alıyor
-- [ ] Oyuncu hareketi senkronizasyonu
-- [ ] Yaratık ve tehdit senkronizasyonu
+- [x] TurnManager sunucuda çalışıyor, istemciler olayları alıyor (`NetTurnHost`/`NetTurnClient`)
+- [x] Oyuncu hareketi senkronizasyonu (host yetkili, `AvatarMover`)
+- [x] Yaratık ve tehdit senkronizasyonu (`NetMatchSim`; host tarafı Play'de denendi, iki pencereyle denemesi sürüyor)
 - [ ] Kopan oyuncu → bot devralır
 - [ ] **Test:** Arkadaşlarla kopmadan 10 maç
 

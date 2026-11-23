@@ -59,6 +59,12 @@ public static class ThreatText
     /// <summary>Alan etiketi: "Sığınak 2/4".</summary>
     public static string GetZoneLabel(SafeZone zone)
     {
-        return $"{GetZoneName(zone.Type)} {zone.Occupants.Count}/{zone.Capacity}";
+        return GetZoneLabel(zone.Type, zone.Occupants.Count, zone.Capacity);
+    }
+
+    /// <summary>Alan etiketi sayılardan: "Kule 2/3" (ağda istemci alanın kendisini değil fotoğrafını bilir).</summary>
+    public static string GetZoneLabel(string type, int occupied, int capacity)
+    {
+        return $"{GetZoneName(type)} {occupied}/{capacity}";
     }
 }

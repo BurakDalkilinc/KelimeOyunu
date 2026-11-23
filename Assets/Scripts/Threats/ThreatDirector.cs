@@ -146,43 +146,15 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
     /// <summary>Oyuncu herhangi bir tehdidin çözüm alanında şu an korunuyor mu?</summary>
     public bool IsSheltered(PlayerState player)
     {
-        foreach (GlobalThreat threat in threats)
-            if (threat.Zones.IsProtected(player.Id)) return true;
-        return false;
+        return RefugeFinder.IsSheltered(threats, player);
     }
 
     /// <summary>
     /// Botun sığınacağı yeri verir: zaten içinde olduğu alan varsa orada kalır, yoksa en yakın boş alana gider.
-    /// Etkinlik bittiyse (alan kalkınca) null döner.
+    /// Etkinlik bittiyse (alan kalkınca) false döner.
     /// </summary>
     public bool TryGetRefuge(PlayerState player, Vector2 position, out Vector2 point)
     {
-        point = Vector2.zero;
-        float bestDistance = float.MaxValue;
-        bool found = false;
-
-        foreach (GlobalThreat threat in threats)
-        {
-            foreach (SafeZone zone in threat.Zones.Zones)
-            {
-                if (zone.IsOccupant(player.Id))
-                {
-                    point = zone.Position; // Zaten korunuyor: orada kal.
-                    return true;
-                }
-
-                if (zone.Free <= 0) continue;
-
-                float distance = (zone.Position - position).magnitude;
-                if (distance < bestDistance)
-                {
-                    bestDistance = distance;
-                    point = zone.Position;
-                    found = true;
-                }
-            }
-        }
-
-        return found;
+        return RefugeFinder.TryGetRefuge(threats, player, position, out point);
     }
 }

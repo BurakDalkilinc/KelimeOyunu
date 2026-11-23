@@ -42,6 +42,17 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
 
     List<CreatureSnapshot> latestCreatures = new List<CreatureSnapshot>();
     List<WallSnapshot> latestWalls = new List<WallSnapshot>();
+    List<ZoneSnapshot> latestZones = new List<ZoneSnapshot>();
+    readonly List<ZoneSnapshot> zoneBuffer = new List<ZoneSnapshot>();
+
+    /// <summary>Host'tan gelen son çözüm alanı fotoğrafı (sığınak, kule, mağara, ev).</summary>
+    public IReadOnlyList<ZoneSnapshot> LatestZones => latestZones;
+
+    /// <summary>Büyük tehdidin son durumu (alarm, parlama sayacı, dalga).</summary>
+    public ThreatStatus LatestThreat { get; private set; } = new ThreatStatus { AlarmWordId = "" };
+
+    /// <summary>Yeni tehdit durumu geldikçe artar.</summary>
+    public int ThreatVersion { get; private set; }
 
     /// <summary>Host'tan gelen son duvar fotoğrafı.</summary>
     public IReadOnlyList<WallSnapshot> LatestWalls => latestWalls;
@@ -172,6 +183,9 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
 
         Sim.SnapshotWalls(wallBuffer);
         WallsRpc(WallSnapshotCodec.Encode(wallBuffer));
+
+        Sim.SnapshotZones(zoneBuffer);
+        ThreatsRpc(ZoneSnapshotCodec.Encode(zoneBuffer), ThreatStatusCodec.Encode(Sim.GetThreatStatus()));
     }
 
     public override void OnNetworkDespawn()
@@ -183,6 +197,9 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         CreaturesVersion++;
         latestWalls = new List<WallSnapshot>();
         WallsVersion++;
+        latestZones = new List<ZoneSnapshot>();
+        LatestThreat = new ThreatStatus { AlarmWordId = "" };
+        ThreatVersion++;
         TargetingWriterId = -1;
     }
 
@@ -269,6 +286,14 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         if (!WallSnapshotCodec.TryDecode(packedWalls, out List<WallSnapshot> list)) return;
         latestWalls = list;
         WallsVersion++;
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    void ThreatsRpc(string packedZones, string packedStatus)
+    {
+        if (ZoneSnapshotCodec.TryDecode(packedZones, out List<ZoneSnapshot> zones)) latestZones = zones;
+        if (ThreatStatusCodec.TryDecode(packedStatus, out ThreatStatus status)) LatestThreat = status;
+        ThreatVersion++;
     }
 
     [Rpc(SendTo.ClientsAndHost)]

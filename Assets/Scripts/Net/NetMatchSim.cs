@@ -19,7 +19,7 @@ public interface INetAvatars
 /// ve istemcilere gidecek <see cref="CreatureSnapshot"/> listesini verir. Kuralların hiçbiri burada yeniden yazılmadı.
 /// Düz C# sınıfı; zamanı dışarıdan alır, ağ kütüphanesini bilmez.
 /// </summary>
-public class NetMatchSim : ICreatureWorld
+public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider
 {
     sealed class SimCreature
     {
@@ -38,8 +38,12 @@ public class NetMatchSim : ICreatureWorld
     readonly List<DangerZone> dangers = new List<DangerZone>();
     readonly List<CreatureHit> hits = new List<CreatureHit>();
     readonly Dictionary<WallSegment, int> wallIds = new Dictionary<WallSegment, int>();
+    readonly List<GlobalThreat> threats = new List<GlobalThreat>();
+    readonly Dictionary<SafeZone, int> zoneIds = new Dictionary<SafeZone, int>();
     int nextId = 1;
     int nextWallId = 1;
+    int nextZoneId = 1;
+    int impactCount;
 
     TargetSelection selection;
     WordEntry selectionWord;
@@ -52,6 +56,9 @@ public class NetMatchSim : ICreatureWorld
         this.random = random ?? throw new ArgumentNullException(nameof(random));
         arena = new ArenaBounds(config.arenaSize);
     }
+
+    /// <summary>Devam eden büyük tehditler (uyarıda ya da etkisi sürenler).</summary>
+    public IReadOnlyList<GlobalThreat> Threats => threats;
 
     /// <summary>Haritadaki duvarlar. Karakterler ve yerdeki yaratıklar bunların içinden geçemez.</summary>
     public WallField Walls { get; } = new WallField();
@@ -109,7 +116,32 @@ public class NetMatchSim : ICreatureWorld
             BeginAttack(writer, word);
         else if (word.category == WordEntry.CategoryDefense && word.scope == WordEntry.ScopeSelf)
             ApplyDefense(writer, word);
+        else if (word.category == WordEntry.CategoryThreat && word.scope == WordEntry.ScopeGlobal)
+            BeginThreat(writer, word);
     }
+
+    /// <summary>Büyük tehdidi başlatır: çözüm alanları çıkar, uyarı sayılır, süre dolunca etki başlar (mevcut <see cref="GlobalThreat"/>).</summary>
+    void BeginThreat(PlayerState writer, WordEntry word)
+    {
+        var threat = new GlobalThreat(word, writer, config, arena, this, new Random(random.Next()), this);
+        // Ekran parlaması yalnızca çözüm alanı olan (sığınılan) tehditlerde; meteor yağmuru yavaş yavaş başlar.
+        if (ThreatSpec.HasZones(word)) threat.Impacted += () => impactCount++;
+        threats.Add(threat);
+    }
+
+    // ---- ICreatureSink (tehdit etkileri yaratık koyar: meteor, zombi sürüsü, ejderha) ----
+
+    void ICreatureSink.Spawn(CreatureModel model, string label)
+    {
+        Add(model, label, false);
+    }
+
+    // ---- IRefugeProvider (botlar en yakın boş sığınağa koşar) ----
+
+    bool IRefugeProvider.IsSheltered(PlayerState player) => RefugeFinder.IsSheltered(threats, player);
+
+    bool IRefugeProvider.TryGetRefuge(PlayerState player, Vector2 position, out Vector2 point)
+        => RefugeFinder.TryGetRefuge(threats, player, position, out point);
 
     void BeginAttack(PlayerState writer, WordEntry word)
     {
@@ -208,6 +240,12 @@ public class NetMatchSim : ICreatureWorld
         Walls.Tick(deltaSeconds);
         TickSelection(deltaSeconds);
 
+        for (int i = threats.Count - 1; i >= 0; i--)
+        {
+            threats[i].Tick(deltaSeconds);
+            if (threats[i].Phase == ThreatPhase.Finished) threats.RemoveAt(i);
+        }
+
         dangers.Clear();
         for (int i = creatures.Count - 1; i >= 0; i--)
         {
@@ -265,6 +303,78 @@ public class NetMatchSim : ICreatureWorld
                 Label = creature.Label,
             });
         }
+    }
+
+    /// <summary>Şu anki tüm çözüm alanlarının fotoğrafı (<paramref name="into"/> temizlenip doldurulur).</summary>
+    public void SnapshotZones(List<ZoneSnapshot> into)
+    {
+        into.Clear();
+
+        var alive = new HashSet<SafeZone>();
+        foreach (GlobalThreat threat in threats)
+        {
+            foreach (SafeZone zone in threat.Zones.Zones)
+            {
+                alive.Add(zone);
+                if (!zoneIds.TryGetValue(zone, out int id))
+                {
+                    id = nextZoneId++;
+                    zoneIds[zone] = id;
+                }
+
+                into.Add(new ZoneSnapshot
+                {
+                    Id = id, Type = zone.Type, X = zone.Position.x, Y = zone.Position.y,
+                    Radius = zone.Radius, Capacity = zone.Capacity, Occupied = zone.Occupants.Count,
+                });
+            }
+        }
+
+        // Kalkan alanların numarası unutulur.
+        if (zoneIds.Count > alive.Count)
+        {
+            var stale = new List<SafeZone>();
+            foreach (SafeZone known in zoneIds.Keys)
+                if (!alive.Contains(known)) stale.Add(known);
+            foreach (SafeZone gone in stale) zoneIds.Remove(gone);
+        }
+    }
+
+    /// <summary>Tehdidin genel durumu: en acil alarm, etki anı sayacı ve ilerleyen dalga.</summary>
+    public ThreatStatus GetThreatStatus()
+    {
+        var status = new ThreatStatus { AlarmWordId = "", ImpactCount = impactCount };
+
+        // En acil uyarı: etkinleşmeye en az süresi kalan (ThreatDirector ile aynı seçim).
+        GlobalThreat urgent = null;
+        foreach (GlobalThreat threat in threats)
+        {
+            bool activeAndRunning = threat.Phase == ThreatPhase.Active && !threat.EffectsFinished;
+            if (threat.Phase != ThreatPhase.Warning && !activeAndRunning) continue;
+            if (urgent == null || threat.WarningLeft < urgent.WarningLeft) urgent = threat;
+        }
+
+        if (urgent != null)
+        {
+            status.AlarmWordId = urgent.Word.id;
+            status.AlarmSeconds = Mathf.CeilToInt(urgent.WarningLeft);
+        }
+
+        foreach (GlobalThreat threat in threats)
+        {
+            foreach (IThreatEffect effect in threat.Effects)
+            {
+                if (effect is WaveEffect wave && wave.IsActive)
+                {
+                    status.WaveActive = true;
+                    status.WaveDirX = wave.Direction.x;
+                    status.WaveDirY = wave.Direction.y;
+                    status.WaveFront = wave.Front;
+                }
+            }
+        }
+
+        return status;
     }
 
     /// <summary>Şu anki tüm duvarların fotoğrafı (<paramref name="into"/> temizlenip doldurulur).</summary>
