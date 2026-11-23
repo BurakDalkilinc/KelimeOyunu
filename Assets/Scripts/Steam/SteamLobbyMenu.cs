@@ -45,6 +45,9 @@ public class SteamLobbyMenu : MonoBehaviour
         var manager = NetworkManager.Singleton;
         if (manager == null) return;
 
+        // Yerel ağda (Steam lobisi olmadan) host/istemciyken Steam kutusu gereksiz.
+        if (manager.IsListening && !current.HasValue) return;
+
         float height = manager.IsListening ? 130f : (SteamClient.IsValid ? 270f : 120f);
         GUILayout.BeginArea(new Rect(304, Screen.height - height - 12, 320, height), GUI.skin.box);
         GUILayout.Label("Steam ile oyna");

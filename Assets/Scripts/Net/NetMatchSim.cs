@@ -19,7 +19,7 @@ public interface INetAvatars
 /// ve istemcilere gidecek <see cref="CreatureSnapshot"/> listesini verir. Kuralların hiçbiri burada yeniden yazılmadı.
 /// Düz C# sınıfı; zamanı dışarıdan alır, ağ kütüphanesini bilmez.
 /// </summary>
-public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider
+public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevivalService
 {
     sealed class SimCreature
     {
@@ -47,6 +47,7 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider
 
     TargetSelection selection;
     WordEntry selectionWord;
+    GhostVote vote;
 
     public NetMatchSim(GameConfig config, MatchState match, INetAvatars avatars, Random random)
     {
@@ -68,6 +69,15 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider
 
     /// <summary>Hedef seçimi bitti (seçildi, süre doldu ya da iptal oldu).</summary>
     public event Action TargetingEnded;
+
+    /// <summary>Hayaletler kimin dirileceğini oylamaya başladı (süre). Ağ katmanı herkese duyurur.</summary>
+    public event Action<float> VoteStarted;
+
+    /// <summary>Oylama bitti: dirilen oyuncunun numarası; oylama iptal olduysa -1.</summary>
+    public event Action<int> VoteEnded;
+
+    /// <summary>Şu an hayalet oylaması sürüyor mu?</summary>
+    public bool IsVoting => vote != null;
 
     /// <summary>Şu an bir insan oyuncu hedef seçiyor mu?</summary>
     public bool IsSelectingTarget => selection != null && selection.IsPending;
@@ -218,7 +228,69 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider
     {
         avatars.TryGetPosition(writer.Id, out Vector2 writerPosition);
         Vector2 facing = avatars.TryGetFacing(writer.Id, out Vector2 f) ? f : Vector2.up;
-        TagRegistry.ApplySelfEffects(word, new SelfEffectContext(writer, word, config, writerPosition, facing, Walls));
+        TagRegistry.ApplySelfEffects(word, new SelfEffectContext(writer, word, config, writerPosition, facing, Walls, this));
+    }
+
+    // ---- IRevivalService: "yeniden canlanma" ----
+
+    /// <summary>
+    /// Hayaletler kimin dirileceğini oylar (insan hayaletler tıklar; oy veren yoksa ya da süre dolunca rastgele).
+    /// Hayalet yoksa ya da zaten bir oylama sürüyorsa kelime boşa gider.
+    /// </summary>
+    void IRevivalService.RequestRevival(PlayerState writer)
+    {
+        if (vote != null) return;
+
+        var ghosts = new List<PlayerState>();
+        var voters = new List<int>();
+        foreach (PlayerState player in match.Players)
+        {
+            if (!player.IsGhost) continue;
+            ghosts.Add(player);
+            if (!player.IsBot) voters.Add(player.Id); // Botlar oy vermez
+        }
+        if (ghosts.Count == 0) return;
+
+        vote = new GhostVote(ghosts, voters, config.reviveVoteSeconds, random);
+        if (vote.IsFinished) { ResolveVote(); return; }
+
+        VoteStarted?.Invoke(vote.TimeLeft);
+    }
+
+    /// <summary>
+    /// Bir hayaletin oyunu uygular. <paramref name="senderPlayerId"/> ağ katmanının bağlantıdan bulduğu numaradır;
+    /// oy veren hayalet değilse ya da aday geçerli değilse reddedilir.
+    /// </summary>
+    public bool TryVote(int senderPlayerId, int candidatePlayerId)
+    {
+        if (vote == null || !vote.TryVote(senderPlayerId, candidatePlayerId)) return false;
+        if (vote.IsFinished) ResolveVote();
+        return true;
+    }
+
+    void ResolveVote()
+    {
+        PlayerState winner = vote.Winner;
+        vote = null;
+
+        GhostRevival.Revive(winner, config);
+        VoteEnded?.Invoke(winner.Id);
+    }
+
+    void TickVote(float deltaSeconds)
+    {
+        if (vote == null) return;
+
+        // Maç bittiyse dirilişin anlamı kalmaz.
+        if (match.IsOver)
+        {
+            vote = null;
+            VoteEnded?.Invoke(-1);
+            return;
+        }
+
+        vote.Tick(deltaSeconds);
+        if (vote.IsFinished) ResolveVote();
     }
 
     void Add(CreatureModel model, string label, bool wanders)
@@ -248,6 +320,7 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider
 
         Walls.Tick(deltaSeconds);
         TickSelection(deltaSeconds);
+        TickVote(deltaSeconds);
 
         for (int i = threats.Count - 1; i >= 0; i--)
         {

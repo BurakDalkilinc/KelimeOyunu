@@ -119,6 +119,8 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         host.Turns.WordPlayed += Sim.OnWordPlayed;
         Sim.TargetingStarted += (writerId, seconds) => TargetingStartRpc(writerId, seconds);
         Sim.TargetingEnded += () => TargetingEndRpc();
+        Sim.VoteStarted += seconds => VoteStartRpc(seconds);
+        Sim.VoteEnded += winnerId => VoteEndRpc(winnerId);
 
         SpawnBotAvatars(roster);
 
@@ -181,6 +183,30 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         return true;
     }
 
+    /// <summary>Hayaletler kimin dirileceğini oyluyor mu? Her bilgisayarda aynıdır.</summary>
+    public bool VoteActive { get; private set; }
+
+    /// <summary>Oylamanın kalan süresi (sn); yaklaşık, mesajlar arasında yerelde geri sayılır.</summary>
+    public float VoteTimeLeft { get; private set; }
+
+    /// <summary>Bu bilgisayardaki oyuncu elenmiş ve oy verebilir mi?</summary>
+    public bool IAmVoting
+    {
+        get
+        {
+            if (!VoteActive || NetworkManager == null || NetworkManager.LocalClient == null || NetworkManager.LocalClient.PlayerObject == null) return false;
+            NetworkPlayer mine = NetworkManager.LocalClient.PlayerObject.GetComponent<NetworkPlayer>();
+            return mine != null && mine.IsGhost && !mine.IsBot;
+        }
+    }
+
+    /// <summary>Elenmiş oyuncu, dirilmesini istediği hayalete tıkladı: host'a bildirir (geçerli mi, host karar verir).</summary>
+    public void VoteForGhost(int candidatePlayerId)
+    {
+        if (!IsSpawned || !IAmVoting) return;
+        VoteRpc(candidatePlayerId);
+    }
+
     /// <summary>Hedef seçen oyuncu bir rakibe tıkladı: host'a bildirir (geçerli mi, host karar verir).</summary>
     public void ChooseTarget(int targetPlayerId)
     {
@@ -217,6 +243,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
             SyncClientHealth();
         }
         if (TargetingWriterId >= 0) TargetingTimeLeft = Mathf.Max(0f, TargetingTimeLeft - Time.deltaTime);
+        if (VoteActive) VoteTimeLeft = Mathf.Max(0f, VoteTimeLeft - Time.deltaTime);
     }
 
     /// <summary>
@@ -230,6 +257,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
 
             int difference = avatar.Health - state.Health.Current;
             if (difference < 0) state.Health.TakeDamage(-difference);
+            else if (difference > 0 && state.Health.IsDead) state.Health.Revive(avatar.Health); // Yeniden doğdu
             else if (difference > 0) state.Health.Heal(difference);
         }
     }
@@ -293,6 +321,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         LatestThreat = new ThreatStatus { AlarmWordId = "" };
         ThreatVersion++;
         TargetingWriterId = -1;
+        VoteActive = false;
     }
 
     // ---- INetAvatars (host'taki karakterler) ----
@@ -400,6 +429,31 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         ThreatVersion++;
         TargetingWriterId = -1;
         TargetingTimeLeft = 0f;
+        VoteActive = false;
+        VoteTimeLeft = 0f;
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    void VoteStartRpc(float seconds)
+    {
+        VoteActive = true;
+        VoteTimeLeft = seconds;
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    void VoteEndRpc(int winnerId)
+    {
+        VoteActive = false;
+        VoteTimeLeft = 0f;
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    void VoteRpc(int candidatePlayerId, RpcParams rpcParams = default)
+    {
+        if (Sim == null) return;
+
+        // Oy veren bağlantıdan bulunur; yalnızca elenmiş insan oyuncular oy verebilir.
+        Sim.TryVote((int)rpcParams.Receive.SenderClientId, candidatePlayerId);
     }
 
     [Rpc(SendTo.ClientsAndHost)]

@@ -42,7 +42,7 @@
 - Çekme (Mıknatıs, pull): arenanın merkezine düşer ve süresi boyunca (4 sn) hedefi saniyede 4 birim hızla oraya çeker. Oyuncu hızı 5 olduğu için ters yönde yürüyerek direnebilir. Botlar mıknatıstan kaçmaz.
 - Yavaşlatma (slowdown): hız yarıya iner. Alan yaratıkları (Bulut) içindeki herkesi yavaşlatır; alandan çıkınca etki 0,6 sn daha sürer.
 - Vur-kaç yaratıklar (ör. Kurt, predator): vurduktan sonra 2 sn geri çekilir, ömrünün son 1,5 sn'sinde sıkılıp gider. Sürü (swarm) üyelerinin ilk vuruşları 0,8 sn arayla kademelidir.
-- Hayaletler: elenen oyuncu hayalet olur: yarı saydam görünür, arenada gezip maçı izler; duvarlar, yaratıklar ve tehditler ona işlemez, hedef alınamaz, zarda seçilmez. (Oylama ile sonraki turu etkilemek Aşama 4'te.)
+- Hayaletler: elenen oyuncu hayalet olur: yarı saydam görünür, arenada gezip maçı izler; duvarlar, yaratıklar ve tehditler ona işlemez, hedef alınamaz, zarda seçilmez. Yeniden doğuş: yazan oyuncu "Yeniden canlanma" (revive) kelimesini yazarsa elenenlerden biri 1 canla geri döner. Ağ maçında hayaletler kimin döneceğini oylar (6 sn, çoğunluk kazanır; eşitlikte ya da oy yoksa rastgele); tek kişilik sahnede rastgele bir hayalet döner. Hayalet yoksa kelime boşa gider; kelime de bu maçta bir daha kullanılamaz.
 
 ## Etiket listesi (v1)
 | Etiket | Anlamı |
@@ -70,6 +70,7 @@
 | `wall` | Engel oluşturur |
 | `escape` | Geçici uçma/kaçış |
 | `stealth` | Hedef alınamaz |
+| `revive` | Elenenlerden biri yeniden doğar |
 
 ## Çözüm (counter) türleri
 | Tür | Kullanan tehdit |

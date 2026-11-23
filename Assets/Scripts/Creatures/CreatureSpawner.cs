@@ -21,6 +21,7 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
     TurnManager turns;
     ArenaBounds arena;
     System.Random random;
+    IRevivalService revival;
 
     void OnEnable()
     {
@@ -34,6 +35,7 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
         turns = runner.Turns;
         arena = new ArenaBounds(config.arenaSize);
         random = new System.Random(runner.Random.Next());
+        revival = new GhostRevival(bootstrap.Match.Players, config, new System.Random(runner.Random.Next()));
         turns.WordPlayed += OnWordPlayed;
     }
 
@@ -60,7 +62,7 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
             // Duvar gibi yer isteyen etkiler için yazanın konumu ve baktığı yön de verilir.
             bootstrap.TryGetPosition(writer.Id, out Vector2 writerPosition);
             Vector2 facing = bootstrap.TryGetFacing(writer.Id, out Vector2 f) ? f : Vector2.up;
-            TagRegistry.ApplySelfEffects(word, new SelfEffectContext(writer, word, config, writerPosition, facing, bootstrap.Walls));
+            TagRegistry.ApplySelfEffects(word, new SelfEffectContext(writer, word, config, writerPosition, facing, bootstrap.Walls, revival));
         }
 
         // Tehdit (threat) kelimeleri yol haritasında sonraki adımlarda.

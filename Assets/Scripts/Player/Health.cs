@@ -35,6 +35,19 @@ public class Health
         return before - Current;
     }
 
+    /// <summary>
+    /// Elenmiş oyuncuyu yeniden doğurur: canı <paramref name="amount"/> (en az 1, en fazla <see cref="Max"/>) olur.
+    /// Zaten hayattaysa bir şey yapmaz. Gerçekten verilen canı döndürür (yaşıyorsa 0).
+    /// </summary>
+    public int Revive(int amount)
+    {
+        if (!IsDead) return 0;
+
+        Current = Math.Min(Max, Math.Max(1, amount));
+        Changed?.Invoke(Current, Max);
+        return Current;
+    }
+
     /// <summary>Can verir (en fazla <see cref="Max"/>). Ölü oyuncu iyileşmez. Gerçekten artan canı döndürür.</summary>
     public int Heal(int amount)
     {

@@ -19,9 +19,14 @@ public readonly struct SelfEffectContext
     /// <summary>Duvar eklenebilen alan; null ise duvar kelimeleri bir şey yapmaz.</summary>
     public WallField Walls { get; }
 
+    /// <summary>Yeniden canlanma kelimesinin elenmiş birini geri getirmesi için hizmet; null ise o kelime bir şey yapmaz.</summary>
+    public IRevivalService Revival { get; }
+
     public SelfEffectContext(PlayerState writer, WordEntry word, GameConfig config,
-                             Vector2 writerPosition = default, Vector2 facing = default, WallField walls = null)
+                             Vector2 writerPosition = default, Vector2 facing = default, WallField walls = null,
+                             IRevivalService revival = null)
     {
+        Revival = revival;
         Writer = writer;
         Word = word;
         Config = config;

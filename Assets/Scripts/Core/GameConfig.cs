@@ -10,6 +10,13 @@ public class GameConfig : ScriptableObject
 {
     [Header("Oyuncu")]
     [Min(1)] public int startingHealth = 3;
+
+    [Header("Hayalet dirilişi")]
+    [Tooltip("\"Yeniden canlanma\" kelimesiyle dirilen oyuncunun canı.")]
+    [Min(1)] public int reviveHealth = 1;
+
+    [Tooltip("Hayaletlerin kimin dirileceğini oylama süresi (ağ maçı).")]
+    [Min(1f)] public float reviveVoteSeconds = 6f;
     [Min(1)] public int minPlayers = 4;
     [Min(1)] public int maxPlayers = 20;
 
