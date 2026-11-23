@@ -8,8 +8,6 @@ using UnityEngine;
 /// </summary>
 public class CreatureView : MonoBehaviour
 {
-    static readonly IReadOnlyList<DangerZone> NoDangers = new List<DangerZone>();
-
     readonly List<CreatureHit> hits = new List<CreatureHit>();
 
     GameConfig config;
@@ -51,52 +49,7 @@ public class CreatureView : MonoBehaviour
 
     void Advance(float dt)
     {
-        if (Model.Target == null)
-        {
-            Vector2 direction = wanderBrain.Think(dt, Model.Position, NoDangers);
-            Model.Wander(direction, dt);
-            return;
-        }
-
-        // Anında vuran yaratık (yumruk) koşmaz: uyarı verir, süre dolunca alanındaki herkese vurur.
-        if (Model.IsStrike)
-        {
-            hits.Clear();
-            Model.TickStrike(dt, bootstrap, config.playerRadius, hits);
-            foreach (CreatureHit hit in hits)
-                bootstrap.TryApplyKnockback(hit.Player.Id, hit.Knockback);
-            return;
-        }
-
-        // Mıknatıs arenanın merkezinde durur ve hedefi çeker.
-        if (Model.IsPull)
-        {
-            Model.TickPull(dt);
-            return;
-        }
-
-        // Tuzak (muz kabuğu) yerinde bekler; yarıçapına giren herkesi etkiler ve kaybolur.
-        if (Model.IsTrap)
-        {
-            hits.Clear();
-            Model.TickTrap(dt, bootstrap, config.playerRadius, hits);
-            foreach (CreatureHit hit in hits)
-                bootstrap.TryApplyKnockback(hit.Player.Id, hit.Knockback);
-            return;
-        }
-
-        // Sürekli alan yaratığı (bulut): hedefi yavaşça takip eder, içindeki herkesi etkiler.
-        if (Model.IsArea)
-        {
-            Model.TickArea(dt, bootstrap, config.playerRadius);
-            return;
-        }
-
-        bool hasTarget = bootstrap.TryGetPosition(Model.Target.Id, out Vector2 targetPosition);
-        bool hitSomeone = Model.Tick(dt, hasTarget ? targetPosition : Model.Position, config.playerRadius, config.creatureHitCooldownSeconds);
-
-        if (hitSomeone && Model.LastHit.Knockback != Vector2.zero)
-            bootstrap.TryApplyKnockback(Model.LastHit.Player.Id, Model.LastHit.Knockback);
+        CreatureDriver.Advance(Model, dt, bootstrap, config, hits, wanderBrain);
     }
 
     void BuildBody(Color color, float radius)

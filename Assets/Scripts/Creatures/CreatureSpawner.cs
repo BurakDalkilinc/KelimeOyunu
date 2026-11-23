@@ -93,44 +93,14 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
 
         if (!bootstrap.TryGetPosition(target.Id, out Vector2 targetPosition)) return;
 
-        // Sürü (swarm) kelimesi birden fazla yaratık doğurur; hepsi aynı noktanın etrafında bir halkada başlar.
-        int count = TagRegistry.GetSpawnCount(word);
-        Vector2 center = ArenaSpawn.PickPoint(arena, targetPosition, config.creatureSpawnMinDistance, random);
-
-        for (int i = 0; i < count; i++)
-        {
-            Vector2 spawn = count == 1 ? center : center + RingOffset(i, count, config.swarmSpawnRingRadius);
-            CreatureModel model = CreatureFactory.CreateAttack(word, target, spawn, config, arena, i, count);
-
-            // Anında vuran yaratık (yumruk) uzaktan koşmaz: uyarı alanı hedefin o anki yerine konur.
-            // Mıknatıs arenanın merkezine konur ve hedefi oraya çeker.
-            if (model.IsPull) model.PlaceAt(Vector2.zero);
-
-            if (model.PlacesNearTarget)
-            {
-                // Yumruk hedefin tam üstüne düşer; patlayıcı (bomba) ve tuzak (muz kabuğu) yanına düşer.
-                Vector2 at = model.PlacementOffset > 0f
-                    ? ArenaSpawn.PointBeside(targetPosition, model.PlacementOffset, random)
-                    : targetPosition;
-                model.PlaceAt(at);
-            }
-
-            Create(model, attackColor, count == 1 || i == 0 ? word.display : string.Empty);
-        }
-    }
-
-    /// <summary>Sürü üyesinin halka üzerindeki yeri (üyeler eşit aralıkla dizilir).</summary>
-    static Vector2 RingOffset(int index, int count, float radius)
-    {
-        float angle = Mathf.PI * 2f * index / count;
-        return new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+        List<CreatureModel> models = CreatureBuilder.BuildAttack(word, target, targetPosition, config, arena, random);
+        for (int i = 0; i < models.Count; i++)
+            Create(models[i], attackColor, models.Count == 1 || i == 0 ? word.display : string.Empty);
     }
 
     void SpawnUnknown()
     {
-        Vector2 spawn = ArenaSpawn.PickPoint(arena, Vector2.zero, 0f, random);
-        CreatureModel model = CreatureFactory.CreateUnknown(spawn, config, arena);
-        Create(model, unknownColor, UnknownLabel);
+        Create(CreatureBuilder.BuildUnknown(config, arena, random), unknownColor, UnknownLabel);
     }
 
     /// <summary>Tehdit etkilerinin (ör. meteor yağmuru) yaratık koyması için: saldırı rengiyle sahneye koyar.</summary>

@@ -4,10 +4,10 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Ağdaki bir karakter (insan ya da bot). Hareketi yalnızca host hesaplar:
-/// sahibi olan istemci sadece "şu yöne basıyorum" der (<see cref="MoveInputRpc"/>), host hızı ve arena sınırını uygular,
-/// konumu herkese <see cref="position"/> ile yayar. Botları da host sürer.
-/// Hesap düz C# sınıflarındadır (<see cref="AvatarMover"/>, <see cref="BotBrain"/>); burası taşıyıcı ve görüntüdür.
+/// Ağdaki bir karakter (insan ya da bot). Hareketi, canı ve etkileri yalnızca host hesaplar:
+/// sahibi olan istemci sadece "şu yöne basıyorum" der (<see cref="MoveInputRpc"/>), host hızı, yavaşlamayı, fırlatmayı
+/// ve arena sınırını uygular; konumu ve canı herkese ağ değişkenleriyle yayar. Botları da host sürer.
+/// Hesap düz C# sınıflarındadır (<see cref="AvatarMover"/>, <see cref="BotBrain"/>, <see cref="PlayerState"/>); burası taşıyıcı ve görüntüdür.
 /// </summary>
 public class NetworkPlayer : NetworkBehaviour
 {
@@ -19,6 +19,9 @@ public class NetworkPlayer : NetworkBehaviour
 
     static readonly IReadOnlyList<DangerZone> NoDangers = new List<DangerZone>();
 
+    /// <summary>Host'taki karakterler (numarasına göre). Yaratık simülasyonu konum ve fırlatma için bunu kullanır.</summary>
+    static readonly Dictionary<int, NetworkPlayer> ServerAvatars = new Dictionary<int, NetworkPlayer>();
+
     /// <summary>Uzak karakterin hedef konuma yaklaşma sertliği (büyük = daha sıkı takip).</summary>
     const float FollowSharpness = 18f;
 
@@ -27,11 +30,15 @@ public class NetworkPlayer : NetworkBehaviour
     readonly NetworkVariable<int> playerId = new NetworkVariable<int>(-1);
     readonly NetworkVariable<bool> isBot = new NetworkVariable<bool>(false);
     readonly NetworkVariable<Vector2> position = new NetworkVariable<Vector2>();
+    readonly NetworkVariable<int> health = new NetworkVariable<int>(1);
+
+    readonly KnockbackMotion knockback = new KnockbackMotion();
 
     SpriteRenderer spriteRenderer;
     ArenaBounds arena;
     BotBrain botBrain;
     NetTurnChannel channel;
+    int registeredId = -1;
 
     int preparedBotId = -1;
     Vector2 serverInput;
@@ -42,10 +49,29 @@ public class NetworkPlayer : NetworkBehaviour
 
     public bool IsBot => isBot.Value;
 
+    /// <summary>Şu anki can (herkes görür).</summary>
+    public int Health => health.Value;
+
+    /// <summary>Elendi mi? Elenen hayalet olur: gezer ama hiçbir şey ona işlemez.</summary>
+    public bool IsGhost => health.Value <= 0;
+
+    /// <summary>Host'ta numarasına göre karakteri bulur.</summary>
+    public static bool TryFind(int playerId, out NetworkPlayer avatar)
+    {
+        return ServerAvatars.TryGetValue(playerId, out avatar) && avatar != null;
+    }
+
     /// <summary>Doğmadan önce çağrılır: bu karakter bir bot olacak. Yalnızca host'ta.</summary>
     public void PrepareAsBot(int botPlayerId)
     {
         preparedBotId = botPlayerId;
+    }
+
+    /// <summary>Karakteri kısa bir süreye yayarak kaydırır (bir yaratık fırlattığında). Yalnızca host'ta.</summary>
+    public void ApplyKnockback(Vector2 distance)
+    {
+        if (config == null) return;
+        knockback.Start(distance, config.knockbackSeconds);
     }
 
     public override void OnNetworkSpawn()
@@ -60,6 +86,7 @@ public class NetworkPlayer : NetworkBehaviour
         animator.SetFrames(SpriteLibrary.GetFrames("char"));
 
         playerId.OnValueChanged += (_, __) => ApplyLook();
+        health.OnValueChanged += (_, __) => ApplyLook();
 
         if (IsServer) InitOnServer();
 
@@ -68,11 +95,19 @@ public class NetworkPlayer : NetworkBehaviour
         channel = FindAnyObjectByType<NetTurnChannel>();
     }
 
+    public override void OnNetworkDespawn()
+    {
+        if (registeredId >= 0 && ServerAvatars.TryGetValue(registeredId, out NetworkPlayer current) && current == this)
+            ServerAvatars.Remove(registeredId);
+        registeredId = -1;
+    }
+
     void InitOnServer()
     {
         if (config == null) { Debug.LogError("NetworkPlayer: GameConfig atanmamış.", this); return; }
 
         arena = new ArenaBounds(config.arenaSize);
+        health.Value = config.startingHealth;
 
         if (preparedBotId >= 0)
         {
@@ -88,13 +123,16 @@ public class NetworkPlayer : NetworkBehaviour
             int slot = (int)(OwnerClientId % (ulong)Palette.Length);
             position.Value = new Vector2((slot - 3.5f) * 1.5f, 0f);
         }
+
+        registeredId = playerId.Value;
+        ServerAvatars[registeredId] = this;
     }
 
     void ApplyLook()
     {
         if (spriteRenderer == null) return;
-        int id = Mathf.Max(0, playerId.Value);
-        spriteRenderer.color = Palette[id % Palette.Length];
+        Color color = Palette[Mathf.Max(0, playerId.Value) % Palette.Length];
+        spriteRenderer.color = IsGhost ? StatusTint.Ghost(color) : color;
     }
 
     void Update()
@@ -111,24 +149,46 @@ public class NetworkPlayer : NetworkBehaviour
     {
         if (arena == null) return;
 
+        NetMatchSim sim = channel != null ? channel.Sim : null;
+        PlayerState state = sim != null ? sim.FindPlayer(playerId.Value) : null;
+        bool frozenBot = isBot.Value && state != null && !state.IsAlive; // Elenen bot durur; elenen insan hayalet olup gezer
+
         Vector2 current = position.Value;
         Vector2 next = current;
 
-        if (isBot.Value)
+        if (!frozenBot)
         {
-            if (botBrain != null)
+            if (state != null)
             {
-                Vector2 direction = botBrain.Think(dt, current, NoDangers);
-                next = AvatarMover.Step(current, direction, config.botMoveSpeed, dt, config.playerRadius, arena, null);
+                // Fırlatılma ve mıknatıs çekimi, yazarken ya da hareketsizken de olur.
+                Vector2 pushed = knockback.Step(dt);
+                if (pushed != Vector2.zero) next = MoveBy(next, pushed);
+
+                Vector2 pulled = state.Status.GetPullStep(next, dt);
+                if (pulled != Vector2.zero) next = MoveBy(next, pulled);
             }
-        }
-        else
-        {
-            next = AvatarMover.Step(current, serverInput, config.playerMoveSpeed, dt, config.playerRadius, arena, null);
+
+            float speedMultiplier = state != null ? state.Status.SpeedMultiplier : 1f;
+            Vector2 input = isBot.Value ? BotDirection(dt, next, sim) : serverInput;
+            float speed = (isBot.Value ? config.botMoveSpeed : config.playerMoveSpeed) * speedMultiplier;
+            next = AvatarMover.Step(next, input, speed, dt, config.playerRadius, arena, null);
         }
 
         if (next != current) position.Value = next;
         transform.position = next;
+
+        if (state != null && health.Value != state.Health.Current) health.Value = state.Health.Current;
+    }
+
+    Vector2 BotDirection(float dt, Vector2 at, NetMatchSim sim)
+    {
+        if (botBrain == null) return Vector2.zero;
+        return botBrain.Think(dt, at, sim != null ? sim.Dangers : NoDangers);
+    }
+
+    Vector2 MoveBy(Vector2 from, Vector2 delta)
+    {
+        return ObstacleMover.Move(from, from + delta, config.playerRadius, arena, config.playerRadius, null);
     }
 
     /// <summary>Bu bilgisayardaki oyuncunun tuşlarını okur; değiştiyse host'a bildirir.</summary>

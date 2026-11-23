@@ -8,7 +8,7 @@ using UnityEngine;
 /// İstemci yalnızca "şunu yazdım" der; sırayı ve sonucu host belirler, gönderen kimliği bağlantıdan alınır.
 /// Kuralların kendisi düz C# sınıflarındadır; burası yalnızca taşıyıcıdır.
 /// </summary>
-public class NetTurnChannel : NetworkBehaviour
+public class NetTurnChannel : NetworkBehaviour, INetAvatars
 {
     /// <summary>Maç en az bu kadar oyuncuyla başlar; eksikler botla doldurulur.</summary>
     const int MinPlayers = 4;
@@ -19,11 +19,36 @@ public class NetTurnChannel : NetworkBehaviour
     [SerializeField] GameConfig config;
     [SerializeField] NetworkObject avatarPrefab;
 
+    /// <summary>Yaratık fotoğrafı yayın aralığı (sn). Saniyede ~12 kez; yeterince akıcı, ağı yormaz.</summary>
+    const float CreatureBroadcastSeconds = 0.08f;
+
     WordDatabase words;
     NetTurnHost host;
+    float creatureBroadcastLeft;
+    readonly List<CreatureSnapshot> snapshotBuffer = new List<CreatureSnapshot>();
 
     /// <summary>Bu bilgisayardaki tur durumu kopyası; maç başlayana kadar null.</summary>
     public NetTurnClient Client { get; private set; }
+
+    /// <summary>Host'taki yaratık dünyası ve can/etki durumu; maç başlayana kadar ve istemcilerde null.</summary>
+    public NetMatchSim Sim { get; private set; }
+
+    /// <summary>Host'tan gelen son yaratık fotoğrafı (her bilgisayarda çizim için).</summary>
+    public IReadOnlyList<CreatureSnapshot> LatestCreatures => latestCreatures;
+
+    /// <summary>Yeni fotoğraf geldikçe artar; çizici değişimi bundan anlar.</summary>
+    public int CreaturesVersion { get; private set; }
+
+    List<CreatureSnapshot> latestCreatures = new List<CreatureSnapshot>();
+
+    /// <summary>Kelime kimliğinden kelimeyi bulur (yaratığın sprite'ı için); yoksa null.</summary>
+    public WordEntry FindWord(string id)
+    {
+        if (words == null || string.IsNullOrEmpty(id)) return null;
+        foreach (WordEntry entry in words.Words)
+            if (entry.id == id) return entry;
+        return null;
+    }
 
     /// <summary>Son kelime gönderiminin sonucu (oyuncuya gösterilecek Türkçe metin).</summary>
     public string Feedback { get; private set; } = "";
@@ -50,6 +75,10 @@ public class NetTurnChannel : NetworkBehaviour
 
         host = new NetTurnHost(config, words, config.CreateRandom(), roster);
         host.MessageReady += Broadcast;
+
+        // Kabul edilen kelime host'ta yaratığa dönüşür (ilk zar atılmadan önce abone ol).
+        Sim = new NetMatchSim(config, host.Match, this, config.CreateRandom());
+        host.Turns.WordPlayed += Sim.OnWordPlayed;
 
         SpawnBotAvatars(roster);
 
@@ -95,14 +124,54 @@ public class NetTurnChannel : NetworkBehaviour
 
     void Update()
     {
-        if (host != null) host.Tick(Time.deltaTime);
+        if (host != null)
+        {
+            host.Tick(Time.deltaTime);
+            Sim.Tick(Time.deltaTime);
+            BroadcastCreatures(Time.deltaTime);
+        }
+
         if (Client != null) Client.Tick(Time.deltaTime);
+    }
+
+    void BroadcastCreatures(float dt)
+    {
+        creatureBroadcastLeft -= dt;
+        if (creatureBroadcastLeft > 0f) return;
+        creatureBroadcastLeft = CreatureBroadcastSeconds;
+
+        Sim.Snapshot(snapshotBuffer);
+        CreaturesRpc(CreatureSnapshotCodec.Encode(snapshotBuffer));
     }
 
     public override void OnNetworkDespawn()
     {
         host = null;
+        Sim = null;
         Client = null;
+        latestCreatures = new List<CreatureSnapshot>();
+        CreaturesVersion++;
+    }
+
+    // ---- INetAvatars (host'taki karakterler) ----
+
+    bool INetAvatars.TryGetPosition(int playerId, out Vector2 position)
+    {
+        if (NetworkPlayer.TryFind(playerId, out NetworkPlayer avatar))
+        {
+            position = avatar.transform.position;
+            return true;
+        }
+
+        position = Vector2.zero;
+        return false;
+    }
+
+    bool INetAvatars.TryApplyKnockback(int playerId, Vector2 distance)
+    {
+        if (!NetworkPlayer.TryFind(playerId, out NetworkPlayer avatar)) return false;
+        avatar.ApplyKnockback(distance);
+        return true;
     }
 
     void Broadcast(TurnMessage m)
@@ -139,6 +208,14 @@ public class NetTurnChannel : NetworkBehaviour
             WordId = wordId,
             WinnerId = winnerId,
         });
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    void CreaturesRpc(string packedCreatures)
+    {
+        if (!CreatureSnapshotCodec.TryDecode(packedCreatures, out List<CreatureSnapshot> list)) return;
+        latestCreatures = list;
+        CreaturesVersion++;
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]

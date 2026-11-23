@@ -67,6 +67,21 @@ public class NetTurnPanel : MonoBehaviour
         if (!string.IsNullOrEmpty(channel.Feedback)) GUILayout.Label(channel.Feedback, smallStyle);
 
         GUILayout.EndArea();
+        DrawHealth();
+    }
+
+    /// <summary>Sol altta bu bilgisayardaki oyuncunun canı; elendiyse hayalet uyarısı.</summary>
+    void DrawHealth()
+    {
+        var manager = NetworkManager.Singleton;
+        if (manager == null || manager.LocalClient == null || manager.LocalClient.PlayerObject == null) return;
+
+        NetworkPlayer mine = manager.LocalClient.PlayerObject.GetComponent<NetworkPlayer>();
+        if (mine == null) return;
+
+        var style = new GUIStyle(bigStyle) { alignment = TextAnchor.LowerLeft };
+        string text = mine.IsGhost ? "Elendin! Hayalet olarak izliyorsun." : "Can: " + mine.Health;
+        GUI.Label(new Rect(12, Screen.height - 54, 520, 44), text, style);
     }
 
     string HeadlineFor(NetTurnClient client)
