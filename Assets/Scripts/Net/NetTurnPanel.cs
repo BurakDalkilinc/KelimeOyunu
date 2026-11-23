@@ -10,6 +10,9 @@ public class NetTurnPanel : MonoBehaviour
 {
     [SerializeField] NetTurnChannel channel;
 
+    /// <summary>Açıksa yalnızca maç öncesi lobi düğmesi çizilir; maç arayüzünü Canvas (Arena arayüzü) gösterir.</summary>
+    [SerializeField] bool lobbyOnly;
+
     string wordText = "";
     GUIStyle bigStyle;
     GUIStyle smallStyle;
@@ -22,8 +25,8 @@ public class NetTurnPanel : MonoBehaviour
         EnsureStyles();
         NetTurnClient client = channel.Client;
 
-        if (client == null) DrawBeforeMatch(manager);
-        else DrawBanner(client);
+        if (!channel.MatchActive) DrawBeforeMatch(manager);
+        else if (!lobbyOnly) DrawBanner(client);
     }
 
     void EnsureStyles()

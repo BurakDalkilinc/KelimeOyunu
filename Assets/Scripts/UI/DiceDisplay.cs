@@ -10,26 +10,26 @@ using UnityEngine.UI;
 public class DiceDisplay : MonoBehaviour
 {
     [SerializeField] GameConfig config;
-    [SerializeField] MatchRunner runner;
+    [SerializeField] TurnViewSource runner;
     [SerializeField] Text label;
     [SerializeField] Color spinningColor = new Color(1f, 0.85f, 0.2f);
     [SerializeField] Color landedColor = Color.white;
     [SerializeField] Color humanColor = new Color(0.3f, 0.95f, 0.6f);
 
-    TurnManager turns;
+    ITurnView turns;
     readonly List<string> candidateNames = new List<string>();
     int finalIndex;
 
     void OnEnable()
     {
-        if (runner == null || runner.Turns == null || label == null || config == null)
+        if (runner == null || runner.View == null || label == null || config == null)
         {
             Debug.LogError("DiceDisplay: runner, config ya da label eksik.", this);
             enabled = false;
             return;
         }
 
-        turns = runner.Turns;
+        turns = runner.View;
         turns.WriterSelected += OnWriterSelected;
         label.text = string.Empty;
     }
@@ -45,7 +45,7 @@ public class DiceDisplay : MonoBehaviour
         candidateNames.Clear();
         finalIndex = 0;
 
-        foreach (PlayerState player in runner.Match.AlivePlayers)
+        foreach (PlayerState player in runner.AlivePlayers)
         {
             if (player == writer) finalIndex = candidateNames.Count;
             candidateNames.Add(player.Name);
@@ -88,6 +88,6 @@ public class DiceDisplay : MonoBehaviour
         if (turns.Writer == null) return;
 
         label.text = turns.Writer.Name;
-        label.color = turns.Writer.IsBot ? landedColor : humanColor;
+        label.color = runner.IsLocal(turns.Writer) ? humanColor : landedColor;
     }
 }

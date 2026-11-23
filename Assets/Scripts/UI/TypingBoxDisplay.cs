@@ -10,13 +10,15 @@ using UnityEngine.UI;
 public class TypingBoxDisplay : MonoBehaviour
 {
     [SerializeField] GameConfig config;
-    [SerializeField] MatchRunner runner;
+    [SerializeField] TurnViewSource runner;
+
+    /// <summary>Tek kişilik sahnede yazarken karakteri durdurmak için. Ağda boş bırakılır (karakteri ağ katmanı durdurur).</summary>
     [SerializeField] PlayerController player;
     [SerializeField] GameObject panel;
     [SerializeField] Text inputText;
     [SerializeField] Text feedbackText;
 
-    TurnManager turns;
+    ITurnView turns;
     TypingBuffer buffer;
     Keyboard keyboard;
     bool open;
@@ -26,15 +28,15 @@ public class TypingBoxDisplay : MonoBehaviour
 
     void OnEnable()
     {
-        if (config == null || runner == null || runner.Turns == null || player == null
+        if (config == null || runner == null || runner.View == null
             || panel == null || inputText == null || feedbackText == null)
         {
-            Debug.LogError("TypingBoxDisplay: bir referans eksik (config, runner, player, panel, inputText, feedbackText).", this);
+            Debug.LogError("TypingBoxDisplay: bir referans eksik (config, runner, panel, inputText, feedbackText).", this);
             enabled = false;
             return;
         }
 
-        turns = runner.Turns;
+        turns = runner.View;
         buffer = new TypingBuffer(config.maxWordLength);
         panel.SetActive(false);
 
@@ -56,10 +58,10 @@ public class TypingBoxDisplay : MonoBehaviour
     /// <summary>Aşama değişince: insan oyuncunun sırasıysa kutuyu aç ve karakteri durdur, değilse kapat.</summary>
     void OnPhaseChanged(TurnPhase phase)
     {
-        bool humanWriter = turns.Writer != null && !turns.Writer.IsBot;
+        bool humanWriter = runner.IsLocal(turns.Writer);
         bool humanTurn = humanWriter && (phase == TurnPhase.Dice || phase == TurnPhase.Typing);
 
-        if (humanTurn) player.CanMove = false;
+        if (humanTurn && player != null) player.CanMove = false;
         else RestoreMovement();
 
         if (humanWriter && phase == TurnPhase.Typing) Open();
@@ -128,9 +130,13 @@ public class TypingBoxDisplay : MonoBehaviour
     {
         if (Time.unscaledTime - openedAt < config.typingInputGraceSeconds) return;
 
-        SubmitStatus status = turns.SubmitWord(turns.Writer.Id, buffer.Text);
+        // Kabul edilince aşama değişir ve kutu kendiliğinden kapanır. Reddedilirse sebebi gösterilir
+        // (ağda cevap host'tan biraz gecikmeyle gelir).
+        runner.SubmitWord(buffer.Text, ShowResult);
+    }
 
-        // Kabul edilince aşama değişir ve kutu kendiliğinden kapanır. Reddedilirse sebebi gösterilir.
+    void ShowResult(SubmitStatus status)
+    {
         string message = SubmitFeedback.GetMessage(status, config.maxWordLength);
         if (message.Length > 0)
         {

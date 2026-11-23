@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Büyük tehdidi herkese gösterir (kural işletmez, host'tan gelen fotoğrafı çizer): çözüm alanları (renkli daire, simge, "Kule 2/3"),
@@ -10,6 +11,12 @@ public class NetThreatRenderer : MonoBehaviour
 {
     [SerializeField] NetTurnChannel channel;
     [SerializeField] GameConfig config;
+
+    /// <summary>İsteğe bağlı: alarm yazısı (Arena arayüzündeki ThreatBanner). Boşsa IMGUI ile çizilir.</summary>
+    [SerializeField] Text banner;
+
+    /// <summary>İsteğe bağlı: etki anı parlaması (Arena arayüzündeki ThreatFlash). Boşsa IMGUI ile çizilir.</summary>
+    [SerializeField] Image flash;
 
     sealed class ZoneView
     {
@@ -70,6 +77,18 @@ public class NetThreatRenderer : MonoBehaviour
         }
 
         if (flashAlpha > 0f) flashAlpha = Mathf.Max(0f, flashAlpha - Time.deltaTime * 1.5f);
+
+        if (flash != null) flash.color = new Color(1f, 1f, 1f, flashAlpha);
+        if (banner != null) banner.text = AlarmText();
+    }
+
+    string AlarmText()
+    {
+        ThreatStatus status = channel.LatestThreat;
+        if (string.IsNullOrEmpty(status.AlarmWordId)) return string.Empty;
+
+        WordEntry word = channel.FindWord(status.AlarmWordId);
+        return word == null ? string.Empty : ThreatText.GetAlarm(word, status.AlarmSeconds);
     }
 
     void ApplyZones(IReadOnlyList<ZoneSnapshot> snapshots)
@@ -163,7 +182,8 @@ public class NetThreatRenderer : MonoBehaviour
 
     void OnGUI()
     {
-        if (channel == null) return;
+        // uGUI afiş ve parlama atanmışsa onlar gösterir.
+        if (channel == null || (banner != null && flash != null)) return;
 
         if (flashAlpha > 0f)
         {

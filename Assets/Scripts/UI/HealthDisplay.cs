@@ -2,47 +2,27 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Ekranın sol üstünde oyuncunun canını yazar ("Can: 3 / 3").
-/// Yalnızca gösterir; can hesabı <see cref="Health"/> sınıfındadır.
+/// Ekranın sol üstünde bu bilgisayardaki oyuncunun canını yazar ("Can: 3 / 3").
+/// Yalnızca gösterir; can hesabı <see cref="Health"/> sınıfındadır. Oyuncu ağda maç başlayınca belli olur,
+/// bu yüzden her karede okunur.
 /// </summary>
 public class HealthDisplay : MonoBehaviour
 {
-    [SerializeField] PlayerController player;
+    [SerializeField] TurnViewSource runner;
     [SerializeField] Text label;
 
-    Health health;
-
-    void Start()
+    void Update()
     {
-        if (player == null || label == null)
+        if (runner == null || label == null) return;
+
+        PlayerState player = runner.LocalPlayer;
+        if (player == null)
         {
-            Debug.LogError("HealthDisplay: player ya da label atanmamış.", this);
+            label.text = string.Empty;
             return;
         }
 
-        health = player.Health;
-        if (health == null)
-        {
-            Debug.LogError("HealthDisplay: oyuncu maça bağlanmamış (sahnede MatchBootstrap var mı?).", this);
-            return;
-        }
-
-        health.Changed += OnChanged;
-        Refresh(health.Current, health.Max);
-    }
-
-    void OnDestroy()
-    {
-        if (health != null) health.Changed -= OnChanged;
-    }
-
-    void OnChanged(int current, int max)
-    {
-        Refresh(current, max);
-    }
-
-    void Refresh(int current, int max)
-    {
-        label.text = current > 0 ? $"Can: {current} / {max}" : "Elendin: hayalet olarak izliyorsun";
+        Health health = player.Health;
+        label.text = health.Current > 0 ? $"Can: {health.Current} / {health.Max}" : "Elendin: hayalet olarak izliyorsun";
     }
 }

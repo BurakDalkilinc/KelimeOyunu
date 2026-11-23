@@ -1996,7 +1996,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6719f807fa27fe04e8b72f232d7b1b0b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: KelimeOyunu.Runtime::StatusEffectDisplay
-  player: {fileID: 978642445}
+  runner: {fileID: 745260175}
   label: {fileID: 1909622971}
 --- !u!114 &1909622971
 MonoBehaviour:
@@ -2268,7 +2268,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 163160b816607bd4fb3d7b4f9f05b176, type: 3}
   m_Name: 
   m_EditorClassIdentifier: KelimeOyunu.Runtime::HealthDisplay
-  player: {fileID: 978642445}
+  runner: {fileID: 745260175}
   label: {fileID: 253177269}
 --- !u!114 &2072727427
 MonoBehaviour:

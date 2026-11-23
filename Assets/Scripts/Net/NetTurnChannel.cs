@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -28,8 +29,16 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     readonly List<CreatureSnapshot> snapshotBuffer = new List<CreatureSnapshot>();
     readonly List<WallSnapshot> wallBuffer = new List<WallSnapshot>();
 
-    /// <summary>Bu bilgisayardaki tur durumu kopyası; maç başlayana kadar null.</summary>
+    /// <summary>
+    /// Bu bilgisayardaki tur durumu kopyası. Hep vardır (arayüz ona abone olur); maç başlayana kadar aşaması
+    /// <see cref="TurnPhase.NotStarted"/>'tır.
+    /// </summary>
     public NetTurnClient Client { get; private set; }
+
+    /// <summary>Maç başladı mı (istemci tur mesajı aldı)?</summary>
+    public bool MatchActive => Client != null && Client.Phase != TurnPhase.NotStarted;
+
+    Action<SubmitStatus> pendingSubmitResult;
 
     /// <summary>Host'taki yaratık dünyası ve can/etki durumu; maç başlayana kadar ve istemcilerde null.</summary>
     public NetMatchSim Sim { get; private set; }
@@ -88,6 +97,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     {
         if (config == null) { Debug.LogError("NetTurnChannel: GameConfig atanmamış.", this); enabled = false; return; }
         words = WordDatabase.LoadFromResources(config.maxWordLength);
+        Client = new NetTurnClient(words);
     }
 
     /// <summary>Maçı başlatır (yalnızca host). Bağlı herkes oyuncu olur, eksikler bot olur.</summary>
@@ -181,7 +191,14 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     /// <summary>Bu bilgisayardaki oyuncu bir kelime yazdı: host'a gönderir.</summary>
     public void SubmitWord(string text)
     {
-        if (!IsSpawned || Client == null) return;
+        SubmitWord(text, null);
+    }
+
+    /// <summary>Bir kelime gönderir; host cevap verince <paramref name="onResult"/> çağrılır.</summary>
+    public void SubmitWord(string text, Action<SubmitStatus> onResult)
+    {
+        if (!IsSpawned || !MatchActive) return;
+        pendingSubmitResult = onResult;
         SubmitWordRpc(text ?? "");
     }
 
@@ -194,8 +211,27 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
             BroadcastCreatures(Time.deltaTime);
         }
 
-        if (Client != null) Client.Tick(Time.deltaTime);
+        if (Client != null)
+        {
+            Client.Tick(Time.deltaTime);
+            SyncClientHealth();
+        }
         if (TargetingWriterId >= 0) TargetingTimeLeft = Mathf.Max(0f, TargetingTimeLeft - Time.deltaTime);
+    }
+
+    /// <summary>
+    /// Karakterlerden gelen canı istemcideki oyuncu kayıtlarına yansıtır; arayüz (can yazısı, hayatta kalanlar) bunları okur.
+    /// </summary>
+    void SyncClientHealth()
+    {
+        foreach (NetworkPlayer avatar in NetworkPlayer.All)
+        {
+            if (avatar == null || !Client.Players.TryGetValue(avatar.PlayerId, out PlayerState state)) continue;
+
+            int difference = avatar.Health - state.Health.Current;
+            if (difference < 0) state.Health.TakeDamage(-difference);
+            else if (difference > 0) state.Health.Heal(difference);
+        }
     }
 
     void BroadcastCreatures(float dt)
@@ -248,7 +284,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         if (IsServer && NetworkManager != null) NetworkManager.OnClientDisconnectCallback -= OnClientDisconnected;
         host = null;
         Sim = null;
-        Client = null;
+        Client?.Reset();
         latestCreatures = new List<CreatureSnapshot>();
         CreaturesVersion++;
         latestWalls = new List<WallSnapshot>();
@@ -306,7 +342,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
             return;
         }
 
-        Client = new NetTurnClient(words);
+        Client.Reset();
         Client.SetRoster(roster, config.startingHealth);
         Feedback = "";
     }
@@ -314,8 +350,6 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     [Rpc(SendTo.ClientsAndHost)]
     void StateRpc(int kind, int phase, int turn, int writerId, float timeLeft, string wordId, int winnerId)
     {
-        if (Client == null) return;
-
         Client.Apply(new TurnMessage
         {
             Kind = (TurnMessageKind)kind,
@@ -355,7 +389,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     [Rpc(SendTo.ClientsAndHost)]
     void ResetMatchRpc()
     {
-        Client = null;
+        Client.Reset();
         Feedback = "";
         latestCreatures = new List<CreatureSnapshot>();
         CreaturesVersion++;
@@ -371,7 +405,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     [Rpc(SendTo.ClientsAndHost)]
     void PlayerBecameBotRpc(int playerId)
     {
-        if (Client != null) Client.MarkBot(playerId);
+        Client.MarkBot(playerId);
     }
 
     [Rpc(SendTo.ClientsAndHost)]
@@ -412,5 +446,9 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     void FeedbackRpc(int status, RpcParams rpcParams)
     {
         Feedback = SubmitFeedback.GetMessage((SubmitStatus)status, config.maxWordLength);
+
+        Action<SubmitStatus> callback = pendingSubmitResult;
+        pendingSubmitResult = null;
+        callback?.Invoke((SubmitStatus)status);
     }
 }

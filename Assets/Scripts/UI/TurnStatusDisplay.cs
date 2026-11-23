@@ -7,21 +7,21 @@ using UnityEngine.UI;
 /// </summary>
 public class TurnStatusDisplay : MonoBehaviour
 {
-    [SerializeField] MatchRunner runner;
+    [SerializeField] TurnViewSource runner;
     [SerializeField] Text label;
 
-    TurnManager turns;
+    ITurnView turns;
 
     void OnEnable()
     {
-        if (runner == null || runner.Turns == null || label == null)
+        if (runner == null || runner.View == null || label == null)
         {
             Debug.LogError("TurnStatusDisplay: runner ya da label eksik.", this);
             enabled = false;
             return;
         }
 
-        turns = runner.Turns;
+        turns = runner.View;
     }
 
     void Update()
@@ -40,13 +40,14 @@ public class TurnStatusDisplay : MonoBehaviour
                 return "Zar atılıyor...";
 
             case TurnPhase.Typing:
-                return writer.IsBot
-                    ? $"{writer.Name} bir kelime yazıyor... ({secondsLeft} sn)"
-                    : $"Sıra sende! Bir kelime yaz ({secondsLeft} sn)";
+                if (writer == null) return string.Empty;
+                return runner.IsLocal(writer)
+                    ? $"Sıra sende! Bir kelime yaz ({secondsLeft} sn)"
+                    : $"{writer.Name} bir kelime yazıyor... ({secondsLeft} sn)";
 
             case TurnPhase.Result:
                 string word = turns.CurrentWord != null ? turns.CurrentWord.display : "???";
-                return $"{writer.Name} yazdı: {word}  ({secondsLeft} sn)";
+                return writer == null ? string.Empty : $"{writer.Name} yazdı: {word}  ({secondsLeft} sn)";
 
             case TurnPhase.MatchOver:
                 return turns.Winner != null ? $"Kazanan: {turns.Winner.Name}" : "Kazanan yok";

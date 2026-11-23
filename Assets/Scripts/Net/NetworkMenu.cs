@@ -16,7 +16,9 @@ public class NetworkMenu : MonoBehaviour
         var manager = NetworkManager.Singleton;
         if (manager == null) { GUILayout.Label("NetworkManager yok."); return; }
 
-        GUILayout.BeginArea(new Rect(12, 12, 280, manager.IsListening ? 80 : 220), GUI.skin.box);
+        // Sol alta: sol üst köşe Arena arayüzünün "Can" yazısına ait.
+        float height = manager.IsListening ? 80 : 220;
+        GUILayout.BeginArea(new Rect(12, Screen.height - height - 12, 280, height), GUI.skin.box);
 
         if (manager.IsListening) DrawConnected(manager);
         else DrawStart(manager);

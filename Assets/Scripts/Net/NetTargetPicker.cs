@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 /// <summary>
 /// Ağ maçında hedefi fareyle seçtirir: sıra sendeyse ve saldırı kelimesi yazdıysan, üzerine gelinen rakibin etrafında halka çıkar,
@@ -11,6 +12,10 @@ public class NetTargetPicker : MonoBehaviour
     [SerializeField] NetTurnChannel channel;
     [SerializeField] GameConfig config;
     [SerializeField] Camera worldCamera;
+
+    /// <summary>İsteğe bağlı: "Hedef seç!" yazısı (Arena arayüzündeki TargetPrompt). Boşsa panelin IMGUI yazısı kullanılır.</summary>
+    [SerializeField] Text prompt;
+
     [SerializeField] Color hoverColor = new Color(1f, 0.9f, 0.3f, 0.5f);
 
     PressEdge clickEdge;
@@ -33,6 +38,8 @@ public class NetTargetPicker : MonoBehaviour
         // Fare tuşunun "yeni basıldı" anı, basılı durumundaki değişimden bulunur (bkz. PressEdge).
         bool clicked = clickEdge.Update(Mouse.current != null && Mouse.current.leftButton.isPressed);
 
+        if (prompt != null) prompt.text = PromptText();
+
         if (channel == null || config == null || worldCamera == null || !channel.IAmChoosingTarget)
         {
             if (ring != null && ring.gameObject.activeSelf) ring.gameObject.SetActive(false);
@@ -47,6 +54,15 @@ public class NetTargetPicker : MonoBehaviour
         ring.localScale = Vector3.one * (config.playerRadius * 2.8f);
 
         if (clicked) channel.ChooseTarget(hovered.PlayerId);
+    }
+
+    string PromptText()
+    {
+        if (channel == null || channel.TargetingWriterId < 0) return string.Empty;
+        if (channel.IAmChoosingTarget) return $"Hedef seç! Bir oyuncuya tıkla ({Mathf.CeilToInt(channel.TargetingTimeLeft)} sn)";
+
+        string name = channel.Client.Players.TryGetValue(channel.TargetingWriterId, out PlayerState writer) ? writer.Name : "Biri";
+        return name + " hedef seçiyor...";
     }
 
     /// <summary>Verilen noktaya en yakın, seçilebilir (kendin değil, elenmemiş, görünmez değil) karakter.</summary>

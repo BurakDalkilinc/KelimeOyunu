@@ -6,7 +6,7 @@ using System.Collections.Generic;
 /// <see cref="TurnManager"/> ile aynı şekilli olayları yayar. Hiçbir kural işletmez; host ne derse odur.
 /// Mesajlar arasında kalan süreyi kendisi geri sayar. Düz C# sınıfı, ağ kütüphanesini bilmez.
 /// </summary>
-public class NetTurnClient
+public class NetTurnClient : ITurnView
 {
     readonly WordDatabase words;
     readonly Dictionary<int, PlayerState> players = new Dictionary<int, PlayerState>();
@@ -34,6 +34,27 @@ public class NetTurnClient
     public NetTurnClient(WordDatabase words)
     {
         this.words = words ?? throw new ArgumentNullException(nameof(words));
+    }
+
+    /// <summary>
+    /// Yeni maç ya da maç iptali için her şeyi sıfırlar: oyuncular, kelimeler, aşama. Aşama değiştiyse
+    /// <see cref="PhaseChanged"/> yayılır (maç sonu ekranı kapansın diye). Olaylara abonelikler korunur.
+    /// </summary>
+    public void Reset()
+    {
+        players.Clear();
+        playedWords.Clear();
+        Writer = null;
+        CurrentWord = null;
+        Winner = null;
+        PhaseTimeLeft = 0f;
+        TurnNumber = 0;
+
+        if (Phase != TurnPhase.NotStarted)
+        {
+            Phase = TurnPhase.NotStarted;
+            PhaseChanged?.Invoke(Phase);
+        }
     }
 
     /// <summary>Oyuncu listesini kurar (host'tan gelen liste). Eski liste silinir.</summary>

@@ -6,7 +6,7 @@ using UnityEngine;
 /// Düz C# sınıfı; zamanı dışarıdan <see cref="Tick"/> ile alır, bu yüzden testlerde saniyeleri elle ilerletebiliriz.
 /// Kelime doğrulaması burada (sunucu tarafında) yapılır; istemci yalnızca "şunu yazdım" der.
 /// </summary>
-public class TurnManager
+public class TurnManager : ITurnView
 {
     readonly GameConfig config;
     readonly MatchState match;
