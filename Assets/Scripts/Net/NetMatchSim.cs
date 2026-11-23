@@ -8,6 +8,9 @@ public interface INetAvatars
 {
     bool TryGetPosition(int playerId, out Vector2 position);
     bool TryApplyKnockback(int playerId, Vector2 distance);
+
+    /// <summary>Karakterin baktığı (son yürüdüğü) yön; bilinmiyorsa false.</summary>
+    bool TryGetFacing(int playerId, out Vector2 direction);
 }
 
 /// <summary>
@@ -34,7 +37,12 @@ public class NetMatchSim : ICreatureWorld
     readonly List<SimCreature> creatures = new List<SimCreature>();
     readonly List<DangerZone> dangers = new List<DangerZone>();
     readonly List<CreatureHit> hits = new List<CreatureHit>();
+    readonly Dictionary<WallSegment, int> wallIds = new Dictionary<WallSegment, int>();
     int nextId = 1;
+    int nextWallId = 1;
+
+    TargetSelection selection;
+    WordEntry selectionWord;
 
     public NetMatchSim(GameConfig config, MatchState match, INetAvatars avatars, Random random)
     {
@@ -44,6 +52,21 @@ public class NetMatchSim : ICreatureWorld
         this.random = random ?? throw new ArgumentNullException(nameof(random));
         arena = new ArenaBounds(config.arenaSize);
     }
+
+    /// <summary>Haritadaki duvarlar. Karakterler ve yerdeki yaratıklar bunların içinden geçemez.</summary>
+    public WallField Walls { get; } = new WallField();
+
+    /// <summary>Bir insan yazan hedef seçmeye başladı (yazanın numarası, süre). Ağ katmanı herkese duyurur.</summary>
+    public event Action<int, float> TargetingStarted;
+
+    /// <summary>Hedef seçimi bitti (seçildi, süre doldu ya da iptal oldu).</summary>
+    public event Action TargetingEnded;
+
+    /// <summary>Şu an bir insan oyuncu hedef seçiyor mu?</summary>
+    public bool IsSelectingTarget => selection != null && selection.IsPending;
+
+    /// <summary>Hedef seçen oyuncunun numarası; seçim yoksa -1.</summary>
+    public int SelectingWriterId => IsSelectingTarget ? selection.Writer.Id : -1;
 
     /// <summary>Canlı yaratık sayısı.</summary>
     public int CreatureCount => creatures.Count;
@@ -70,8 +93,9 @@ public class NetMatchSim : ICreatureWorld
     // ---- Kelime → yaratık ----
 
     /// <summary>
-    /// Kabul edilen kelimeyi yaratığa çevirir. Saldırı kelimesinin hedefi rastgele bir rakiptir; bilinmeyen kelime "???" olur.
-    /// (Koruma ve büyük tehdit kelimeleri sonraki adımlarda eklenecek.)
+    /// Kabul edilen kelimeyi uygular. Saldırı kelimesinde hedefi insan yazan seçer (<see cref="TryChooseTarget"/>;
+    /// süre dolarsa rastgele), bot yazan hemen rastgele bir rakip seçer. Koruma kelimesi yazana uygulanır.
+    /// Bilinmeyen kelime zararsız "???" olur. (Büyük tehditler sonraki adımda.)
     /// </summary>
     public void OnWordPlayed(PlayerState writer, WordEntry word)
     {
@@ -81,19 +105,85 @@ public class NetMatchSim : ICreatureWorld
             return;
         }
 
-        if (word.category != WordEntry.CategoryAttack || word.scope != WordEntry.ScopeTarget) return;
+        if (word.category == WordEntry.CategoryAttack && word.scope == WordEntry.ScopeTarget)
+            BeginAttack(writer, word);
+        else if (word.category == WordEntry.CategoryDefense && word.scope == WordEntry.ScopeSelf)
+            ApplyDefense(writer, word);
+    }
 
-        PlayerState target = TargetPicker.PickRandomOpponent(match.Players, writer, random);
-        if (target == null || !avatars.TryGetPosition(target.Id, out Vector2 targetPosition)) return;
+    void BeginAttack(PlayerState writer, WordEntry word)
+    {
+        // Önceki seçim bitmeden yenisi gelirse, öncekini rastgele bir hedefle tamamla.
+        if (IsSelectingTarget) CompleteSelection(forceRandom: true);
+
+        if (writer.IsBot)
+        {
+            PlayerState target = TargetPicker.PickRandomOpponent(match.Players, writer, random);
+            if (target != null) SpawnAttack(writer, word, target);
+            return;
+        }
+
+        selection = new TargetSelection(writer, config.targetSelectionSeconds);
+        selectionWord = word;
+        TargetingStarted?.Invoke(writer.Id, config.targetSelectionSeconds);
+    }
+
+    /// <summary>
+    /// Hedef seçen oyuncunun seçimini uygular. <paramref name="senderPlayerId"/> ağ katmanının bağlantıdan bulduğu numaradır;
+    /// seçen yazan değilse, süre bitmişse ya da hedef geçersizse (kendisi, elenmiş, görünmez) reddedilir.
+    /// </summary>
+    public bool TryChooseTarget(int senderPlayerId, int targetPlayerId)
+    {
+        if (!IsSelectingTarget || selection.Writer.Id != senderPlayerId) return false;
+        if (!selection.TrySelect(FindPlayer(targetPlayerId))) return false;
+
+        CompleteSelection(forceRandom: false);
+        return true;
+    }
+
+    void CompleteSelection(bool forceRandom)
+    {
+        PlayerState writer = selection.Writer;
+        WordEntry word = selectionWord;
+        PlayerState target = selection.State == TargetSelectionState.Selected && !forceRandom
+            ? selection.Chosen
+            : TargetPicker.PickRandomOpponent(match.Players, writer, random);
+
+        selection = null;
+        selectionWord = null;
+        TargetingEnded?.Invoke();
+
+        if (target != null) SpawnAttack(writer, word, target);
+    }
+
+    void SpawnAttack(PlayerState writer, WordEntry word, PlayerState target)
+    {
+        // Hedef seçilirken elenmiş olabilir; öyleyse başka bir rakip seç.
+        if (!target.IsAlive)
+        {
+            target = TargetPicker.PickRandomOpponent(match.Players, writer, random);
+            if (target == null) return;
+        }
+
+        if (!avatars.TryGetPosition(target.Id, out Vector2 targetPosition)) return;
 
         List<CreatureModel> models = CreatureBuilder.BuildAttack(word, target, targetPosition, config, arena, random);
         for (int i = 0; i < models.Count; i++)
             Add(models[i], models.Count == 1 || i == 0 ? word.display : "", false);
     }
 
+    /// <summary>Koruma kelimeleri yazana uygulanır: can, kalkan, görünmezlik, uçma, duvar...</summary>
+    void ApplyDefense(PlayerState writer, WordEntry word)
+    {
+        avatars.TryGetPosition(writer.Id, out Vector2 writerPosition);
+        Vector2 facing = avatars.TryGetFacing(writer.Id, out Vector2 f) ? f : Vector2.up;
+        TagRegistry.ApplySelfEffects(word, new SelfEffectContext(writer, word, config, writerPosition, facing, Walls));
+    }
+
     void Add(CreatureModel model, string label, bool wanders)
     {
         model.Locator = this; // Hedefi ölünce ya da başkası yaklaşınca yeniden seçebilsin
+        model.Obstacles = Walls; // Uçmayan yaratıklar duvardan geçemez
 
         creatures.Add(new SimCreature
         {
@@ -115,6 +205,9 @@ public class NetMatchSim : ICreatureWorld
             else player.Status.Tick(deltaSeconds);
         }
 
+        Walls.Tick(deltaSeconds);
+        TickSelection(deltaSeconds);
+
         dangers.Clear();
         for (int i = creatures.Count - 1; i >= 0; i--)
         {
@@ -130,6 +223,23 @@ public class NetMatchSim : ICreatureWorld
             // Sıkılıp giden avcı artık tehlike değil; botlar ondan kaçmak zorunda kalmaz.
             if (model.IsHarmful && !model.IsLeaving) dangers.Add(new DangerZone(model.Position, model.Radius));
         }
+    }
+
+    void TickSelection(float deltaSeconds)
+    {
+        if (selection == null) return;
+
+        // Yazan elendiyse ya da maç bittiyse seçim anlamını yitirir.
+        if (!selection.Writer.IsAlive || match.IsOver)
+        {
+            selection = null;
+            selectionWord = null;
+            TargetingEnded?.Invoke();
+            return;
+        }
+
+        selection.Tick(deltaSeconds);
+        if (selection.State == TargetSelectionState.TimedOut) CompleteSelection(forceRandom: true);
     }
 
     // ---- İstemciye giden fotoğraf ----
@@ -153,6 +263,40 @@ public class NetMatchSim : ICreatureWorld
                 HasStruck = m.HasStruck,
                 Countdown = m.ShowsCountdown && !m.IsSky && m.IsStrike && !m.HasStruck ? Mathf.CeilToInt(m.StrikeWarningLeft) : 0,
                 Label = creature.Label,
+            });
+        }
+    }
+
+    /// <summary>Şu anki tüm duvarların fotoğrafı (<paramref name="into"/> temizlenip doldurulur).</summary>
+    public void SnapshotWalls(List<WallSnapshot> into)
+    {
+        into.Clear();
+
+        // Ömrü biten duvarların numarası unutulur.
+        if (wallIds.Count > Walls.Walls.Count)
+        {
+            var alive = new HashSet<WallSegment>(Walls.Walls);
+            var stale = new List<WallSegment>();
+            foreach (WallSegment known in wallIds.Keys)
+                if (!alive.Contains(known)) stale.Add(known);
+            foreach (WallSegment gone in stale) wallIds.Remove(gone);
+        }
+
+        foreach (WallSegment wall in Walls.Walls)
+        {
+            if (!wallIds.TryGetValue(wall, out int id))
+            {
+                id = nextWallId++;
+                wallIds[wall] = id;
+            }
+
+            into.Add(new WallSnapshot
+            {
+                Id = id,
+                CenterX = wall.Center.x, CenterY = wall.Center.y,
+                DirX = wall.Direction.x, DirY = wall.Direction.y,
+                Length = wall.Length, Thickness = wall.Thickness,
+                LifeRatio = wall.TotalLife > 0f ? Mathf.Clamp01(wall.LifeLeft / wall.TotalLife) : 0f,
             });
         }
     }

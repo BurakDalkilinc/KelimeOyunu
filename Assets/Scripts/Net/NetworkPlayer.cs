@@ -22,6 +22,9 @@ public class NetworkPlayer : NetworkBehaviour
     /// <summary>Host'taki karakterler (numarasına göre). Yaratık simülasyonu konum ve fırlatma için bunu kullanır.</summary>
     static readonly Dictionary<int, NetworkPlayer> ServerAvatars = new Dictionary<int, NetworkPlayer>();
 
+    /// <summary>Bu bilgisayarda görünen bütün karakterler (fareyle hedef seçmek için).</summary>
+    static readonly List<NetworkPlayer> Everyone = new List<NetworkPlayer>();
+
     /// <summary>Uzak karakterin hedef konuma yaklaşma sertliği (büyük = daha sıkı takip).</summary>
     const float FollowSharpness = 18f;
 
@@ -31,6 +34,7 @@ public class NetworkPlayer : NetworkBehaviour
     readonly NetworkVariable<bool> isBot = new NetworkVariable<bool>(false);
     readonly NetworkVariable<Vector2> position = new NetworkVariable<Vector2>();
     readonly NetworkVariable<int> health = new NetworkVariable<int>(1);
+    readonly NetworkVariable<int> statusFlags = new NetworkVariable<int>(0);
 
     readonly KnockbackMotion knockback = new KnockbackMotion();
 
@@ -43,6 +47,7 @@ public class NetworkPlayer : NetworkBehaviour
     int preparedBotId = -1;
     Vector2 serverInput;
     Vector2 lastSentInput;
+    Vector2 facing = Vector2.up;
 
     /// <summary>Bu karakterin maç numarası (insan: bağlantı numarası, bot: 100'den başlar).</summary>
     public int PlayerId => playerId.Value;
@@ -54,6 +59,15 @@ public class NetworkPlayer : NetworkBehaviour
 
     /// <summary>Elendi mi? Elenen hayalet olur: gezer ama hiçbir şey ona işlemez.</summary>
     public bool IsGhost => health.Value <= 0;
+
+    /// <summary>Üzerindeki etkiler (yavaş, kalkan, görünmez, uçan, çekilen).</summary>
+    public StatusFlags Status => (StatusFlags)statusFlags.Value;
+
+    /// <summary>Host'ta: son yürüdüğü yön (duvar önünde belirsin diye). Henüz yürümediyse yukarı.</summary>
+    public Vector2 FacingDirection => facing;
+
+    /// <summary>Bu bilgisayarda görünen karakterler.</summary>
+    public static IReadOnlyList<NetworkPlayer> All => Everyone;
 
     /// <summary>Host'ta numarasına göre karakteri bulur.</summary>
     public static bool TryFind(int playerId, out NetworkPlayer avatar)
@@ -87,6 +101,8 @@ public class NetworkPlayer : NetworkBehaviour
 
         playerId.OnValueChanged += (_, __) => ApplyLook();
         health.OnValueChanged += (_, __) => ApplyLook();
+        statusFlags.OnValueChanged += (_, __) => ApplyLook();
+        Everyone.Add(this);
 
         if (IsServer) InitOnServer();
 
@@ -97,6 +113,7 @@ public class NetworkPlayer : NetworkBehaviour
 
     public override void OnNetworkDespawn()
     {
+        Everyone.Remove(this);
         if (registeredId >= 0 && ServerAvatars.TryGetValue(registeredId, out NetworkPlayer current) && current == this)
             ServerAvatars.Remove(registeredId);
         registeredId = -1;
@@ -132,7 +149,7 @@ public class NetworkPlayer : NetworkBehaviour
     {
         if (spriteRenderer == null) return;
         Color color = Palette[Mathf.Max(0, playerId.Value) % Palette.Length];
-        spriteRenderer.color = IsGhost ? StatusTint.Ghost(color) : color;
+        spriteRenderer.color = IsGhost ? StatusTint.Ghost(color) : StatusFlagsUtil.Tint(color, Status);
     }
 
     void Update()
@@ -158,26 +175,44 @@ public class NetworkPlayer : NetworkBehaviour
 
         if (!frozenBot)
         {
+            // Hayalet ve uçan karakter duvarlardan geçer; diğerleri takılır.
+            IObstacleField obstacles = sim != null ? MovementRules.EffectiveObstacles(state, sim.Walls) : null;
+
             if (state != null)
             {
                 // Fırlatılma ve mıknatıs çekimi, yazarken ya da hareketsizken de olur.
                 Vector2 pushed = knockback.Step(dt);
-                if (pushed != Vector2.zero) next = MoveBy(next, pushed);
+                if (pushed != Vector2.zero) next = MoveBy(next, pushed, obstacles);
 
                 Vector2 pulled = state.Status.GetPullStep(next, dt);
-                if (pulled != Vector2.zero) next = MoveBy(next, pulled);
+                if (pulled != Vector2.zero) next = MoveBy(next, pulled, obstacles);
             }
 
             float speedMultiplier = state != null ? state.Status.SpeedMultiplier : 1f;
             Vector2 input = isBot.Value ? BotDirection(dt, next, sim) : serverInput;
+            if (input != Vector2.zero) facing = input.normalized;
+
             float speed = (isBot.Value ? config.botMoveSpeed : config.playerMoveSpeed) * speedMultiplier;
-            next = AvatarMover.Step(next, input, speed, dt, config.playerRadius, arena, null);
+            next = AvatarMover.Step(next, input, speed, dt, config.playerRadius, arena, obstacles);
+
+            // Duvar tam üstüne çıktıysa karakter dışarı itilir.
+            if (obstacles != null)
+            {
+                Vector2 resolved = obstacles.Resolve(next, config.playerRadius);
+                if (resolved != next) next = arena.Clamp(resolved, config.playerRadius);
+            }
         }
 
         if (next != current) position.Value = next;
         transform.position = next;
 
-        if (state != null && health.Value != state.Health.Current) health.Value = state.Health.Current;
+        if (state != null)
+        {
+            if (health.Value != state.Health.Current) health.Value = state.Health.Current;
+
+            int flags = (int)StatusFlagsUtil.Of(state.Status);
+            if (statusFlags.Value != flags) statusFlags.Value = flags;
+        }
     }
 
     Vector2 BotDirection(float dt, Vector2 at, NetMatchSim sim)
@@ -186,9 +221,9 @@ public class NetworkPlayer : NetworkBehaviour
         return botBrain.Think(dt, at, sim != null ? sim.Dangers : NoDangers);
     }
 
-    Vector2 MoveBy(Vector2 from, Vector2 delta)
+    Vector2 MoveBy(Vector2 from, Vector2 delta, IObstacleField obstacles)
     {
-        return ObstacleMover.Move(from, from + delta, config.playerRadius, arena, config.playerRadius, null);
+        return ObstacleMover.Move(from, from + delta, config.playerRadius, arena, config.playerRadius, obstacles);
     }
 
     /// <summary>Bu bilgisayardaki oyuncunun tuşlarını okur; değiştiyse host'a bildirir.</summary>

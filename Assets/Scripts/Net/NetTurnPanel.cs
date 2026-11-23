@@ -66,6 +66,9 @@ public class NetTurnPanel : MonoBehaviour
 
         if (!string.IsNullOrEmpty(channel.Feedback)) GUILayout.Label(channel.Feedback, smallStyle);
 
+        string targeting = TargetingText(client);
+        if (targeting.Length > 0) GUILayout.Label(targeting, bigStyle);
+
         GUILayout.EndArea();
         DrawHealth();
     }
@@ -82,6 +85,18 @@ public class NetTurnPanel : MonoBehaviour
         var style = new GUIStyle(bigStyle) { alignment = TextAnchor.LowerLeft };
         string text = mine.IsGhost ? "Elendin! Hayalet olarak izliyorsun." : "Can: " + mine.Health;
         GUI.Label(new Rect(12, Screen.height - 54, 520, 44), text, style);
+    }
+
+    /// <summary>Hedef seçilirken: seçen oyuncuya talimat, diğerlerine kimin seçtiği.</summary>
+    string TargetingText(NetTurnClient client)
+    {
+        int writerId = channel.TargetingWriterId;
+        if (writerId < 0) return "";
+
+        if (channel.IAmChoosingTarget) return "Hedef seç! Bir oyuncuya tıkla (" + Mathf.CeilToInt(channel.TargetingTimeLeft) + " sn)";
+
+        string name = client.Players.TryGetValue(writerId, out PlayerState writer) ? writer.Name : "Biri";
+        return name + " hedef seçiyor...";
     }
 
     string HeadlineFor(NetTurnClient client)

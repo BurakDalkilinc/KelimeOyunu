@@ -26,6 +26,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     NetTurnHost host;
     float creatureBroadcastLeft;
     readonly List<CreatureSnapshot> snapshotBuffer = new List<CreatureSnapshot>();
+    readonly List<WallSnapshot> wallBuffer = new List<WallSnapshot>();
 
     /// <summary>Bu bilgisayardaki tur durumu kopyası; maç başlayana kadar null.</summary>
     public NetTurnClient Client { get; private set; }
@@ -40,6 +41,22 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     public int CreaturesVersion { get; private set; }
 
     List<CreatureSnapshot> latestCreatures = new List<CreatureSnapshot>();
+    List<WallSnapshot> latestWalls = new List<WallSnapshot>();
+
+    /// <summary>Host'tan gelen son duvar fotoğrafı.</summary>
+    public IReadOnlyList<WallSnapshot> LatestWalls => latestWalls;
+
+    /// <summary>Yeni duvar fotoğrafı geldikçe artar.</summary>
+    public int WallsVersion { get; private set; }
+
+    /// <summary>Hedef seçen oyuncunun numarası; kimse seçmiyorsa -1. Her bilgisayarda aynıdır.</summary>
+    public int TargetingWriterId { get; private set; } = -1;
+
+    /// <summary>Hedef seçmek için kalan süre (sn); yaklaşık, mesajlar arasında yerelde geri sayılır.</summary>
+    public float TargetingTimeLeft { get; private set; }
+
+    /// <summary>Bu bilgisayardaki oyuncu şu an hedef seçmek zorunda mı?</summary>
+    public bool IAmChoosingTarget => TargetingWriterId >= 0 && TargetingWriterId == LocalPlayerId;
 
     /// <summary>Kelime kimliğinden kelimeyi bulur (yaratığın sprite'ı için); yoksa null.</summary>
     public WordEntry FindWord(string id)
@@ -79,6 +96,8 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         // Kabul edilen kelime host'ta yaratığa dönüşür (ilk zar atılmadan önce abone ol).
         Sim = new NetMatchSim(config, host.Match, this, config.CreateRandom());
         host.Turns.WordPlayed += Sim.OnWordPlayed;
+        Sim.TargetingStarted += (writerId, seconds) => TargetingStartRpc(writerId, seconds);
+        Sim.TargetingEnded += () => TargetingEndRpc();
 
         SpawnBotAvatars(roster);
 
@@ -115,6 +134,13 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         }
     }
 
+    /// <summary>Hedef seçen oyuncu bir rakibe tıkladı: host'a bildirir (geçerli mi, host karar verir).</summary>
+    public void ChooseTarget(int targetPlayerId)
+    {
+        if (!IsSpawned || !IAmChoosingTarget) return;
+        ChooseTargetRpc(targetPlayerId);
+    }
+
     /// <summary>Bu bilgisayardaki oyuncu bir kelime yazdı: host'a gönderir.</summary>
     public void SubmitWord(string text)
     {
@@ -132,6 +158,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         }
 
         if (Client != null) Client.Tick(Time.deltaTime);
+        if (TargetingWriterId >= 0) TargetingTimeLeft = Mathf.Max(0f, TargetingTimeLeft - Time.deltaTime);
     }
 
     void BroadcastCreatures(float dt)
@@ -142,6 +169,9 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
 
         Sim.Snapshot(snapshotBuffer);
         CreaturesRpc(CreatureSnapshotCodec.Encode(snapshotBuffer));
+
+        Sim.SnapshotWalls(wallBuffer);
+        WallsRpc(WallSnapshotCodec.Encode(wallBuffer));
     }
 
     public override void OnNetworkDespawn()
@@ -151,6 +181,9 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         Client = null;
         latestCreatures = new List<CreatureSnapshot>();
         CreaturesVersion++;
+        latestWalls = new List<WallSnapshot>();
+        WallsVersion++;
+        TargetingWriterId = -1;
     }
 
     // ---- INetAvatars (host'taki karakterler) ----
@@ -164,6 +197,18 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         }
 
         position = Vector2.zero;
+        return false;
+    }
+
+    bool INetAvatars.TryGetFacing(int playerId, out Vector2 direction)
+    {
+        if (NetworkPlayer.TryFind(playerId, out NetworkPlayer avatar))
+        {
+            direction = avatar.FacingDirection;
+            return true;
+        }
+
+        direction = Vector2.up;
         return false;
     }
 
@@ -216,6 +261,37 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         if (!CreatureSnapshotCodec.TryDecode(packedCreatures, out List<CreatureSnapshot> list)) return;
         latestCreatures = list;
         CreaturesVersion++;
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    void WallsRpc(string packedWalls)
+    {
+        if (!WallSnapshotCodec.TryDecode(packedWalls, out List<WallSnapshot> list)) return;
+        latestWalls = list;
+        WallsVersion++;
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    void TargetingStartRpc(int writerId, float seconds)
+    {
+        TargetingWriterId = writerId;
+        TargetingTimeLeft = seconds;
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    void TargetingEndRpc()
+    {
+        TargetingWriterId = -1;
+        TargetingTimeLeft = 0f;
+    }
+
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    void ChooseTargetRpc(int targetPlayerId, RpcParams rpcParams = default)
+    {
+        if (Sim == null) return;
+
+        // Seçen kişi bağlantıdan bulunur; yalnızca sırası olan yazan seçebilir.
+        Sim.TryChooseTarget((int)rpcParams.Receive.SenderClientId, targetPlayerId);
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
