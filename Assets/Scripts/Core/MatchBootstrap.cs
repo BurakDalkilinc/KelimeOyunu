@@ -74,6 +74,45 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
         Walls.Tick(Time.deltaTime);
     }
 
+    readonly List<Vector2> bodyPositions = new List<Vector2>();
+    readonly List<bool> bodySolid = new List<bool>();
+    readonly List<Transform> bodyTransforms = new List<Transform>();
+    readonly List<PlayerState> bodyStates = new List<PlayerState>();
+
+    /// <summary>
+    /// Karakterlerin birbirinin içinden geçmemesi (<see cref="BodyCollisions"/>): hareket eden öndekini iter.
+    /// Hayalet ve uçan karakterler katı değildir. Duvar ve arena sınırı ayrıca korunur.
+    /// </summary>
+    void LateUpdate()
+    {
+        if (config == null || !config.charactersPushEachOther || Match == null) return;
+
+        bodyPositions.Clear(); bodySolid.Clear(); bodyTransforms.Clear(); bodyStates.Clear();
+        foreach (PlayerState state in Match.Players)
+        {
+            if (!avatars.TryGetValue(state.Id, out Transform avatar) || avatar == null) continue;
+
+            bodyTransforms.Add(avatar);
+            bodyStates.Add(state);
+            bodyPositions.Add(avatar.position);
+            bodySolid.Add(state.IsAlive && !state.Status.IsFlying);
+        }
+
+        var arena = new ArenaBounds(config.arenaSize);
+        if (!BodyCollisions.Resolve(bodyPositions, bodySolid, config.playerRadius, arena)) return;
+
+        for (int i = 0; i < bodyTransforms.Count; i++)
+        {
+            if (!bodySolid[i]) continue;
+
+            Vector2 resolved = bodyPositions[i];
+            IObstacleField obstacles = MovementRules.EffectiveObstacles(bodyStates[i], Walls);
+            if (obstacles != null) resolved = arena.Clamp(obstacles.Resolve(resolved, config.playerRadius), config.playerRadius);
+
+            bodyTransforms[i].position = new Vector3(resolved.x, resolved.y, bodyTransforms[i].position.z);
+        }
+    }
+
     void Awake()
     {
         if (config == null || player == null)

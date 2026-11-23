@@ -289,7 +289,9 @@ public class DragonFireTests
         var threat = new GlobalThreat(Ejderha(), world.Players[0], config, arena, world, new Random(2), new CollectingSink());
 
         threat.Tick(9.9f);
-        Assert.AreEqual(2, threat.Zones.Zones.Count);
+        // 4 oyuncu: mağara sayısı oyuncu sayısına göre (2 * 4 / 8 = 1).
+        Assert.AreEqual(ThreatSpec.GetZoneCount(Ejderha(), 4, config), threat.Zones.Zones.Count);
+        Assert.AreEqual(1, threat.Zones.Zones.Count);
 
         threat.Tick(0.2f);
         threat.Tick(config.safeZoneLingerSeconds + 0.5f);

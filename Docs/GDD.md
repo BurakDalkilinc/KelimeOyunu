@@ -22,6 +22,7 @@
 | Yazma süresi | 10 sn |
 | Sonuç/kaçış süresi | 15–20 sn (kelimeye göre) |
 | Global tehdit uyarı süresi | en az 5 sn |
+| Kule/mağara/ev sayısı | kelimedeki sayı 8 oyuncu içindir; hayattaki oyuncu sayısıyla orantılı çoğalır/azalır (en az 1; `zoneReferencePlayers`) |
 | Sığınak kapasitesi | hayattaki oyuncuların yarısı (aşağı yuvarla, en az 1) |
 | Zar: seçilmeme bonusu | her seçilmeyen tur için +0,5 ağırlık (`diceBonusPerMissedTurn`) |
 | Harita | 34 × 19 birim (20 oyuncu için geniş) |
@@ -37,13 +38,14 @@
 - Tuzaklar (ör. Muz kabuğu, trap): hedefin 2 birim yanına düşer ve yerinde bekler (15 sn). Yarıçapına kim basarsa (hedef, yazan ya da başkası) kayar ve tuzak kaybolur (tek kullanımlık). Botlar tuzakları görmez, onlardan kaçmaz.
 - Koruma kelimeleri yazana uygulanır: Kalkan (bir sonraki hasarı engeller, en çok 30 sn), Can (1 can, başlangıç canını aşmaz), Görünmezlik (6 sn saldırı kelimesinin hedefi seçilemez, peşindeki yaratıklar bırakmaz), Kanat (5 sn uçma: hız ×1,2, yerdeki yaratıkların temasından ve tuzaklardan etkilenmez; alan vuruşları, patlamalar ve uçan yaratıklar yine etkiler).
 - Global tehdit akışı: kelime kabul edilince uyarı süresi başlar (en az 5 sn, atom bombası 8 sn), ekranın üstünde alarm ("ATOM BOMBASI! Sığınağa gir! (5 sn)") çıkar ve haritada çözüm alanları belirir. Alanın kapasitesi sınırlıdır: içeridekiler arasında merkeze en yakın olanlar önce girer, önce girenin yeri korunur. Sığınak kapasitesi hayattaki oyuncuların yarısı (aşağı yuvarla, en az 1). Süre dolunca etki başlar; alanın dışında kalan ve kapasiteye sığmayan herkes etkilenir. Kalkan atom bombasını bir kez engeller. Botlar uyarıda en yakın boş alana koşar.
-- Tsunami: 5 sn uyarıdan sonra arenanın rastgele bir kenarından saniyede 4 birim hızla dev dalga gelir; önü geçtiği herkes elenir (kalkan bir kez engeller). 3 kule çıkar, her biri 3 kişi alır; kuledekiler kurtulur.
+- Tsunami: 5 sn uyarıdan sonra arenanın rastgele bir kenarından saniyede 4 birim hızla dev dalga gelir; önü geçtiği herkes elenir (kalkan bir kez engeller). Kule sayısı oyuncu sayısına bağlıdır (8 oyuncuda 3, 20 oyuncuda 8; her biri 3 kişi alır); kuledekiler kurtulur.
 - Meteor yağmuru: haritada sığınak yoktur; 12 sn boyunca 30 meteor eşit aralıkla düşer. Her meteor önce yerde 1,5 sn bir gölge gösterir (yarıçap 1,5), sonra gölgedeki herkese 1 hasar verir. Meteorların bir kısmı (%40) rastgele bir oyuncunun yakınına, kalanı rastgele yere düşer. Çözüm gölgeleri görüp kaçmaktır; kalkan bir meteoru engeller.
 - Yaratık tehditleri (Zombi sürüsü, Ejderha): uyarı süresi beklenmez, yaratıklar hemen görünür. Her yaratık en yakınındaki oyuncuya saldırır (hedefi ölünce ya da başka biri belirgin şekilde yaklaşınca en yakına geçer; görünmezlik alan oyuncular hedef alınamaz) ve yaklaşık 10 sn sürer. Zombi sürüsü: kenarlardan 20 zombi (hız 2,5, saniyede 1 hasar, ilk vuruşlar en çok 4 sn kademeli). Ejderha: uçan tek yaratık (hız 6), yarıçapı 2 olan alanındaki herkese saniyede 1 ateş hasarı verir. Evler ve mağaralar isteğe bağlı sığınaktır: içindekilere yaratıklar vuramaz, ama girmek zorunlu değildir. Evdeki/mağaradaki bot tehlike görse de yerinde kalır.
 - Duvar (wall): yazanın baktığı yönün 1,8 birim önünde, o yöne dik, 4 birim uzunluğunda, 10 sn duran engel. Oyuncular, botlar ve yerdeki (uçmayan) yaratıklar içinden geçemez; uçan yaratıklar (Arı), kanatla uçan oyuncular ve yağmur bulutu geçer. Yaratıklar duvarın çevresinden dolaşmayı bilmez, duvara takılırlar.
 - Çekme (Mıknatıs, pull): arenanın merkezine düşer ve süresi boyunca (4 sn) hedefi saniyede 4 birim hızla oraya çeker. Oyuncu hızı 5 olduğu için ters yönde yürüyerek direnebilir. Botlar mıknatıstan kaçmaz.
 - Yavaşlatma (slowdown): hız yarıya iner. Alan yaratıkları (Bulut) içindeki herkesi yavaşlatır; alandan çıkınca etki 0,6 sn daha sürer.
 - Vur-kaç yaratıklar (ör. Kurt, predator): vurduktan sonra 2 sn geri çekilir, ömrünün son 1,5 sn'sinde sıkılıp gider. Sürü (swarm) üyelerinin ilk vuruşları 0,8 sn arayla kademelidir.
+- Karakterler birbirinin içinden geçemez: hareket eden öndekini iter, kalabalıkta itme yayılır. İtilen karakter kuleden/sığınaktan çıkarsa korumasını kaybeder, boşalan yere başkası girebilir. Hayaletler ve uçanlar (kanat) iç içe geçer (`charactersPushEachOther`).
 - Hayaletler: elenen oyuncu hayalet olur: yarı saydam görünür, arenada gezip maçı izler; duvarlar, yaratıklar ve tehditler ona işlemez, hedef alınamaz, zarda seçilmez. Yeniden doğuş: yazan oyuncu "Yeniden canlanma" (revive) kelimesini yazarsa elenenlerden rastgele biri 1 canla hemen geri döner (tek kişilik ve ağ maçında aynı). Hayalet yoksa kelime boşa gider; kelime de bu maçta bir daha kullanılamaz.
 
 ## Etiket listesi (v1)

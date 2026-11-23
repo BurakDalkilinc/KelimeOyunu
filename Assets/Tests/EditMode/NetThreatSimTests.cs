@@ -82,7 +82,7 @@ public class NetThreatSimTests
         sim.OnWordPlayed(writer, Word("tsunami"));
 
         List<ZoneSnapshot> zones = Zones();
-        Assert.AreEqual(3, zones.Count);
+        Assert.AreEqual(2, zones.Count); // 4 oyuncu: 3 * 4 / 8 = 1,5 -> 2 kule (oyuncu sayısına bağlı)
         Assert.IsTrue(zones.TrueForAll(z => z.Type == "tower" && z.Capacity == 3));
 
         ThreatStatus status = sim.GetThreatStatus();
@@ -190,7 +190,7 @@ public class NetThreatSimTests
 
         Assert.AreEqual(20, sim.CreatureCount);
         List<ZoneSnapshot> zones = Zones();
-        Assert.AreEqual(4, zones.Count);
+        Assert.AreEqual(2, zones.Count); // 4 oyuncu: 4 * 4 / 8 = 2 ev
         Assert.IsTrue(zones.TrueForAll(z => z.Type == "houses"));
     }
 
@@ -205,7 +205,7 @@ public class NetThreatSimTests
         Assert.AreEqual(CreatureKind.FireArea, creatures[0].Kind);
 
         List<ZoneSnapshot> zones = Zones();
-        Assert.AreEqual(2, zones.Count);
+        Assert.AreEqual(1, zones.Count); // 4 oyuncu: 2 * 4 / 8 = 1 mağara
         Assert.IsTrue(zones.TrueForAll(z => z.Type == "cave"));
     }
 

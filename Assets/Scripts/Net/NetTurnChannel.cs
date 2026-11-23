@@ -255,6 +255,46 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         }
     }
 
+    readonly List<Vector2> bodyPositions = new List<Vector2>();
+    readonly List<bool> bodySolid = new List<bool>();
+    readonly List<NetworkPlayer> bodyAvatars = new List<NetworkPlayer>();
+    readonly List<PlayerState> bodyStates = new List<PlayerState>();
+
+    /// <summary>
+    /// Karakterler birbirinin içinden geçmesin (<see cref="BodyCollisions"/>): hareket eden öndekini iter; itilen kuleden çıkabilir.
+    /// Her karede host'ta, bütün karakterler hareket ettikten sonra çözülür.
+    /// </summary>
+    void LateUpdate()
+    {
+        if (!IsServer || Sim == null || !config.charactersPushEachOther) return;
+
+        bodyPositions.Clear(); bodySolid.Clear(); bodyAvatars.Clear(); bodyStates.Clear();
+        foreach (NetworkPlayer avatar in NetworkPlayer.All)
+        {
+            if (avatar == null || !avatar.IsSpawned) continue;
+
+            PlayerState state = Sim.FindPlayer(avatar.PlayerId);
+            bodyAvatars.Add(avatar);
+            bodyStates.Add(state);
+            bodyPositions.Add(avatar.ServerPosition);
+            bodySolid.Add(state == null || (state.IsAlive && !state.Status.IsFlying));
+        }
+
+        var arena = new ArenaBounds(config.arenaSize);
+        if (!BodyCollisions.Resolve(bodyPositions, bodySolid, config.playerRadius, arena)) return;
+
+        for (int i = 0; i < bodyAvatars.Count; i++)
+        {
+            if (!bodySolid[i]) continue;
+
+            Vector2 resolved = bodyPositions[i];
+            IObstacleField obstacles = MovementRules.EffectiveObstacles(bodyStates[i], Sim.Walls);
+            if (obstacles != null) resolved = arena.Clamp(obstacles.Resolve(resolved, config.playerRadius), config.playerRadius);
+
+            if (resolved != bodyAvatars[i].ServerPosition) bodyAvatars[i].ServerSetPosition(resolved);
+        }
+    }
+
     void BroadcastCreatures(float dt)
     {
         creatureBroadcastLeft -= dt;

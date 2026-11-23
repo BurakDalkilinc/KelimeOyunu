@@ -11,6 +11,10 @@ public class GameConfig : ScriptableObject
     [Header("Oyuncu")]
     [Min(1)] public int startingHealth = 3;
 
+    [Header("Karakter itişmesi")]
+    [Tooltip("Açıksa karakterler birbirinin içinden geçemez, hareket eden öndekini iter (kuleden de itilebilir). Hayalet ve uçan karakterler geçer.")]
+    public bool charactersPushEachOther = true;
+
     [Header("Hayalet dirilişi")]
     [Tooltip("\"Yeniden canlanma\" kelimesiyle dirilen oyuncunun canı.")]
     [Min(1)] public int reviveHealth = 1;
@@ -153,6 +157,9 @@ public class GameConfig : ScriptableObject
     [Min(1f)] public float globalThreatWarningSeconds = 5f;
 
     [Header("Çözüm alanları (sığınak, kule, mağara, ev)")]
+    [Tooltip("Çözüm alanı sayısı (kule, mağara, ev) kelimedeki sayı bu oyuncu sayısı için ayarlıdır; hayattaki oyuncu sayısıyla orantılı büyür/küçülür.")]
+    [Min(1)] public int zoneReferencePlayers = 8;
+
     [Tooltip("Çözüm alanının yarıçapı (birim). Oyuncunun merkezi bu daireye girince korunur (kapasite varsa).")]
     [Min(0.5f)] public float safeZoneRadius = 1.6f;
     [Tooltip("Çözüm alanları arena kenarından en az bu kadar içeride çıkar (birim).")]

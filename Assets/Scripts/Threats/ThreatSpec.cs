@@ -23,6 +23,21 @@ public static class ThreatSpec
     }
 
     /// <summary>
+    /// Hayattaki oyuncu sayısına göre alan sayısı. Kelimedeki sayı <see cref="GameConfig.zoneReferencePlayers"/> oyuncu için ayarlıdır;
+    /// kule/mağara/ev gibi "alan başına kapasite" türleri oyuncu sayısıyla orantılı çoğalır (20 oyuncuda ~2,5 katı), en az 1.
+    /// Kapasitesi zaten oyuncu sayısından hesaplanan türler (sığınak) kelimedeki sayıda kalır.
+    /// </summary>
+    public static int GetZoneCount(WordEntry word, int alivePlayers, GameConfig config)
+    {
+        int baseCount = GetZoneCount(word);
+        if (baseCount == 0) return 0;
+        if (word.counter.capacityPerItem <= 0) return baseCount; // Kapasite oranı ile ölçeklenen tür
+
+        int reference = Mathf.Max(1, config.zoneReferencePlayers);
+        return Mathf.Max(1, Mathf.CeilToInt(baseCount * Mathf.Max(0, alivePlayers) / (float)reference));
+    }
+
+    /// <summary>
     /// Bir alanın kapasitesi. "capacityPerItem" yazıyorsa her alan o kadar alır. Yazmıyorsa (sığınak gibi)
     /// toplam kapasite hayattaki oyuncuların "capacityRatio" oranıdır (aşağı yuvarlanır, en az GameConfig'teki alt sınır)
     /// ve alanlara bölünür.

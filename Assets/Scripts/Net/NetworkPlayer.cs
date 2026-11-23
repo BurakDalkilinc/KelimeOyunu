@@ -110,6 +110,17 @@ public class NetworkPlayer : NetworkBehaviour
         transform.position = start;
     }
 
+    /// <summary>Host'ta karakterin şu anki konumu.</summary>
+    public Vector2 ServerPosition => position.Value;
+
+    /// <summary>Host'ta karakteri verilen konuma koyar (itişme çözümü). İstemcide bir şey yapmaz.</summary>
+    public void ServerSetPosition(Vector2 newPosition)
+    {
+        if (!IsServer) return;
+        position.Value = newPosition;
+        transform.position = newPosition;
+    }
+
     /// <summary>Karakteri kısa bir süreye yayarak kaydırır (bir yaratık fırlattığında). Yalnızca host'ta.</summary>
     public void ApplyKnockback(Vector2 distance)
     {

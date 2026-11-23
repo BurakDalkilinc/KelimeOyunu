@@ -68,11 +68,13 @@ public class GlobalThreat
 
     void PlaceZones()
     {
-        int count = ThreatSpec.GetZoneCount(Word);
+        GameConfig config = context.Config;
+        int alive = context.World.Players.Count(p => p.IsAlive);
+
+        int count = ThreatSpec.GetZoneCount(Word, alive, config);
         if (count == 0) return;
 
-        GameConfig config = context.Config;
-        int capacity = ThreatSpec.GetZoneCapacity(Word, context.World.Players.Count(p => p.IsAlive), config);
+        int capacity = ThreatSpec.GetZoneCapacity(Word, alive, config);
         List<Vector2> positions = ZonePlacement.Pick(context.Arena, count, config.safeZoneEdgeMargin, config.safeZoneSeparation, context.Random);
 
         foreach (Vector2 position in positions)
