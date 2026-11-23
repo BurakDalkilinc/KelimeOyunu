@@ -24,6 +24,9 @@ public abstract class TurnViewSource : MonoBehaviour
     /// <summary>Bu bilgisayardaki oyuncunun üzerindeki etkilerin Türkçe özeti ("Kalkan var"...); etki yoksa boş.</summary>
     public abstract string DescribeLocalStatus();
 
+    /// <summary>Bu bilgisayardaki oyuncunun itiş durumu yazısı ("İtiş (Boşluk): hazır" ya da "İtiş: 2 sn").</summary>
+    public abstract string DescribeShove();
+
     /// <summary>
     /// Yazılan kelimeyi gönderir. Sonuç (kabul, uzun, yasaklı, kullanılmış...) hazır olunca <paramref name="onResult"/> çağrılır:
     /// tek kişilikte hemen, ağda host cevap verince.

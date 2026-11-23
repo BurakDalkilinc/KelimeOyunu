@@ -69,9 +69,69 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
         return false;
     }
 
+    readonly Dictionary<int, ShoveCooldown> shoveCooldowns = new Dictionary<int, ShoveCooldown>();
+    readonly List<PlayerState> shoveStates = new List<PlayerState>();
+    readonly List<Vector2> shovePositions = new List<Vector2>();
+    readonly List<bool> shoveSolid = new List<bool>();
+    readonly List<ShoveHit> shoveHits = new List<ShoveHit>();
+
     void Update()
     {
         Walls.Tick(Time.deltaTime);
+        foreach (ShoveCooldown cooldown in shoveCooldowns.Values) cooldown.Tick(Time.deltaTime);
+    }
+
+    ShoveCooldown ShoveCooldownOf(int playerId)
+    {
+        if (!shoveCooldowns.TryGetValue(playerId, out ShoveCooldown cooldown))
+        {
+            cooldown = new ShoveCooldown(config.shoveCooldownSeconds);
+            shoveCooldowns[playerId] = cooldown;
+        }
+        return cooldown;
+    }
+
+    /// <summary>Oyuncunun itişinin kalan bekleme süresi (sn); 0 ise hazır.</summary>
+    public float GetShoveCooldownLeft(int playerId)
+    {
+        return config == null ? 0f : ShoveCooldownOf(playerId).Remaining;
+    }
+
+    /// <summary>
+    /// İtiş: bakılan yönde yakındakileri güçlü savurur (<see cref="ShoveRules"/>, savurma mevcut fırlatma sisteminde).
+    /// Bekleme süresi dolmadıysa, oyuncu elenmiş ya da uçuyorsa yapılmaz. <paramref name="onlyIfVictims"/> true ise
+    /// (botlar) önünde kimse yoksa hak harcanmaz; insan boşa da atabilir (bekleme süresi başlar).
+    /// </summary>
+    public bool TryShove(int playerId, bool onlyIfVictims)
+    {
+        if (Match == null || config == null) return false;
+
+        ShoveCooldown cooldown = ShoveCooldownOf(playerId);
+        if (!cooldown.IsReady) return false;
+
+        shoveStates.Clear(); shovePositions.Clear(); shoveSolid.Clear();
+        PlayerState shover = null;
+        int shoverIndex = -1;
+        foreach (PlayerState state in Match.Players)
+        {
+            if (!avatars.TryGetValue(state.Id, out Transform avatar) || avatar == null) continue;
+
+            if (state.Id == playerId) { shover = state; shoverIndex = shoveStates.Count; }
+            shoveStates.Add(state);
+            shovePositions.Add(avatar.position);
+            shoveSolid.Add(state.IsAlive && !state.Status.IsFlying);
+        }
+
+        if (shover == null || !shover.IsAlive || shover.Status.IsFlying) return false;
+
+        Vector2 facing = TryGetFacing(playerId, out Vector2 f) ? f : Vector2.up;
+        ShoveRules.Find(shoverIndex, facing, shovePositions, shoveSolid, config.shoveRange, config.shoveHalfAngleDegrees, config.shoveDistance, shoveHits);
+        if (onlyIfVictims && shoveHits.Count == 0) return false;
+
+        cooldown.TryUse();
+        foreach (ShoveHit hit in shoveHits) TryApplyKnockback(shoveStates[hit.Index].Id, hit.Push);
+        ShoveEffect.Spawn(shovePositions[shoverIndex], config.shoveRange);
+        return true;
     }
 
     readonly List<Vector2> bodyPositions = new List<Vector2>();
@@ -133,6 +193,7 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
 
         Match = new MatchState(states);
         player.Bind(humanState);
+        player.Bootstrap = this;
         player.Obstacles = Walls;
         avatars[humanState.Id] = player.transform;
 
@@ -159,6 +220,7 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
             var botRandom = new System.Random(Random.Next());
             var bot = go.AddComponent<BotController>();
             bot.Initialize(states[i], config, arena, botRandom, dangers, color);
+            bot.Bootstrap = this;
             bots.Add(bot);
             bot.Obstacles = Walls;
             avatars[states[i].Id] = go.transform;

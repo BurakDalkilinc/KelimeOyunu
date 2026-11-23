@@ -133,6 +133,7 @@ public class TurnViewTests
         public override IReadOnlyList<WordEntry> UsedWords => new List<WordEntry>();
         public override PlayerState LocalPlayer => Local;
         public override string DescribeLocalStatus() => "";
+        public override string DescribeShove() => "";
         public override void SubmitWord(string text, System.Action<SubmitStatus> onResult) { }
         public override bool CanRestart => false;
         public override void Restart() { }

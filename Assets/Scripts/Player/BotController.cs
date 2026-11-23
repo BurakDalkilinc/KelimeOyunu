@@ -21,6 +21,12 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
     /// <summary>İçinden geçilemeyen engeller (duvarlar). Uçarken (kanat) engeller yok sayılır.</summary>
     public IObstacleField Obstacles { get; set; }
 
+    /// <summary>İtiş için maç bağlantısı (<see cref="MatchBootstrap"/> atar).</summary>
+    public MatchBootstrap Bootstrap { get; set; }
+
+    float shoveThinkTimer;
+    System.Random shoveRandom;
+
     /// <summary>Son yürüdüğü yön. Henüz yürümediyse yukarı.</summary>
     public Vector2 FacingDirection { get; private set; } = Vector2.up;
 
@@ -66,6 +72,24 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
 
         Step();
         ResolveObstacles();
+        ThinkShove(Time.deltaTime);
+    }
+
+    /// <summary>
+    /// Bot dörtte bir saniyede bir düşünür: önünde biri varsa (ve bekleme süresi dolmuşsa) belli bir olasılıkla itiş atar.
+    /// Önünde kimse yokken hak harcamaz.
+    /// </summary>
+    void ThinkShove(float dt)
+    {
+        shoveThinkTimer += dt;
+        if (shoveThinkTimer < 0.25f) return;
+        shoveThinkTimer = 0f;
+
+        if (Bootstrap == null) return;
+        if (shoveRandom == null) shoveRandom = new System.Random(State.Id * 31 + 7);
+
+        if (shoveRandom.NextDouble() < config.botShoveChancePerSecond * 0.25f)
+            Bootstrap.TryShove(State.Id, true);
     }
 
     /// <summary>

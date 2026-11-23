@@ -6,8 +6,9 @@ Oyun şu an tek bilgisayarda oynanıyor (sen + 7 bot). Arkadaşlar sırayla klav
 ## Nasıl denenir
 1. Unity'de `Assets/Scenes/Arena` sahnesini aç, **Play**'e bas, Game penceresine bir kez tıkla.
 2. Sıran gelince bir kelime yaz (Türkçe ya da İngilizce), Enter'a bas. Saldırı kelimesiyse 3 sn içinde fareyle bir oyuncuya tıkla.
-3. Maç bitince **R** ile yeniden başla.
-4. Her arkadaşa en az 2 maç oynat. Onlara bir şey anlatma, sadece izle.
+3. **Boşluk** tuşu: bakığın yönde yakındakini güçlü iter (3 sn bekleme). Sol üstte "İtiş (Boşluk): hazır" yazar.
+4. Maç bitince **R** ile yeniden başla.
+5. Her arkadaşa en az 2 maç oynat. Onlara bir şey anlatma, sadece izle.
 
 ## Denenecek kelimeler
 | Tür | Kelimeler |

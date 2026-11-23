@@ -11,6 +11,22 @@ public class GameConfig : ScriptableObject
     [Header("Oyuncu")]
     [Min(1)] public int startingHealth = 3;
 
+    [Header("İtiş (Boşluk tuşu)")]
+    [Tooltip("İtişin vurduğu mesafe (birim).")]
+    [Min(0.5f)] public float shoveRange = 1.9f;
+
+    [Tooltip("İtişin yelpazesi: bakılan yönün iki yanında kaç derece.")]
+    [Range(10f, 180f)] public float shoveHalfAngleDegrees = 65f;
+
+    [Tooltip("İtilenin savrulacağı mesafe (birim, yakında daha çok). Sıradan çarpışma itişinden çok güçlüdür.")]
+    [Min(0.5f)] public float shoveDistance = 3.6f;
+
+    [Tooltip("İtişin bekleme süresi (sn).")]
+    [Min(0.5f)] public float shoveCooldownSeconds = 3f;
+
+    [Tooltip("Botların, önlerinde biri varken saniyede itiş atma şansı (0-1+).")]
+    [Min(0f)] public float botShoveChancePerSecond = 0.6f;
+
     [Header("Karakter itişmesi")]
     [Tooltip("Açıksa karakterler birbirinin içinden geçemez, hareket eden öndekini iter (kuleden de itilebilir). Hayalet ve uçan karakterler geçer.")]
     public bool charactersPushEachOther = true;

@@ -14,6 +14,11 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
     SpriteRenderer spriteRenderer;
     readonly KnockbackMotion knockback = new KnockbackMotion();
 
+    /// <summary>İtiş için maç bağlantısı (<see cref="MatchBootstrap"/> atar).</summary>
+    public MatchBootstrap Bootstrap { get; set; }
+
+    PressEdge shoveEdge;
+
     /// <summary>Oyuncunun maçtaki durumu. <see cref="Bind"/> çağrılana kadar null.</summary>
     public PlayerState State { get; private set; }
 
@@ -72,6 +77,16 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
 
         Step();
         ResolveObstacles();
+        UpdateShove();
+    }
+
+    /// <summary>Boşluk: itiş. Yazı kutusu açıkken (CanMove kapalı) ya da elenince çalışmaz.</summary>
+    void UpdateShove()
+    {
+        var keyboard = Keyboard.current;
+        bool pressed = shoveEdge.Update(keyboard != null && keyboard.spaceKey.isPressed);
+
+        if (pressed && CanMove && State.IsAlive && Bootstrap != null) Bootstrap.TryShove(State.Id, false);
     }
 
     /// <summary>

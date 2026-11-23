@@ -33,10 +33,30 @@ public class NetworkPlayer : NetworkBehaviour
     readonly NetworkVariable<int> health = new NetworkVariable<int>(1);
     readonly NetworkVariable<int> statusFlags = new NetworkVariable<int>(0);
 
+    /// <summary>İtişin kalan bekleme süresi (host yazar, yaklaşık; arayüz kendi geri sayar).</summary>
+    readonly NetworkVariable<float> shoveLeft = new NetworkVariable<float>(0f);
+
+    /// <summary>Her itişte artar; herkes artışı görünce halka efekti çıkarır.</summary>
+    readonly NetworkVariable<int> shoveCount = new NetworkVariable<int>(0);
+
     readonly KnockbackMotion knockback = new KnockbackMotion();
 
     /// <summary>Yön mesajı hız sınırı: normal oyunda yalnızca tuş değişince gider; seli engeller.</summary>
     readonly RpcRateLimiter moveLimiter = new RpcRateLimiter(30f, 30f);
+
+    // İtiş (Boşluk): bekleme süresi ve hesap host'tadır; istemci yalnızca "bastım" der.
+    readonly RpcRateLimiter shoveLimiter = new RpcRateLimiter(3f, 1f);
+    readonly List<PlayerState> shoveStates = new List<PlayerState>();
+    readonly List<NetworkPlayer> shoveAvatars = new List<NetworkPlayer>();
+    readonly List<Vector2> shovePositions = new List<Vector2>();
+    readonly List<bool> shoveSolid = new List<bool>();
+    readonly List<ShoveHit> shoveHits = new List<ShoveHit>();
+    ShoveCooldown shoveCooldown;
+    System.Random shoveRandom;
+    float shoveThinkTimer;
+    float shoveSyncTimer;
+    float shoveLeftChangedAt;
+    PressEdge shoveEdge;
 
     SpriteRenderer spriteRenderer;
     ArenaBounds arena;
@@ -53,6 +73,9 @@ public class NetworkPlayer : NetworkBehaviour
     public int PlayerId => playerId.Value;
 
     public bool IsBot => isBot.Value;
+
+    /// <summary>İtişin kalan bekleme süresi (sn), son host mesajından bu yana geri sayılarak; 0 ise hazır.</summary>
+    public float ShoveLeft => Mathf.Max(0f, shoveLeft.Value - (Time.unscaledTime - shoveLeftChangedAt));
 
     /// <summary>Şu anki can (herkes görür).</summary>
     public int Health => health.Value;
@@ -102,6 +125,8 @@ public class NetworkPlayer : NetworkBehaviour
 
         knockback.Start(Vector2.zero, 0.01f);
         serverInput = Vector2.zero;
+        shoveCooldown?.Reset();
+        shoveLeft.Value = 0f;
         health.Value = config.startingHealth;
         statusFlags.Value = 0;
 
@@ -142,6 +167,9 @@ public class NetworkPlayer : NetworkBehaviour
         playerId.OnValueChanged += (_, __) => ApplyLook();
         health.OnValueChanged += (_, __) => ApplyLook();
         statusFlags.OnValueChanged += (_, __) => ApplyLook();
+        shoveLeft.OnValueChanged += (_, __) => shoveLeftChangedAt = Time.unscaledTime;
+        shoveCount.OnValueChanged += (_, __) => { if (config != null) ShoveEffect.Spawn(transform.position, config.shoveRange); };
+        shoveLeftChangedAt = Time.unscaledTime;
         Everyone.Add(this);
 
         if (IsServer) InitOnServer();
@@ -165,6 +193,8 @@ public class NetworkPlayer : NetworkBehaviour
 
         arena = new ArenaBounds(config.arenaSize);
         health.Value = config.startingHealth;
+        shoveCooldown = new ShoveCooldown(config.shoveCooldownSeconds);
+        shoveRandom = new System.Random(unchecked((int)OwnerClientId * 7919 + 13));
 
         if (preparedBotId >= 0)
         {
@@ -253,6 +283,8 @@ public class NetworkPlayer : NetworkBehaviour
         if (next != current) position.Value = next;
         transform.position = next;
 
+        TickShove(dt, state);
+
         if (state != null)
         {
             if (health.Value != state.Health.Current) health.Value = state.Health.Current;
@@ -260,6 +292,64 @@ public class NetworkPlayer : NetworkBehaviour
             int flags = (int)StatusFlagsUtil.Of(state.Status);
             if (statusFlags.Value != flags) statusFlags.Value = flags;
         }
+    }
+
+    /// <summary>Host'ta itişin bekleme süresini ilerletir, arayüze seyrek bildirir ve botlara ara sıra itiş attırır.</summary>
+    void TickShove(float dt, PlayerState state)
+    {
+        if (shoveCooldown == null) return;
+
+        shoveCooldown.Tick(dt);
+        shoveSyncTimer += dt;
+        if (shoveSyncTimer >= 0.25f)
+        {
+            shoveSyncTimer = 0f;
+            if (Mathf.Abs(shoveLeft.Value - shoveCooldown.Remaining) > 0.2f || (shoveCooldown.IsReady && shoveLeft.Value > 0f))
+                shoveLeft.Value = shoveCooldown.Remaining;
+        }
+
+        if (!isBot.Value || state == null || !state.IsAlive) return;
+
+        shoveThinkTimer += dt;
+        if (shoveThinkTimer < 0.25f) return;
+        shoveThinkTimer = 0f;
+
+        if (shoveRandom.NextDouble() < config.botShoveChancePerSecond * 0.25f) ServerTryShove(true);
+    }
+
+    /// <summary>
+    /// İtiş (host'ta): bekleme süresi doluysa, karakter yaşıyor ve uçmuyorsa bakılan yönde yakındakileri güçlü savurur.
+    /// <paramref name="onlyIfVictims"/> true ise (botlar) önünde kimse yoksa hak harcanmaz.
+    /// </summary>
+    bool ServerTryShove(bool onlyIfVictims)
+    {
+        NetMatchSim sim = channel != null ? channel.Sim : null;
+        PlayerState me = sim != null ? sim.FindPlayer(playerId.Value) : null;
+        if (me == null || !me.IsAlive || me.Status.IsFlying || shoveCooldown == null || !shoveCooldown.IsReady) return false;
+
+        shoveStates.Clear(); shoveAvatars.Clear(); shovePositions.Clear(); shoveSolid.Clear();
+        int myIndex = -1;
+        foreach (NetworkPlayer avatar in All)
+        {
+            if (avatar == null || !avatar.IsSpawned) continue;
+
+            PlayerState state = sim.FindPlayer(avatar.PlayerId);
+            if (avatar == this) myIndex = shoveAvatars.Count;
+            shoveStates.Add(state);
+            shoveAvatars.Add(avatar);
+            shovePositions.Add(avatar.ServerPosition);
+            shoveSolid.Add(state != null && state.IsAlive && !state.Status.IsFlying);
+        }
+        if (myIndex < 0) return false;
+
+        ShoveRules.Find(myIndex, facing, shovePositions, shoveSolid, config.shoveRange, config.shoveHalfAngleDegrees, config.shoveDistance, shoveHits);
+        if (onlyIfVictims && shoveHits.Count == 0) return false;
+
+        shoveCooldown.TryUse();
+        shoveLeft.Value = shoveCooldown.Remaining;
+        shoveCount.Value++;
+        foreach (ShoveHit hit in shoveHits) shoveAvatars[hit.Index].ApplyKnockback(hit.Push);
+        return true;
     }
 
     Vector2 BotDirection(float dt, Vector2 at, NetMatchSim sim, PlayerState state)
@@ -282,7 +372,16 @@ public class NetworkPlayer : NetworkBehaviour
     /// <summary>Bu bilgisayardaki oyuncunun tuşlarını okur; değiştiyse host'a bildirir.</summary>
     void SendInput()
     {
-        Vector2 input = IsTypingTurn() ? Vector2.zero : ReadMoveInput();
+        bool typing = IsTypingTurn();
+        Vector2 input = typing ? Vector2.zero : ReadMoveInput();
+
+        // Boşluk: itiş. Yazma sırasında ve elenince çalışmaz.
+        var keyboard = Keyboard.current;
+        if (shoveEdge.Update(keyboard != null && keyboard.spaceKey.isPressed) && !typing && !IsGhost)
+        {
+            if (IsServer) ServerTryShove(false);
+            else ShoveRpc();
+        }
 
         if (IsServer)
         {
@@ -318,6 +417,15 @@ public class NetworkPlayer : NetworkBehaviour
         if (keyboard.sKey.isPressed || keyboard.downArrowKey.isPressed) y -= 1f;
 
         return new Vector2(x, y).normalized;
+    }
+
+    /// <summary>Sahibi olan istemci "itiş attım" der; bekleme süresini ve etkiyi host hesaplar.</summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+    void ShoveRpc()
+    {
+        if (isBot.Value) return;
+        if (!shoveLimiter.Allow(0, Time.unscaledTime)) return;
+        ServerTryShove(false);
     }
 
     /// <summary>Sahibi olan istemci host'a yönünü söyler. Host değeri her seferinde temizler (<see cref="AvatarMover.SanitizeInput"/>).</summary>

@@ -9,6 +9,7 @@ bağlantıdan bulunur (`rpcParams.Receive.SenderClientId`).
 | Mesaj | Kim gönderebilir | Host'ta doğrulananlar | Sınır | Test |
 | --- | --- | --- | --- | --- |
 | `MoveInputRpc(yön)` (`NetworkPlayer`) | Yalnızca karakterin sahibi (`RpcInvokePermission.Owner`) | Bot karakter için yok sayılır; yön `AvatarMover.SanitizeInput` ile temizlenir (NaN/sonsuz → 0, uzunluk ≤ 1); hız, yavaşlama, duvar, arena sınırı host'ta uygulanır; konum istemciden alınmaz | 30 mesaj patlama, 30/sn yenilenme | `AvatarMoverTests`, `RpcRateLimiterTests` |
+| `ShoveRpc()` (`NetworkPlayer`) | Yalnızca karakterin sahibi (`RpcInvokePermission.Owner`) | Bot için yok sayılır; bekleme süresi host'ta (`ShoveCooldown`, 3 sn), yaşıyor ve uçmuyor mu, kimin vurulacağı ve savrulma miktarı host'ta (`ShoveRules`); istemci yön ya da mesafe gönderemez | 3 patlama, 1/sn (ayrıca bekleme süresi) | `ShoveTests` |
 | `SubmitWordRpc(metin)` (`NetTurnChannel`) | Herkes | Sıra bu oyuncuda mı, aşama doğru mu (`TurnManager.SubmitWord`); kelime uzunluğu, yasaklı, daha önce kullanılmış, eş anlamlı kilidi; 200 karakterden uzun metin hiç işlenmez | 5 patlama, 2/sn | `NetTurnTests`, `NetBotTakeoverTests` |
 | `ChooseTargetRpc(hedef)` | Herkes | Seçim açık mı, gönderen o turun yazanı mı, hedef geçerli mi (kendisi değil, elenmemiş, görünmez değil) | 8 patlama, 4/sn | `NetMatchSimTests` |
 

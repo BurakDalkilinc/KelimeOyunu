@@ -48,6 +48,13 @@ public class MatchRunner : TurnViewSource
 
     public override string DescribeLocalStatus() => StatusText.Describe(LocalPlayer?.Status);
 
+    public override string DescribeShove()
+    {
+        PlayerState local = LocalPlayer;
+        if (local == null || !local.IsAlive) return string.Empty;
+        return ShoveCooldown.Describe(bootstrap.GetShoveCooldownLeft(local.Id));
+    }
+
     public override void SubmitWord(string text, Action<SubmitStatus> onResult)
     {
         SubmitStatus status = Turns.SubmitWord(Turns.Writer.Id, text);

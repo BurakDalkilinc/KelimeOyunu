@@ -46,6 +46,16 @@ public class NetTurnViewSource : TurnViewSource
         return mine == null || mine.IsGhost ? string.Empty : StatusText.Describe(mine.Status);
     }
 
+    public override string DescribeShove()
+    {
+        var manager = NetworkManager.Singleton;
+        if (manager == null || manager.LocalClient == null || manager.LocalClient.PlayerObject == null) return string.Empty;
+
+        NetworkPlayer mine = manager.LocalClient.PlayerObject.GetComponent<NetworkPlayer>();
+        if (mine == null || mine.IsGhost || !channel.MatchActive) return string.Empty;
+        return ShoveCooldown.Describe(mine.ShoveLeft);
+    }
+
     public override void SubmitWord(string text, Action<SubmitStatus> onResult)
     {
         channel.SubmitWord(text, onResult);
