@@ -1,0 +1,107 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// Bir maçın arazisi: harita, yangın, tehlikeler ve engeller bir arada. Yaratıkların (Ateş, Ejderha) tutuşturmasını da buradan yürütür.
+/// Tek kişilik sahne (<see cref="MatchBootstrap"/>) ve ağ maçı (<see cref="NetMatchSim"/>) aynı sınıfı kullanır.
+/// Düz C# sınıfı, test edilebilir.
+/// </summary>
+public class TerrainSim
+{
+    readonly GameConfig config;
+    readonly HashSet<CreatureModel> struckAlready = new HashSet<CreatureModel>();
+    readonly List<CreatureModel> staleModels = new List<CreatureModel>();
+
+    public TerrainMap Map { get; }
+    public FireSim Fire { get; }
+    public TerrainHazards Hazards { get; }
+
+    /// <summary>Yalnızca içinden geçilemeyen karolar (tahta duvar): itilen/fırlatılan karakterler için.</summary>
+    public IObstacleField SolidObstacles { get; }
+
+    /// <summary>Duvar + lav + uçurum + yanan karolar: botların kendi isteğiyle yürürken kaçındığı yerler.</summary>
+    public IObstacleField AvoidingObstacles { get; }
+
+    /// <summary>Haritada bir şey değişti (karo ya da yanma). Ağ katmanı bunu görünce yeni durumu yayar.</summary>
+    public bool Dirty { get; set; }
+
+    /// <summary>Tohumdan yeni harita üretir.</summary>
+    public TerrainSim(GameConfig config, int seed, System.Random random)
+        : this(config, MapGenerator.Generate(Mathf.RoundToInt(config.arenaSize.x), Mathf.RoundToInt(config.arenaSize.y), seed, MapRecipe.Default), random)
+    {
+    }
+
+    /// <summary>Hazır haritayla (testler ve istemci için).</summary>
+    public TerrainSim(GameConfig config, TerrainMap map, System.Random random)
+    {
+        this.config = config ?? throw new ArgumentNullException(nameof(config));
+        Map = map ?? throw new ArgumentNullException(nameof(map));
+        Fire = new FireSim(map, config, random ?? throw new ArgumentNullException(nameof(random)));
+        Hazards = new TerrainHazards(map, Fire, config);
+        SolidObstacles = new TerrainObstacles(map, Fire, blockHazards: false);
+        AvoidingObstacles = new TerrainObstacles(map, Fire, blockHazards: true);
+
+        map.TileChanged += (_, __) => Dirty = true;
+        Fire.BurnChanged += (_, __) => Dirty = true;
+    }
+
+    /// <summary>Dünya noktası duvar, lav ya da uçurum karosunda mı? (Kule/sığınak yerleşimi buradan kaçınır.)</summary>
+    public bool IsBlocked(Vector2 point) => Map.IsBlockedPoint(point);
+
+    /// <summary>
+    /// Noktayı en yakın güvenli (yürünür, yanmayan) karoya taşır; nokta zaten güvenliyse aynen verir.
+    /// Başlangıç yerleri (karakterler, botlar) bununla ayarlanır.
+    /// </summary>
+    public Vector2 NearestSafe(Vector2 point)
+    {
+        Vector2Int cell = Map.CellOf(point);
+        if (TerrainMap.IsWalkable(Map.At(cell.x, cell.y)) && !Fire.IsBurning(cell.x, cell.y)) return point;
+
+        return Map.TryFindNearestWalkable(point, out Vector2 safe, Fire.IsBurning) ? safe : point;
+    }
+
+    /// <summary>
+    /// Zamanı ilerletir: yangın, yaratıkların tutuşturması ve tehlikelerin hasarı.
+    /// </summary>
+    public void Tick(float deltaSeconds, IEnumerable<CreatureModel> creatures, IReadOnlyList<PlayerState> players,
+                     Func<int, Vector2?> positionOf, Action<int, Vector2> teleport)
+    {
+        IgniteFromCreatures(deltaSeconds, creatures);
+        Fire.Tick(deltaSeconds);
+        Hazards.Tick(deltaSeconds, players, positionOf, teleport);
+    }
+
+    /// <summary>
+    /// Tutuşturan yaratıklar: "Ateş" uyarısı dolup vurunca bir kez alanını tutuşturur; ejderha gibi sürekli ateş
+    /// püskürtenler yarıçaplarındaki karoları saniyede <see cref="GameConfig.creatureIgniteChancePerSecond"/> olasılıkla tutuşturur.
+    /// </summary>
+    void IgniteFromCreatures(float dt, IEnumerable<CreatureModel> creatures)
+    {
+        if (creatures == null) return;
+
+        foreach (CreatureModel creature in creatures)
+        {
+            if (creature == null || !creature.IgnitesTerrain || creature.IsFinished) continue;
+
+            if (creature.IsStrike)
+            {
+                if (creature.HasStruck && struckAlready.Add(creature)) Fire.IgniteArea(creature.Position, creature.Radius);
+            }
+            else if (creature.BurnsArea)
+            {
+                float chance = 1f - Mathf.Exp(-config.creatureIgniteChancePerSecond * Mathf.Max(0f, dt));
+                Fire.IgniteArea(creature.Position, creature.Radius * 0.8f, chance);
+            }
+        }
+
+        // Bitmiş yaratıkların kaydını unut (bellek şişmesin).
+        if (struckAlready.Count > 64)
+        {
+            staleModels.Clear();
+            foreach (CreatureModel model in struckAlready)
+                if (model.IsFinished) staleModels.Add(model);
+            foreach (CreatureModel model in staleModels) struckAlready.Remove(model);
+        }
+    }
+}

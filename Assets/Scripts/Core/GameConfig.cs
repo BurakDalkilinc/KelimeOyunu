@@ -27,6 +27,37 @@ public class GameConfig : ScriptableObject
     [Tooltip("Botların, önlerinde biri varken saniyede itiş atma şansı (0-1+).")]
     [Min(0f)] public float botShoveChancePerSecond = 0.6f;
 
+    [Header("Arazi ve yangın")]
+    [Tooltip("Harita tohumu. 0 ise her maçta rastgele bir harita üretilir; başka bir sayı hep aynı haritayı verir.")]
+    public int terrainSeed = 0;
+
+    [Tooltip("Yanan tahta komşu tahta karoya saniyede bu olasılıkla (≈) yayılır.")]
+    [Min(0f)] public float fireSpreadChancePerSecond = 0.45f;
+
+    [Tooltip("Tahta karonun yanma süresi (sn); sonra kömürleşir.")]
+    [Min(0.5f)] public float fireBurnSeconds = 5f;
+
+    [Tooltip("Çimen/patika/kömür üstüne düşen alevin süresi (sn); yayılmaz.")]
+    [Min(0.5f)] public float groundFireSeconds = 2.5f;
+
+    [Tooltip("Lavın bitişiğindeki tahta karonun saniyede tutuşma olasılığı.")]
+    [Min(0f)] public float lavaIgniteChancePerSecond = 0.1f;
+
+    [Tooltip("Ejderha gibi sürekli ateş püskürten yaratığın alanındaki karoların saniyede tutuşma olasılığı.")]
+    [Min(0f)] public float creatureIgniteChancePerSecond = 1.5f;
+
+    [Min(0)] public int terrainFireDamage = 1;
+    [Tooltip("Yanan karoda duran oyuncuya hasar aralığı (sn).")]
+    [Min(0.1f)] public float terrainFireDamageIntervalSeconds = 1f;
+
+    [Min(0)] public int lavaDamage = 1;
+    [Tooltip("Lavda duran oyuncuya hasar aralığı (sn).")]
+    [Min(0.1f)] public float lavaDamageIntervalSeconds = 1f;
+
+    [Tooltip("Uçuruma düşenin kaybettiği can (sonra en yakın güvenli kareye döner).")]
+    [Min(0)] public int chasmFallDamage = 1;
+    [Min(0.1f)] public float chasmFallCooldownSeconds = 1.5f;
+
     [Header("Karakter itişmesi")]
     [Tooltip("Açıksa karakterler birbirinin içinden geçemez, hareket eden öndekini iter (kuleden de itilebilir). Hayalet ve uçan karakterler geçer.")]
     public bool charactersPushEachOther = true;

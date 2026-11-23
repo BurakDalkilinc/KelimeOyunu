@@ -76,6 +76,7 @@
 | `escape` | Geçici uçma/kaçış |
 | `stealth` | Hedef alınamaz |
 | `revive` | Elenenlerden biri yeniden doğar |
+| `ignite` | Haritadaki tahtaları tutuşturur (yangın yayılır) |
 
 ## Çözüm (counter) türleri
 | Tür | Kullanan tehdit |

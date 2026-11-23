@@ -28,6 +28,7 @@ public static class TagRegistry
         new EscapeTag(),
         new WallTag(),
         new ReviveTag(),
+        new IgniteTag(),
         new MapWideTag(),
         new WaterTag(),
         new SkyTag(),

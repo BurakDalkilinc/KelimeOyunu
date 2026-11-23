@@ -9,7 +9,8 @@ public static class ZonePlacement
 {
     const int AttemptsPerZone = 60;
 
-    public static List<Vector2> Pick(ArenaBounds arena, int count, float edgeMargin, float minSeparation, System.Random random)
+    public static List<Vector2> Pick(ArenaBounds arena, int count, float edgeMargin, float minSeparation, System.Random random,
+                                     System.Func<Vector2, bool> isBlockedPoint = null)
     {
         if (arena == null) throw new System.ArgumentNullException(nameof(arena));
         if (random == null) throw new System.ArgumentNullException(nameof(random));
@@ -34,6 +35,8 @@ public static class ZonePlacement
                         Mathf.Lerp(-half.x, half.x, (float)random.NextDouble()),
                         Mathf.Lerp(-half.y, half.y, (float)random.NextDouble()));
 
+                    if (!IsClear(point, isBlockedPoint)) continue;
+
                     if (FarEnough(point, result, needed))
                     {
                         chosen = point;
@@ -43,12 +46,23 @@ public static class ZonePlacement
                 }
             }
 
+            // Hiç uygun yer bulunamazsa (çok dolu harita) engel bakmadan rastgele bir yere koy.
             if (!found)
                 chosen = new Vector2(Mathf.Lerp(-half.x, half.x, (float)random.NextDouble()), Mathf.Lerp(-half.y, half.y, (float)random.NextDouble()));
 
             result.Add(chosen);
         }
         return result;
+    }
+
+    /// <summary>Alanın merkezi ve çevresindeki dört nokta (1,2 birim) duvar/lav/uçurum üstünde değilse temiz sayılır.</summary>
+    static bool IsClear(Vector2 point, System.Func<Vector2, bool> isBlockedPoint)
+    {
+        if (isBlockedPoint == null) return true;
+        const float reach = 1.2f;
+        return !isBlockedPoint(point)
+            && !isBlockedPoint(point + Vector2.right * reach) && !isBlockedPoint(point + Vector2.left * reach)
+            && !isBlockedPoint(point + Vector2.up * reach) && !isBlockedPoint(point + Vector2.down * reach);
     }
 
     static bool FarEnough(Vector2 point, List<Vector2> others, float distance)

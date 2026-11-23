@@ -11,6 +11,9 @@ public interface INetAvatars
 
     /// <summary>Karakterin baktığı (son yürüdüğü) yön; bilinmiyorsa false.</summary>
     bool TryGetFacing(int playerId, out Vector2 direction);
+
+    /// <summary>Karakteri verilen noktaya ışınlar (uçuruma düşen güvenli kareye döner). Yapılamıyorsa false.</summary>
+    bool TryTeleport(int playerId, Vector2 position) => false;
 }
 
 /// <summary>

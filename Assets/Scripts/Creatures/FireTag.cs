@@ -11,6 +11,7 @@ public class FireTag : ITagBehaviour, IThreatEffectTag
     public void Configure(CreatureModel creature, SpawnContext context)
     {
         creature.BurnsArea = true;
+        creature.IgnitesTerrain = true; // Ateş püskürten yaratık altındaki tahtaları da tutuşturur
         creature.RetargetsWhenTargetDies = true;
         if (context.Config != null) creature.AreaDamageIntervalSeconds = context.Config.fireDamageIntervalSeconds;
     }

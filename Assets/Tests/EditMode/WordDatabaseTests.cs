@@ -167,7 +167,7 @@ public class WordDatabaseTests
     {
         "slow", "fast", "flying", "swarm", "undead", "predator", "instant", "knockback", "trap",
         "slowdown", "pull", "armored", "explosive", "area", "water", "fire", "sky", "map_wide",
-        "shield", "heal", "wall", "escape", "stealth", "revive"
+        "shield", "heal", "wall", "escape", "stealth", "revive", "ignite"
     };
 
     static readonly string[] AllowedCounters = { "shelter", "tower", "cave", "shadows", "houses" };

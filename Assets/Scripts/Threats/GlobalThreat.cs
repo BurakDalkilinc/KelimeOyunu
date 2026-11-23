@@ -24,6 +24,7 @@ public enum ThreatPhase
 public class GlobalThreat
 {
     readonly ThreatContext context;
+    readonly System.Func<Vector2, bool> isBlockedPoint;
     readonly List<IThreatEffect> effects;
     float lingerLeft;
     bool effectsFinished;
@@ -46,8 +47,10 @@ public class GlobalThreat
     public event Action Impacted;
 
     public GlobalThreat(WordEntry word, PlayerState writer, GameConfig config, ArenaBounds arena,
-                        IPlayerLocator world, System.Random random, ICreatureSink creatures = null)
+                        IPlayerLocator world, System.Random random, ICreatureSink creatures = null,
+                        System.Func<Vector2, bool> isBlockedPoint = null)
     {
+        this.isBlockedPoint = isBlockedPoint;
         if (word == null) throw new ArgumentNullException(nameof(word));
         if (config == null) throw new ArgumentNullException(nameof(config));
         if (arena == null) throw new ArgumentNullException(nameof(arena));
@@ -75,7 +78,7 @@ public class GlobalThreat
         if (count == 0) return;
 
         int capacity = ThreatSpec.GetZoneCapacity(Word, alive, config);
-        List<Vector2> positions = ZonePlacement.Pick(context.Arena, count, config.safeZoneEdgeMargin, config.safeZoneSeparation, context.Random);
+        List<Vector2> positions = ZonePlacement.Pick(context.Arena, count, config.safeZoneEdgeMargin, config.safeZoneSeparation, context.Random, isBlockedPoint);
 
         foreach (Vector2 position in positions)
             context.Zones.Add(new SafeZone(Word.counter.type, position, config.safeZoneRadius, capacity, float.MaxValue));

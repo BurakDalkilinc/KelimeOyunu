@@ -113,6 +113,12 @@ public class CreatureModel
     /// <summary>true ise sürekli alanı ateş püskürtür: yarıçapındaki herkese aralıklarla hasar verir. "fire" etiketi açar.</summary>
     public bool BurnsArea { get; set; }
 
+    /// <summary>
+    /// Haritadaki tahtaları tutuşturur mu? Uyarı alanı vuranlar (Ateş) vurunca bir kez, sürekli ateş püskürtenler (Ejderha)
+    /// yarıçaplarında sürekli tutuşturur. Yangını <see cref="TerrainSim"/> yürütür.
+    /// </summary>
+    public bool IgnitesTerrain { get; set; }
+
     /// <summary>Ateşin aynı oyuncuya iki hasarı arasındaki süre (sn). "fire" etiketi GameConfig'ten ayarlar.</summary>
     public float AreaDamageIntervalSeconds { get; set; } = 1f;
 
