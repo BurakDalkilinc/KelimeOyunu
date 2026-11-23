@@ -14,9 +14,6 @@ public class GameConfig : ScriptableObject
     [Header("Hayalet dirilişi")]
     [Tooltip("\"Yeniden canlanma\" kelimesiyle dirilen oyuncunun canı.")]
     [Min(1)] public int reviveHealth = 1;
-
-    [Tooltip("Hayaletlerin kimin dirileceğini oylama süresi (ağ maçı).")]
-    [Min(1f)] public float reviveVoteSeconds = 6f;
     [Min(1)] public int minPlayers = 4;
     [Min(1)] public int maxPlayers = 20;
 
@@ -24,7 +21,7 @@ public class GameConfig : ScriptableObject
     [Tooltip("Oyuncunun saniyedeki hızı (birim/sn).")]
     [Min(0.1f)] public float playerMoveSpeed = 5f;
     [Tooltip("Arenanın genişliği ve yüksekliği (birim).")]
-    public Vector2 arenaSize = new Vector2(20f, 12f);
+    public Vector2 arenaSize = new Vector2(34f, 19f);
     [Tooltip("Oyuncunun merkezinin arena kenarından uzak durması gereken mesafe.")]
     [Min(0f)] public float playerRadius = 0.5f;
     [Tooltip("Kameranın arenanın etrafında bırakacağı boşluk (birim).")]

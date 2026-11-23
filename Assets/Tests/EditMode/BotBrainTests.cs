@@ -14,7 +14,8 @@ public class BotBrainTests
     [SetUp]
     public void SetUp()
     {
-        config = ScriptableObject.CreateInstance<GameConfig>(); // Arena 20x12, oyuncu yarıçapı 0.5
+        config = ScriptableObject.CreateInstance<GameConfig>(); // Oyuncu yarıçapı 0.5
+        config.arenaSize = new Vector2(20f, 12f); // Testlerdeki koordinatlar bu küçük haritaya göre; oyunun gerçek haritası daha büyük
         arena = new ArenaBounds(config.arenaSize);
     }
 

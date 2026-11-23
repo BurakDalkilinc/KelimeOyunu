@@ -40,34 +40,24 @@ public class NetTargetPicker : MonoBehaviour
 
         if (prompt != null) prompt.text = PromptText();
 
-        bool voting = channel != null && channel.IAmVoting;
-        if (channel == null || config == null || worldCamera == null || (!channel.IAmChoosingTarget && !voting))
+        if (channel == null || config == null || worldCamera == null || !channel.IAmChoosingTarget)
         {
             if (ring != null && ring.gameObject.activeSelf) ring.gameObject.SetActive(false);
             return;
         }
 
-        NetworkPlayer hovered = voting ? FindGhostAt(MouseWorldPosition()) : FindAt(MouseWorldPosition());
+        NetworkPlayer hovered = FindAt(MouseWorldPosition());
         ring.gameObject.SetActive(hovered != null);
         if (hovered == null) return;
 
         ring.position = hovered.transform.position;
         ring.localScale = Vector3.one * (config.playerRadius * 2.8f);
 
-        if (!clicked) return;
-        if (voting) channel.VoteForGhost(hovered.PlayerId);
-        else channel.ChooseTarget(hovered.PlayerId);
+        if (clicked) channel.ChooseTarget(hovered.PlayerId);
     }
 
     string PromptText()
     {
-        if (channel != null && channel.VoteActive)
-        {
-            return channel.IAmVoting
-                ? $"Kim dirilsin? Bir hayalete tıkla ({Mathf.CeilToInt(channel.VoteTimeLeft)} sn)"
-                : $"Hayaletler kimin dirileceğini oyluyor... ({Mathf.CeilToInt(channel.VoteTimeLeft)} sn)";
-        }
-
         if (channel == null || channel.TargetingWriterId < 0) return string.Empty;
         if (channel.IAmChoosingTarget) return $"Hedef seç! Bir oyuncuya tıkla ({Mathf.CeilToInt(channel.TargetingTimeLeft)} sn)";
 
@@ -85,27 +75,6 @@ public class NetTargetPicker : MonoBehaviour
         {
             if (avatar == null || avatar.PlayerId == channel.LocalPlayerId || avatar.IsGhost) continue;
             if ((avatar.Status & StatusFlags.Stealth) != 0) continue;
-
-            float distance = ((Vector2)avatar.transform.position - point).magnitude;
-            if (distance <= config.targetClickRadius && distance < bestDistance)
-            {
-                best = avatar;
-                bestDistance = distance;
-            }
-        }
-
-        return best;
-    }
-
-    /// <summary>Verilen noktaya en yakın hayalet (kendin dahil; oy verilebilir adaylar).</summary>
-    NetworkPlayer FindGhostAt(Vector2 point)
-    {
-        NetworkPlayer best = null;
-        float bestDistance = float.MaxValue;
-
-        foreach (NetworkPlayer avatar in NetworkPlayer.All)
-        {
-            if (avatar == null || !avatar.IsGhost) continue;
 
             float distance = ((Vector2)avatar.transform.position - point).magnitude;
             if (distance <= config.targetClickRadius && distance < bestDistance)

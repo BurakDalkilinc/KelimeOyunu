@@ -40,7 +40,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
   - [x] Zombi sürüsü: hemen belirir (uyarı yok), kenarlardan 20 zombi en yakındaki oyuncuya saldırır (10 sn); evler isteğe bağlı sığınak, evdeki bot evinde kalır
   - [x] Ejderha: hemen belirir, en yakındaki oyuncuya saldırır, alanında saniyede 1 ateş hasarı (10 sn); mağaralar isteğe bağlı sığınak
 - [x] Bilinmeyen kelime → "???" yaratığı
-- [x] Hayalet modu (eleme sonrası izleme): yarı saydam, WASD ile gezer, duvarlar/yaratıklar/tehditler işlemez, hedef alınamaz (oylama Aşama 4'te)
+- [x] Hayalet modu (eleme sonrası izleme): yarı saydam, WASD ile gezer, duvarlar/yaratıklar/tehditler işlemez, hedef alınamaz (yeniden doğuş için bkz. Aşama 4)
 - [x] Maç sonu ekranı: kazanan, yazılan kelimeler listesi, R ile yeniden başlama
 - [x] Piksel sanat görünümü: kodla üretilen 16x16 sprite'lar (`Tools/GeneratePixelArt.py`), Pixel Perfect Camera, piksel yazı tipi (Pixelify Sans). Beğenilmeyen sprite aynı adlı PNG ile değiştirilebilir
 - [ ] **Test:** 3 arkadaş oynadı, notlar `Docs/TEST_NOTLARI.md`'ye yazıldı
@@ -56,7 +56,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 
 ## Aşama 4 — 20 kişi
 - [x] Lobi 4–20 kişi, eksikler bot (host lobide oyuncu sayısını ayarlar; Steam odası 20 kişi; geç bağlanan reddedilir)
-- [x] Hayalet oylama sistemi ("Yeniden canlanma" kelimesi: hayaletler kimin döneceğini oylar; `GhostVote`)
+- [x] Hayalet katılımı: "Yeniden canlanma" kelimesi elenenlerden rastgele birini 1 canla geri getirir (oylama yok, karar: rastgele)
 - [x] 20 oyuncu performans testi (`NetPerformanceTests`; Editor'da 20 oyuncu + 49 yaratıkla ~167 kare/sn)
 - [x] Hile kontrolleri (sunucu doğrulama listesi: `Docs/HILE_KONTROLLERI.md`, hız sınırı, boyut sınırı)
 

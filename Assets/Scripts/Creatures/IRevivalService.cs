@@ -1,6 +1,6 @@
 /// <summary>
-/// "Yeniden canlanma" kelimesinin elenmiş bir oyuncuyu geri getirmesini sağlayan hizmet. Tek kişilik sahnede rastgele bir hayalet
-/// dirilir, ağ maçında hayaletler kimin dirileceğini oylar. Kelime etiketi (<see cref="ReviveTag"/>) sadece bu hizmeti çağırır.
+/// "Yeniden canlanma" kelimesinin elenmiş bir oyuncuyu geri getirmesini sağlayan hizmet. Elenenlerden rastgele biri
+/// dirilir. Kelime etiketi (<see cref="ReviveTag"/>) sadece bu hizmeti çağırır.
 /// </summary>
 public interface IRevivalService
 {

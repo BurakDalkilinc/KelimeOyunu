@@ -1,6 +1,6 @@
 /// <summary>
-/// "revive": yazan oyuncu "yeniden canlanma" yazarsa elenenlerden biri yeniden doğar. Kimin dirileceğini hayaletler oylar
-/// (kimse oy vermezse rastgele); yeniden doğan oyuncu <c>GameConfig.reviveHealth</c> canla döner.
+/// "revive": yazan oyuncu "yeniden canlanma" yazarsa elenenlerden rastgele biri yeniden doğar
+/// (<c>GameConfig.reviveHealth</c> canla döner).
 /// Etki, yazanın üzerine değil elenmiş bir oyuncunun üzerine gider; bu yüzden iş <see cref="IRevivalService"/>'e devredilir.
 /// </summary>
 public class ReviveTag : ITagBehaviour, ISelfEffectTag

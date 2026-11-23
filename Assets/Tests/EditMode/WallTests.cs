@@ -15,6 +15,7 @@ public class WallTests
     {
         arena = new ArenaBounds(new Vector2(20f, 12f));
         config = ScriptableObject.CreateInstance<GameConfig>(); // önünde 1.8, kalınlık 0.5, uzunluk 4, ömür 10
+        config.arenaSize = new Vector2(20f, 12f); // Testlerdeki koordinatlar bu küçük haritaya göre
     }
 
     [TearDown]

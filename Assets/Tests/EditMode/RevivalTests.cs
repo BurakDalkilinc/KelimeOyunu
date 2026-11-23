@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 
-/// <summary>Hayalet dirilişi testleri: can, oylama, kelime etiketi, tek kişilik hizmet ve ağ simülasyonu.</summary>
+/// <summary>Hayalet dirilişi testleri: can, kelime etiketi, rastgele diriliş hizmeti ve ağ simülasyonu.</summary>
 public class RevivalTests
 {
     sealed class FakeAvatars : INetAvatars
@@ -103,88 +103,6 @@ public class RevivalTests
         Assert.IsTrue(health.IsDead);
     }
 
-    // ---- GhostVote ----
-
-    [Test]
-    public void Vote_MajorityWins()
-    {
-        var a = Dead(1); var b = Dead(2); var c = Dead(3);
-        var vote = new GhostVote(new[] { a, b, c }, new[] { 1, 2, 3 }, 5f, new System.Random(1));
-
-        vote.TryVote(1, 2);
-        vote.TryVote(2, 2);
-        Assert.IsFalse(vote.IsFinished);
-        vote.TryVote(3, 1);
-
-        Assert.IsTrue(vote.IsFinished); // Herkes oy verince erken biter
-        Assert.AreSame(b, vote.Winner);
-        Assert.AreEqual(2, vote.VotesFor(2));
-    }
-
-    [Test]
-    public void Vote_Tie_PicksOneOfTheTopCandidates()
-    {
-        var a = Dead(1); var b = Dead(2); var c = Dead(3);
-        for (int seed = 0; seed < 20; seed++)
-        {
-            var vote = new GhostVote(new[] { a, b, c }, new[] { 1, 2 }, 5f, new System.Random(seed));
-            vote.TryVote(1, 1);
-            vote.TryVote(2, 2);
-
-            Assert.IsTrue(vote.Winner == a || vote.Winner == b);
-            Assert.AreNotSame(c, vote.Winner);
-        }
-    }
-
-    [Test]
-    public void Vote_NoVotes_AfterTimeout_PicksRandomly()
-    {
-        var a = Dead(1); var b = Dead(2);
-        var vote = new GhostVote(new[] { a, b }, new[] { 1 }, 5f, new System.Random(3));
-
-        vote.Tick(4f);
-        Assert.IsFalse(vote.IsFinished);
-        vote.Tick(2f);
-
-        Assert.IsTrue(vote.IsFinished);
-        Assert.IsTrue(vote.Winner == a || vote.Winner == b);
-    }
-
-    [Test]
-    public void Vote_WithoutHumanVoters_FinishesImmediately()
-    {
-        var bot = Dead(100, bot: true);
-        var vote = new GhostVote(new[] { bot }, new int[0], 5f, new System.Random(1));
-
-        Assert.IsTrue(vote.IsFinished);
-        Assert.AreSame(bot, vote.Winner);
-    }
-
-    [Test]
-    public void Vote_RejectsNonVoters_UnknownCandidates_AndLateVotes()
-    {
-        var a = Dead(1); var b = Dead(2);
-        var vote = new GhostVote(new[] { a, b }, new[] { 1, 2 }, 5f, new System.Random(1));
-
-        Assert.IsFalse(vote.TryVote(9, 1));   // Oy hakkı yok
-        Assert.IsFalse(vote.TryVote(1, 9));   // Aday değil
-        Assert.AreEqual(0, vote.VotesCast);
-
-        Assert.IsTrue(vote.TryVote(1, 1));
-        Assert.IsTrue(vote.TryVote(1, 2));    // Fikir değiştirmek serbest
-        Assert.AreEqual(1, vote.VotesCast);
-        Assert.AreEqual(1, vote.VotesFor(2));
-
-        vote.Tick(10f);
-        Assert.IsFalse(vote.TryVote(2, 1));   // Bitti
-    }
-
-    [Test]
-    public void Vote_RequiresAtLeastOneCandidate()
-    {
-        Assert.Throws<System.ArgumentException>(() => new GhostVote(new PlayerState[0], new[] { 1 }, 5f, new System.Random(1)));
-    }
-
     // ---- Etiket, kelime ----
 
     [Test]
@@ -220,7 +138,7 @@ public class RevivalTests
         Assert.AreEqual("yeniden_canlanma", result.Entry.id);
     }
 
-    // ---- Tek kişilik hizmet ----
+    // ---- Diriliş hizmeti (tek kişilik ve ağ aynısını kullanır) ----
 
     [Test]
     public void GhostRevival_RevivesARandomGhost_WithConfiguredHealth_AndClearsEffects()
@@ -247,7 +165,18 @@ public class RevivalTests
         Assert.IsNull(GhostRevival.Pick(new[] { alive }, new System.Random(1)));
     }
 
-    // ---- Ağ simülasyonu: oylu diriliş ----
+    [Test]
+    public void GhostRevival_NeverRevivesTheLiving()
+    {
+        var alive = new PlayerState(1, "A", 3);
+        alive.Health.TakeDamage(1);
+
+        GhostRevival.Revive(alive, config);
+
+        Assert.AreEqual(2, alive.Health.Current); // Yaşayanın canı değişmez
+    }
+
+    // ---- Ağ simülasyonu: rastgele diriliş ----
 
     NetMatchSim BuildSim(out PlayerState writer, out PlayerState humanGhost, out PlayerState botGhost)
     {
@@ -263,99 +192,62 @@ public class RevivalTests
     }
 
     [Test]
-    public void NetSim_ReviveWord_StartsAVote_AndTheVotedGhostReturns()
+    public void NetSim_ReviveWord_RevivesExactlyOneRandomGhost_Immediately()
     {
         NetMatchSim sim = BuildSim(out PlayerState writer, out PlayerState humanGhost, out PlayerState botGhost);
-        float started = -1f; int ended = -2;
-        sim.VoteStarted += s => started = s;
-        sim.VoteEnded += id => ended = id;
 
         sim.OnWordPlayed(writer, Word("yeniden_canlanma"));
 
-        Assert.IsTrue(sim.IsVoting);
-        Assert.AreEqual(config.reviveVoteSeconds, started, 0.0001f);
-
-        Assert.IsTrue(sim.TryVote(2, 100)); // İnsan hayalet, bot hayaleti seçti
-
-        Assert.IsFalse(sim.IsVoting);
-        Assert.AreEqual(100, ended);
-        Assert.IsFalse(botGhost.IsGhost);
-        Assert.AreEqual(config.reviveHealth, botGhost.Health.Current);
-        Assert.IsTrue(humanGhost.IsGhost); // Diğeri hâlâ elenmiş
+        int revived = (humanGhost.IsGhost ? 0 : 1) + (botGhost.IsGhost ? 0 : 1);
+        Assert.AreEqual(1, revived);
+        PlayerState back = humanGhost.IsGhost ? botGhost : humanGhost;
+        Assert.AreEqual(config.reviveHealth, back.Health.Current);
     }
 
     [Test]
-    public void NetSim_Vote_RejectsLivingPlayersAndNonGhostCandidates()
-    {
-        NetMatchSim sim = BuildSim(out PlayerState writer, out _, out _);
-        sim.OnWordPlayed(writer, Word("yeniden_canlanma"));
-
-        Assert.IsFalse(sim.TryVote(1, 2));   // Yazan yaşıyor, oy hakkı yok
-        Assert.IsFalse(sim.TryVote(2, 3));   // 3 numara hayalet değil
-        Assert.IsFalse(sim.TryVote(100, 2)); // Bot oy vermez
-        Assert.IsTrue(sim.IsVoting);
-    }
-
-    [Test]
-    public void NetSim_Vote_TimeoutPicksARandomGhost()
+    public void NetSim_SecondReviveWord_BringsBackTheOtherGhost()
     {
         NetMatchSim sim = BuildSim(out PlayerState writer, out PlayerState humanGhost, out PlayerState botGhost);
-        sim.OnWordPlayed(writer, Word("yeniden_canlanma"));
-
-        sim.Tick(config.reviveVoteSeconds + 0.1f);
-
-        Assert.IsFalse(sim.IsVoting);
-        Assert.AreEqual(1, (humanGhost.IsGhost ? 0 : 1) + (botGhost.IsGhost ? 0 : 1)); // Tam biri döndü
-    }
-
-    [Test]
-    public void NetSim_OnlyBotGhosts_RevivesImmediately()
-    {
-        var writer = new PlayerState(1, "Yazan", 3);
-        var botGhost = Dead(100, bot: true);
-        var avatars = new FakeAvatars();
-        avatars.Positions[1] = Vector2.zero; avatars.Positions[100] = Vector2.one;
-        var sim = new NetMatchSim(config, new MatchState(new[] { writer, botGhost }), avatars, new System.Random(1));
 
         sim.OnWordPlayed(writer, Word("yeniden_canlanma"));
+        sim.OnWordPlayed(writer, Word("yeniden_canlanma"));
 
-        Assert.IsFalse(sim.IsVoting);
+        Assert.IsFalse(humanGhost.IsGhost);
         Assert.IsFalse(botGhost.IsGhost);
     }
 
     [Test]
-    public void NetSim_NoGhosts_ReviveWordFizzles_AndSecondRequestDuringVoteIsIgnored()
+    public void NetSim_EveryGhostCanBeTheOneWhoReturns()
+    {
+        var seen = new HashSet<int>();
+        for (int seed = 0; seed < 40; seed++)
+        {
+            var writer = new PlayerState(1, "Yazan", 3);
+            PlayerState a = Dead(2), b = Dead(3), c = Dead(4);
+            var avatars = new FakeAvatars();
+            foreach (int id in new[] { 1, 2, 3, 4 }) avatars.Positions[id] = Vector2.zero;
+            var sim = new NetMatchSim(config, new MatchState(new[] { writer, a, b, c }), avatars, new System.Random(seed));
+
+            sim.OnWordPlayed(writer, Word("yeniden_canlanma"));
+
+            foreach (PlayerState ghost in new[] { a, b, c })
+                if (!ghost.IsGhost) seen.Add(ghost.Id);
+        }
+
+        Assert.AreEqual(3, seen.Count, "Rastgele seçim hayaletlerin hepsine şans vermeli");
+    }
+
+    [Test]
+    public void NetSim_NoGhosts_ReviveWordFizzles()
     {
         var a = new PlayerState(1, "A", 3);
         var b = new PlayerState(2, "B", 3);
         var avatars = new FakeAvatars();
         avatars.Positions[1] = Vector2.zero; avatars.Positions[2] = Vector2.one;
         var sim = new NetMatchSim(config, new MatchState(new[] { a, b }), avatars, new System.Random(1));
-        sim.OnWordPlayed(a, Word("yeniden_canlanma"));
-        Assert.IsFalse(sim.IsVoting);
 
-        NetMatchSim sim2 = BuildSim(out PlayerState writer, out _, out _);
-        int started = 0;
-        sim2.VoteStarted += _ => started++;
-        sim2.OnWordPlayed(writer, Word("yeniden_canlanma"));
-        sim2.OnWordPlayed(writer, Word("yeniden_canlanma")); // İkincisi boşa gider
-
-        Assert.AreEqual(1, started);
-    }
-
-    [Test]
-    public void NetSim_MatchOver_CancelsTheVote()
-    {
-        NetMatchSim sim = BuildSim(out PlayerState writer, out _, out _);
-        int ended = -2;
-        sim.VoteEnded += id => ended = id;
-        sim.OnWordPlayed(writer, Word("yeniden_canlanma"));
-
-        writer.Health.TakeDamage(99);
-        // Maç, hayatta tek ya da hiç oyuncu kalınca biter: yalnızca "Diğer" yaşıyor.
-        sim.Tick(0.05f);
-
-        Assert.AreEqual(-1, ended);
-        Assert.IsFalse(sim.IsVoting);
+        Assert.DoesNotThrow(() => sim.OnWordPlayed(a, Word("yeniden_canlanma")));
+        Assert.AreEqual(3, a.Health.Current);
+        Assert.AreEqual(3, b.Health.Current);
     }
 }

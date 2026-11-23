@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 
 /// <summary>
-/// Hayaleti yeniden doğurmanın ortak hesabı ve tek kişilik sahnenin diriliş hizmeti.
+/// Hayaleti yeniden doğurmanın ortak hesabı ve diriliş hizmeti (tek kişilik ve ağ maçı aynısını kullanır):
+/// elenenlerden rastgele biri döner.
 /// Düz C# sınıfı, test edilebilir.
 /// </summary>
 public class GhostRevival : IRevivalService
@@ -18,7 +19,7 @@ public class GhostRevival : IRevivalService
         this.random = random ?? throw new ArgumentNullException(nameof(random));
     }
 
-    /// <summary>Tek kişilikte oylayacak insan hayalet olmadığı için rastgele bir hayalet dirilir.</summary>
+    /// <summary>Elenenlerden rastgele biri dirilir; kimse elenmediyse hiçbir şey olmaz.</summary>
     public void RequestRevival(PlayerState writer)
     {
         PlayerState chosen = Pick(players, random);
