@@ -31,6 +31,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
     public MatchBootstrap Bootstrap { get; set; }
 
     float shoveThinkTimer;
+    CreatureModel attackingBoss;
     System.Random shoveRandom;
 
     /// <summary>Son yürüdüğü yön. Henüz yürümediyse yukarı.</summary>
@@ -93,6 +94,9 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
 
         if (Bootstrap == null) return;
         if (shoveRandom == null) shoveRandom = new System.Random(State.Id * 31 + 7);
+
+        // Boss'a saldırıyorsa her düşünüşte vurmayı dener (önünde boss yoksa hak harcanmaz).
+        if (attackingBoss != null && !attackingBoss.IsFinished) { Bootstrap.TryShove(State.Id, true); return; }
 
         if (shoveRandom.NextDouble() < config.botShoveChancePerSecond * 0.25f)
             Bootstrap.TryShove(State.Id, true);
@@ -171,7 +175,21 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         TerrainSim terrain = Bootstrap != null ? Bootstrap.Terrain : null;
         if (terrain != null && brain.IsBadTarget == null) brain.IsBadTarget = terrain.IsBadWanderTarget;
 
-        Vector2 direction = brain.Think(Time.deltaTime, transform.position, dangers, refuge, sheltered);
+        // Büyük tehdit yoksa ve canı yetiyorsa yakındaki boss'a saldırır (yüzü boss'a döner, Boşluk'la vurur).
+        attackingBoss = refuge.HasValue || sheltered || Bootstrap == null || Bootstrap.CreatureSource == null ? null
+            : BossRules.PickBossToAttack(Bootstrap.CreatureSource(), State, transform.position, config);
+
+        Vector2 direction;
+        if (attackingBoss != null)
+        {
+            direction = brain.ThinkBossAttack(transform.position, dangers, attackingBoss.Position, attackingBoss.Radius, out Vector2 face);
+            FacingDirection = face;
+            if (direction != Vector2.zero)
+                MoveBy(direction * (config.botMoveSpeed * State.Status.SpeedMultiplier * Time.deltaTime), voluntary: true);
+            return;
+        }
+
+        direction = brain.Think(Time.deltaTime, transform.position, dangers, refuge, sheltered);
         if (direction == Vector2.zero) return;
 
         FacingDirection = direction;

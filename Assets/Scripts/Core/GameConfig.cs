@@ -137,6 +137,15 @@ public class GameConfig : ScriptableObject
     [Tooltip("Boss'u bitirenin kazandığı can (canı tamsa onun yerine bir vuruşluk kalkan alır).")]
     [Min(0)] public int bossKillReward = 1;
 
+    [Tooltip("Bot en az bu kadar canı varsa boss'a saldırır; daha azsa ondan kaçar.")]
+    [Min(1)] public int botBossAttackMinHealth = 2;
+
+    [Tooltip("Bot bu mesafedeki (birim) boss'u fark edip saldırmaya gider.")]
+    [Min(0f)] public float botBossAggroRange = 14f;
+
+    [Tooltip("Saldıran botun boss'un gövdesine değmeden durduğu boşluk (birim). Vuruş menzili bundan uzun olmalı.")]
+    [Min(0f)] public float botBossStandoff = 0.6f;
+
     [Tooltip("Silah kelimesi süre yazmıyorsa silahın elde kalma süresi (sn).")]
     [Min(1f)] public float weaponDefaultSeconds = 15f;
 

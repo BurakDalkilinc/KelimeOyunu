@@ -92,7 +92,35 @@ public class BotBrain
         return Wander(deltaSeconds, position);
     }
 
+    /// <summary>
+    /// Boss'a saldırı: bot boss'un gövdesine değmeden vuruş menzilinde durur (çok yaklaştıysa geri çekilir) ve
+    /// yüzü hep boss'a döner (<paramref name="facing"/>). Saldırdığı boss'un tehlike alanından kaçmaz, başka tehlikelerden kaçar.
+    /// </summary>
+    public Vector2 ThinkBossAttack(Vector2 position, IReadOnlyList<DangerZone> dangers, Vector2 bossPosition, float bossRadius,
+                                   out Vector2 facing)
+    {
+        hasTarget = false;
+        pauseLeft = 0f;
+
+        Vector2 toBoss = bossPosition - position;
+        float distance = toBoss.magnitude;
+        facing = distance > 0.0001f ? toBoss / distance : Vector2.up;
+
+        if (TryFlee(position, dangers, out Vector2 flee, bossPosition, bossRadius)) return flee;
+
+        float stand = bossRadius + config.playerRadius + config.botBossStandoff;
+        if (distance > stand + 0.3f) return facing;                             // Yaklaş
+        if (distance < stand - 0.4f) return SlideAlongWalls(position, -facing); // Çok yakın: geri çekil
+        return Vector2.zero;                                                    // Menzilde: dur ve vur
+    }
+
     bool TryFlee(Vector2 position, IReadOnlyList<DangerZone> dangers, out Vector2 direction)
+    {
+        return TryFlee(position, dangers, out direction, null, 0f);
+    }
+
+    /// <summary><paramref name="ignorePosition"/> verilirse o konumdaki (saldırılan boss'un) tehlike alanı yok sayılır.</summary>
+    bool TryFlee(Vector2 position, IReadOnlyList<DangerZone> dangers, out Vector2 direction, Vector2? ignorePosition, float ignoreRadius)
     {
         direction = Vector2.zero;
         if (dangers == null) return false;
@@ -103,6 +131,8 @@ public class BotBrain
         for (int i = 0; i < dangers.Count; i++)
         {
             DangerZone danger = dangers[i];
+            if (ignorePosition.HasValue && (danger.Position - ignorePosition.Value).sqrMagnitude < 0.01f
+                && Mathf.Abs(danger.Radius - ignoreRadius) < 0.01f) continue;
             Vector2 delta = position - danger.Position;
             float distance = delta.magnitude;
             float reach = danger.Radius + config.botFleeMargin;

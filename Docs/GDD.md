@@ -78,7 +78,7 @@
 | `revive` | Elenenlerden biri yeniden doğar |
 | `ignite` | Haritadaki tahtaları tutuşturur (yangın yayılır) |
 | `weapon` | Yazana silah verir: Boşluk itiş yerine ateş eder, mermi değdiği ilk rakibe vurur (kalkan korur, duvar durdurur) |
-| `boss` | Can barlı dev (Godzilla): en yakına saldırır; herkes Boşluk ile vurup canını eritir, son vuran +1 can (canı tamsa kalkan) alır |
+| `boss` | Can barlı dev (Godzilla): en yakına saldırır; herkes Boşluk ile vurup canını eritir, son vuran +1 can (canı tamsa kalkan) alır. Canı en az 2 olan botlar da yakındaki boss'a gidip vurur (silahlı ya da canı az bot kaçar) |
 
 ## Harita ve arazi
 Harita 34 × 19 karelik bir ızgaradır (kare = 1 birim, 16×16 piksel). Her maçta tohumdan üretilir (`terrainSeed` 0 ise rastgele); ağ maçında host üretir, herkese durum gider.

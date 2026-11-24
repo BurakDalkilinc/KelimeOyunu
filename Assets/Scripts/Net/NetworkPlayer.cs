@@ -68,6 +68,7 @@ public class NetworkPlayer : NetworkBehaviour
     Vector2 serverInput;
     Vector2 lastSentInput;
     Vector2 facing = Vector2.up;
+    Vector2? botBossFacing;
 
     /// <summary>Bu karakterin maç numarası (insan: bağlantı numarası, bot: 100'den başlar).</summary>
     public int PlayerId => playerId.Value;
@@ -299,6 +300,7 @@ public class NetworkPlayer : NetworkBehaviour
             bool stunnedBot = isBot.Value && knockback.IsActive;
             Vector2 input = falling || stunnedBot ? Vector2.zero : isBot.Value ? BotDirection(dt, next, sim, state) : serverInput;
             if (input != Vector2.zero) facing = input.normalized;
+            if (isBot.Value && botBossFacing.HasValue) facing = botBossFacing.Value; // Saldırdığı boss'a bakar
 
             float speed = (isBot.Value ? config.botMoveSpeed : config.playerMoveSpeed) * speedMultiplier;
             next = AvatarMover.Step(next, input, speed, dt, config.playerRadius, arena, voluntary);
@@ -347,6 +349,9 @@ public class NetworkPlayer : NetworkBehaviour
         shoveThinkTimer += dt;
         if (shoveThinkTimer < 0.25f) return;
         shoveThinkTimer = 0f;
+
+        // Boss'a saldıran bot her düşünüşte vurmayı dener (önünde boss yoksa hak harcanmaz).
+        if (botBossFacing.HasValue) { ServerTryShove(true); return; }
 
         if (shoveRandom.NextDouble() < config.botShoveChancePerSecond * 0.25f) ServerTryShove(true);
     }
@@ -410,6 +415,16 @@ public class NetworkPlayer : NetworkBehaviour
         IRefugeProvider refugeProvider = sim;
         Vector2? refuge = refugeProvider.TryGetRefuge(state, at, out Vector2 point) ? point : (Vector2?)null;
         bool sheltered = refugeProvider.IsSheltered(state);
+
+        // Büyük tehdit yoksa ve canı yetiyorsa yakındaki boss'a saldırır.
+        botBossFacing = null;
+        CreatureModel boss = refuge.HasValue || sheltered ? null : BossRules.PickBossToAttack(sim.CreatureModels, state, at, config);
+        if (boss != null)
+        {
+            Vector2 move = botBrain.ThinkBossAttack(at, sim.Dangers, boss.Position, boss.Radius, out Vector2 face);
+            botBossFacing = face;
+            return move;
+        }
         return botBrain.Think(dt, at, sim.Dangers, refuge, sheltered);
     }
 

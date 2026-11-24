@@ -117,6 +117,52 @@ public class BossTests
     }
 
     [Test]
+    public void Bot_PicksNearestBoss_OnlyWhenHealthyUnarmedAndInRange()
+    {
+        var bot = new PlayerState(1, "bot", 3);
+        CreatureModel far = Boss(5, new Vector2(10f, 0f), bot);
+        CreatureModel near = Boss(5, new Vector2(4f, 0f), bot);
+        var list = new List<CreatureModel> { far, near };
+
+        Assert.AreSame(near, BossRules.PickBossToAttack(list, bot, Vector2.zero, config));
+
+        config.botBossAggroRange = 1f;
+        Assert.IsNull(BossRules.PickBossToAttack(list, bot, Vector2.zero, config), "menzil dışı");
+        config.botBossAggroRange = 14f;
+
+        bot.TakeDamage(2);
+        Assert.IsNull(BossRules.PickBossToAttack(list, bot, Vector2.zero, config), "canı az: kaçar");
+
+        var armed = new PlayerState(2, "b", 3);
+        armed.Status.ArmWeapon(new WordEntry { id = "silah", display = "Silah", stats = new WordStats() }, 1, 10f);
+        Assert.IsNull(BossRules.PickBossToAttack(list, armed, Vector2.zero, config), "silahlı bot boss'a vurmaz");
+    }
+
+    [Test]
+    public void BotBrain_BossAttack_ApproachesHoldsAndBacksOff_FacingBoss()
+    {
+        var brain = new BotBrain(config, arena, new System.Random(1));
+        Vector2 bossAt = new Vector2(6f, 0f);
+        var dangers = new List<DangerZone> { new DangerZone(bossAt, 1.3f) };
+        float stand = 1.3f + config.playerRadius + config.botBossStandoff;
+
+        Vector2 move = brain.ThinkBossAttack(Vector2.zero, dangers, bossAt, 1.3f, out Vector2 face);
+        Assert.Greater(move.x, 0.9f, "uzaktan boss'a yaklaşır (kendi tehlike alanından kaçmaz)");
+        Assert.Greater(face.x, 0.99f);
+
+        Vector2 holdAt = bossAt - new Vector2(stand, 0f);
+        Assert.AreEqual(Vector2.zero, brain.ThinkBossAttack(holdAt, dangers, bossAt, 1.3f, out face), "menzilde durur");
+        Assert.Greater(face.x, 0.99f, "yüzü boss'a dönük");
+        Assert.LessOrEqual(stand - 1.3f, config.shoveRange, "durduğu yerden vurabilir");
+
+        Vector2 tooClose = bossAt - new Vector2(1.4f, 0f);
+        Assert.Less(brain.ThinkBossAttack(tooClose, dangers, bossAt, 1.3f, out face).x, -0.9f, "çok yakın: geri çekilir");
+
+        dangers.Add(new DangerZone(new Vector2(1f, 0f), 1f)); // Başka bir tehlike (örn. ateş)
+        Assert.Less(brain.ThinkBossAttack(Vector2.zero, dangers, bossAt, 1.3f, out face).x, 0f, "başka tehlikeden yine kaçar");
+    }
+
+    [Test]
     public void GodzillaWord_IsABoss()
     {
         WordEntry word = WordDatabase.LoadFromResources(50).Lookup("gojira").Entry;

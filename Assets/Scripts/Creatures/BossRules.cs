@@ -38,6 +38,29 @@ public static class BossRules
         return count;
     }
 
+    /// <summary>
+    /// Botun saldıracağı boss: menzildeki en yakın canlı boss. Botun canı azsa, uçuyorsa, düşüyorsa ya da silahı varsa
+    /// (silah boss'a işlemez, Boşluk ateş eder) null döner ve bot her zamanki gibi kaçar.
+    /// </summary>
+    public static CreatureModel PickBossToAttack(IEnumerable<CreatureModel> creatures, PlayerState bot, Vector2 position, GameConfig config)
+    {
+        if (creatures == null || bot == null || config == null || !bot.IsAlive) return null;
+        if (bot.Health.Current < config.botBossAttackMinHealth) return null;
+        if (bot.Status.IsFlying || bot.Status.HasWeapon || bot.Falling != FallKind.None) return null;
+
+        CreatureModel best = null;
+        float bestDistance = config.botBossAggroRange;
+        foreach (CreatureModel boss in creatures)
+        {
+            if (boss == null || !boss.IsBoss || boss.IsFinished) continue;
+            float distance = (boss.Position - position).magnitude - boss.Radius;
+            if (distance > bestDistance) continue;
+            best = boss;
+            bestDistance = distance;
+        }
+        return best;
+    }
+
     /// <summary>Boss'u bitirenin ödülü: canı eksikse can, tamsa kalkan.</summary>
     public static void Reward(PlayerState killer, GameConfig config)
     {
