@@ -76,31 +76,18 @@ public class TerrainSim
     }
 
     /// <summary>
-    /// İtiş lava ya da uçuruma varır mı? Yolda önce lav/uçurum gelirse true; önce tahta duvar gelirse (itiş orada durur) false.
+    /// İtilen oyuncu lava ya da uçuruma varıp içinde kaldıysa düşme başlar (animasyon, sonra bütün can gider). Başladıysa true.
+    /// Yanan kare (alev) bunu başlatmaz; yalnızca lav ve uçurum.
     /// </summary>
-    public bool PushReachesDeadlyTile(Vector2 from, Vector2 push)
+    public bool TryStartFall(PlayerState victim, Vector2 landedAt)
     {
-        const float step = 0.2f;
-        int steps = Mathf.CeilToInt(push.magnitude / step);
-        for (int i = 1; i <= steps; i++)
-        {
-            TileType type = Map.At(Vector2.Lerp(from, from + push, i / (float)steps));
-            if (TerrainMap.IsSolid(type)) return false;
-            if (TerrainMap.IsHazard(type)) return true;
-        }
-        return false;
-    }
+        if (victim == null || !victim.IsAlive || victim.Status.IsFlying || victim.Falling != FallKind.None) return false;
 
-    /// <summary>
-    /// Lava ya da uçuruma itilen oyuncunun bütün canı gider. İtildiği anda hesaplanır (kayma karelerine bağlı değil).
-    /// Kayıp olduysa true.
-    /// </summary>
-    public bool TryEliminateByPush(PlayerState victim, Vector2 from, Vector2 push)
-    {
-        if (victim == null || !victim.IsAlive || victim.Status.IsFlying) return false;
-        if (!PushReachesDeadlyTile(from, push)) return false;
+        TileType type = Map.At(landedAt);
+        FallKind kind = type == TileType.Chasm ? FallKind.Chasm : type == TileType.Lava ? FallKind.Lava : FallKind.None;
+        if (kind == FallKind.None) return false;
 
-        victim.Eliminate();
+        Hazards.StartFall(victim, kind);
         return true;
     }
 

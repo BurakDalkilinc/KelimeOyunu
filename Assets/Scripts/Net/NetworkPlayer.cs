@@ -237,7 +237,16 @@ public class NetworkPlayer : NetworkBehaviour
         else transform.position = Vector2.Lerp(transform.position, position.Value, 1f - Mathf.Exp(-FollowSharpness * Time.deltaTime));
 
         if (IsOwner && !isBot.Value) SendInput();
+
+        // Düşme animasyonu (herkeste, bayraktan).
+        if (config != null)
+        {
+            if (fall == null) fall = FallAnimation.Attach(gameObject, config.fallSeconds);
+            fall.Kind = (Status & StatusFlags.FallChasm) != 0 ? FallKind.Chasm : (Status & StatusFlags.FallLava) != 0 ? FallKind.Lava : FallKind.None;
+        }
     }
+
+    FallAnimation fall;
 
     void ServerStep(float dt)
     {
@@ -271,7 +280,11 @@ public class NetworkPlayer : NetworkBehaviour
                     if (sim != null && sim.Terrain != null && !state.Status.IsFlying)
                     {
                         next = sim.Terrain.FirstHazardOnPath(before, next, out bool hitHazard);
-                        if (hitHazard) knockback.Cancel();
+                        if (hitHazard)
+                        {
+                            knockback.Cancel();
+                            sim.Terrain.TryStartFall(state, next); // Lava/uçurumda kaldıysa düşme animasyonu, sonra ölüm
+                        }
                     }
                 }
 
@@ -284,7 +297,8 @@ public class NetworkPlayer : NetworkBehaviour
             // her karede dışarı fırlatılır ve itmenin etkisi kalmaz).
             bool escaping = isBot.Value && sim != null && sim.Terrain != null && state != null
                             && !state.Status.IsFlying && sim.Terrain.IsHazardousAt(next);
-            Vector2 input = escaping ? sim.Terrain.EscapeDirection(next) : isBot.Value ? BotDirection(dt, next, sim, state) : serverInput;
+            bool falling = state != null && state.Falling != FallKind.None;
+            Vector2 input = falling ? Vector2.zero : escaping ? sim.Terrain.EscapeDirection(next) : isBot.Value ? BotDirection(dt, next, sim, state) : serverInput;
             if (input != Vector2.zero) facing = input.normalized;
 
             float speed = (isBot.Value ? config.botMoveSpeed : config.playerMoveSpeed) * speedMultiplier;
@@ -308,6 +322,8 @@ public class NetworkPlayer : NetworkBehaviour
             if (health.Value != state.Health.Current) health.Value = state.Health.Current;
 
             int flags = (int)StatusFlagsUtil.Of(state.Status);
+            if (state.Falling == FallKind.Chasm) flags |= (int)StatusFlags.FallChasm;
+            else if (state.Falling == FallKind.Lava) flags |= (int)StatusFlags.FallLava;
             if (statusFlags.Value != flags) statusFlags.Value = flags;
         }
     }
@@ -366,12 +382,7 @@ public class NetworkPlayer : NetworkBehaviour
         shoveCooldown.TryUse();
         shoveLeft.Value = shoveCooldown.Remaining;
         shoveCount.Value++;
-        foreach (ShoveHit hit in shoveHits)
-        {
-            // Lava ya da uçuruma itilen bütün canını kaybeder.
-            if (sim.Terrain != null) sim.Terrain.TryEliminateByPush(shoveStates[hit.Index], shovePositions[hit.Index], hit.Push);
-            shoveAvatars[hit.Index].ApplyKnockback(hit.Push);
-        }
+        foreach (ShoveHit hit in shoveHits) shoveAvatars[hit.Index].ApplyKnockback(hit.Push);
         return true;
     }
 

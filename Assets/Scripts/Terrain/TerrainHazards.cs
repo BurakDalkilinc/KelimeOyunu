@@ -14,6 +14,7 @@ public class TerrainHazards
         public float LavaLeft;
         public float FireLeft;
         public float FallCooldown;
+        public float DoomLeft;
     }
 
     readonly TerrainMap map;
@@ -41,6 +42,16 @@ public class TerrainHazards
         {
             PlayerTimers t = TimersOf(player.Id);
             t.FallCooldown = Mathf.Max(0f, t.FallCooldown - dt);
+
+            if (player.Falling != FallKind.None)
+            {
+                // Düşüyor: normal lav/uçurum kuralları işlemez, süre bitince can tamamen gider.
+                if (!player.IsAlive) { player.Falling = FallKind.None; continue; }
+
+                t.DoomLeft -= dt;
+                if (t.DoomLeft <= 0f) player.Eliminate();
+                continue;
+            }
 
             Vector2? position = positionOf(player.Id);
             if (!player.IsAlive || player.Status.IsFlying || position == null)
@@ -84,6 +95,17 @@ public class TerrainHazards
 
         teleport?.Invoke(player.Id, safe);
         Fell?.Invoke(player.Id, safe);
+    }
+
+    /// <summary>
+    /// Oyuncu lava ya da uçuruma itilip içinde kaldı: <see cref="GameConfig.fallSeconds"/> sonra bütün canı gider (arada animasyon oynar).
+    /// </summary>
+    public void StartFall(PlayerState player, FallKind kind)
+    {
+        if (player == null || !player.IsAlive || player.Falling != FallKind.None || kind == FallKind.None) return;
+
+        player.Falling = kind;
+        TimersOf(player.Id).DoomLeft = config.fallSeconds;
     }
 
     PlayerTimers TimersOf(int id)

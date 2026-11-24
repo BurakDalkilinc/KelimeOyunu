@@ -11,6 +11,8 @@ public enum StatusFlags
     Stealth = 4,
     Flight = 8,
     Pull = 16,
+    FallChasm = 32,
+    FallLava = 64,
 }
 
 /// <summary>Etkiler ile bayraklar arasında çeviri ve bayraklara göre renk. Düz hesap, test edilebilir.</summary>

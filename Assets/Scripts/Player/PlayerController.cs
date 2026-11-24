@@ -110,7 +110,10 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
         if (!hit) return;
         transform.position = new Vector3(landed.x, landed.y, transform.position.z);
         knockback.Cancel();
+        terrain.TryStartFall(State, landed); // Lava/uçurumda kaldıysa düşme animasyonu, sonra ölüm
     }
+
+    FallAnimation fall;
 
     /// <summary>Karakter bir duvarın içine girmişse (duvar tam üstüne çıktı ya da fırlatıldı) dışarı iter.</summary>
     void ResolveObstacles()
@@ -142,7 +145,9 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
         Vector2 pulled = State.Status.GetPullStep(transform.position, Time.deltaTime);
         if (pulled != Vector2.zero) MoveBy(pulled);
 
-        if (!CanMove) return;
+        if (fall == null) fall = FallAnimation.Attach(gameObject, config.fallSeconds);
+        fall.Kind = State.Falling;
+        if (!CanMove || State.Falling != FallKind.None) return;
 
         Vector2 input = ReadMoveInput();
         if (input == Vector2.zero) return;

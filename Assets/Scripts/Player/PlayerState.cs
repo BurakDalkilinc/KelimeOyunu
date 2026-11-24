@@ -27,9 +27,13 @@ public class PlayerState
         return Health.TakeDamage(amount);
     }
 
-    /// <summary>Bütün canı anında alır (lava/uçuruma itilme). Kalkan da engelleyemez.</summary>
+    /// <summary>Lava ya da uçuruma düşüyor mu? Düşerken hareket edemez; animasyon bitince <see cref="Eliminate"/> çağrılır.</summary>
+    public FallKind Falling { get; set; }
+
+    /// <summary>Bütün canı anında alır (lava/uçuruma düşme). Kalkan da engelleyemez.</summary>
     public void Eliminate()
     {
+        Falling = FallKind.None;
         if (IsAlive) Health.TakeDamage(Health.Current);
     }
 

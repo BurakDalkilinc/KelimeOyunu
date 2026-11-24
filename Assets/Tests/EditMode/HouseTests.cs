@@ -123,28 +123,34 @@ public class HouseTests
     }
 
     [Test]
-    public void Push_IntoChasmOrLava_EliminatesVictim()
+    public void Fall_AfterPush_AnimatesThenKills()
     {
         var map = new TerrainMap(12, 8);
         map.Set(6, 4, TileType.Chasm);
         map.Set(3, 6, TileType.Lava);
-        map.Set(9, 2, TileType.WoodWall);
-        map.Set(10, 2, TileType.Lava);
         var sim = new TerrainSim(config, map, new System.Random(1));
+        var players = new System.Collections.Generic.List<PlayerState>();
 
         var chasmVictim = new PlayerState(1, "a", 3);
-        Assert.IsTrue(sim.TryEliminateByPush(chasmVictim, map.CellCenter(4, 4), new Vector2(3f, 0f)));
-        Assert.IsFalse(chasmVictim.IsAlive);
-
         var lavaVictim = new PlayerState(2, "b", 3);
-        Assert.IsTrue(sim.TryEliminateByPush(lavaVictim, map.CellCenter(3, 4), new Vector2(0f, 3f)));
-        Assert.IsFalse(lavaVictim.IsAlive);
-
         var safe = new PlayerState(3, "c", 3);
-        Assert.IsFalse(sim.TryEliminateByPush(safe, map.CellCenter(1, 1), new Vector2(3f, 0f)));
-        Assert.IsTrue(safe.IsAlive);
+        players.Add(chasmVictim); players.Add(lavaVictim); players.Add(safe);
 
-        var shielded = new PlayerState(4, "d", 3);
-        Assert.IsFalse(sim.TryEliminateByPush(shielded, map.CellCenter(8, 2), new Vector2(3f, 0f)), "duvar önce gelir");
+        Assert.IsTrue(sim.TryStartFall(chasmVictim, map.CellCenter(6, 4)));
+        Assert.IsTrue(sim.TryStartFall(lavaVictim, map.CellCenter(3, 6)));
+        Assert.IsFalse(sim.TryStartFall(safe, map.CellCenter(1, 1)));
+        Assert.AreEqual(FallKind.Chasm, chasmVictim.Falling);
+        Assert.IsTrue(chasmVictim.IsAlive, "animasyon sürerken henüz ölmedi");
+
+        System.Func<int, Vector2?> where = id => id == 1 ? map.CellCenter(6, 4) : id == 2 ? map.CellCenter(3, 6) : map.CellCenter(1, 1);
+        sim.Tick(config.fallSeconds * 0.5f, null, players, where, (id, to) => { });
+        Assert.IsTrue(chasmVictim.IsAlive);
+        Assert.AreEqual(3, chasmVictim.Health.Current, "düşerken normal uçurum hasarı/ışınlanma işlemez");
+
+        sim.Tick(config.fallSeconds, null, players, where, (id, to) => { });
+        Assert.IsFalse(chasmVictim.IsAlive);
+        Assert.IsFalse(lavaVictim.IsAlive);
+        Assert.IsTrue(safe.IsAlive);
+        Assert.AreEqual(FallKind.None, chasmVictim.Falling);
     }
 }

@@ -119,7 +119,10 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         if (!hit) return;
         transform.position = new Vector3(landed.x, landed.y, transform.position.z);
         knockback.Cancel();
+        terrain.TryStartFall(State, landed); // Lava/uçurumda kaldıysa düşme animasyonu, sonra ölüm
     }
+
+    FallAnimation fall;
 
     /// <summary>Bot bir duvarın içine girmişse dışarı iter.</summary>
     void ResolveObstacles()
@@ -136,6 +139,11 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
     {
         State.Status.Tick(Time.deltaTime);
         spriteRenderer.color = StatusTint.Apply(baseColor, State.Status); // Etkilere göre renk
+
+        // Lava/uçuruma düşüyor: animasyon oynar, hareket edemez.
+        if (fall == null) fall = FallAnimation.Attach(gameObject, config.fallSeconds);
+        fall.Kind = State.Falling;
+        if (State.Falling != FallKind.None) return;
 
         Vector2 pushed = knockback.Step(Time.deltaTime);
         if (pushed != Vector2.zero)
