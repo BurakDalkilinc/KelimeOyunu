@@ -479,46 +479,6 @@ public class TerrainTests
     TerrainHazards NewHazards(TerrainMap map, FireSim fire) => new TerrainHazards(map, fire, config);
 
     [Test]
-    public void Lava_HurtsOnEntry_ThenEverySecond_AndStopsWhenYouLeave()
-    {
-        TerrainMap map = Plain();
-        map.Set(4, 4, TileType.Lava);
-        TerrainHazards hazards = NewHazards(map, null);
-        var player = new PlayerState(1, "A", 10);
-        var placer = new Placer();
-        placer.Positions[1] = map.CellCenter(4, 4);
-        var players = new[] { player };
-
-        hazards.Tick(0.05f, players, placer.Position, placer.Teleport);
-        Assert.AreEqual(9, player.Health.Current); // Girişte hemen
-
-        hazards.Tick(0.5f, players, placer.Position, placer.Teleport);
-        Assert.AreEqual(9, player.Health.Current);
-        hazards.Tick(0.6f, players, placer.Position, placer.Teleport);
-        Assert.AreEqual(8, player.Health.Current);  // 1 sn sonra ikinci hasar
-
-        placer.Positions[1] = map.CellCenter(1, 1);
-        hazards.Tick(2f, players, placer.Position, placer.Teleport);
-        Assert.AreEqual(8, player.Health.Current);
-    }
-
-    [Test]
-    public void Lava_ShieldAbsorbsTheHit()
-    {
-        TerrainMap map = Plain();
-        map.Set(4, 4, TileType.Lava);
-        var player = new PlayerState(1, "A", 3);
-        player.Status.ApplyShield(1, 30f);
-        var placer = new Placer();
-        placer.Positions[1] = map.CellCenter(4, 4);
-
-        NewHazards(map, null).Tick(0.05f, new[] { player }, placer.Position, placer.Teleport);
-
-        Assert.AreEqual(3, player.Health.Current);
-        Assert.IsFalse(player.Status.HasShield);
-    }
-
-    [Test]
     public void FlyingAndGhosts_AreImmuneToLavaAndChasm()
     {
         TerrainMap map = Plain();
@@ -536,44 +496,6 @@ public class TerrainTests
 
         Assert.AreEqual(3, flyer.Health.Current);
         Assert.AreEqual(0, placer.Teleports.Count);
-    }
-
-    [Test]
-    public void Chasm_CostsOneHealth_AndSendsYouToTheNearestSafeTile()
-    {
-        TerrainMap map = Plain();
-        for (int x = 3; x <= 5; x++) map.Set(x, 4, TileType.Chasm);
-        TerrainHazards hazards = NewHazards(map, null);
-        var player = new PlayerState(1, "A", 3);
-        var placer = new Placer();
-        placer.Positions[1] = map.CellCenter(4, 4);
-        Vector2 fellAt = Vector2.zero;
-        hazards.Fell += (id, safe) => fellAt = safe;
-
-        hazards.Tick(0.05f, new[] { player }, placer.Position, placer.Teleport);
-
-        Assert.AreEqual(2, player.Health.Current);
-        Assert.AreEqual(1, placer.Teleports.Count);
-        Assert.IsTrue(TerrainMap.IsWalkable(map.At(placer.Teleports[0].to)));
-        Assert.AreEqual(placer.Teleports[0].to, fellAt);
-    }
-
-    [Test]
-    public void Chasm_FallingTwiceInARow_IsLimitedByTheCooldown()
-    {
-        TerrainMap map = Plain();
-        map.Set(4, 4, TileType.Chasm);
-        TerrainHazards hazards = NewHazards(map, null);
-        var player = new PlayerState(1, "A", 5);
-        var placer = new Placer();
-        placer.Positions[1] = map.CellCenter(4, 4);
-        var players = new[] { player };
-
-        hazards.Tick(0.05f, players, placer.Position, placer.Teleport);
-        placer.Positions[1] = map.CellCenter(4, 4); // Hemen tekrar düştü
-        hazards.Tick(0.05f, players, placer.Position, placer.Teleport);
-
-        Assert.AreEqual(4, player.Health.Current); // Yalnızca bir hasar
     }
 
     [Test]

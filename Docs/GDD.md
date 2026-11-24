@@ -81,8 +81,7 @@
 ## Harita ve arazi
 Harita 34 × 19 karelik bir ızgaradır (kare = 1 birim, 16×16 piksel). Her maçta tohumdan üretilir (`terrainSeed` 0 ise rastgele); ağ maçında host üretir, herkese durum gider.
 - **Tahta köyler** (3 adet): tahta meydan ve yürüyüş yolları, içinden geçilemeyen **tahta ev duvarları** (kapılı evler), tahta zemin. Köyler patikalarla bağlanır.
-- **Lav havuzu** (2): üstünde duran saniyede 1 hasar alır (kalkan engeller). Bitişiğindeki tahtayı ara sıra tutuşturur.
-- **Uçurum yarığı** (2): düşen 1 can kaybeder ve en yakın güvenli kareye döner (itişle lava ya da uçuruma itilen, içinde kalırsa düşme animasyonu oynar ve ~1 sn sonra **bütün canını kaybeder**, kalkan da engelleyemez; kendi yürüyerek düşen 1 can kaybedip kenara döner). Kanatla uçan ve hayaletler lav/uçurumdan etkilenmez.
+- **Lav havuzu** (2) ve **uçurum yarığı** (2): içine giren (itilen ya da kendi yürüyen) düşme animasyonu oynar (~1 sn) ve **bütün canını kaybeder** (ölür); kalkan engelleyemez. Lav bitişiğindeki tahtayı ara sıra tutuşturur. Kanatla uçan ve hayaletler etkilenmez.
 - **Yangın:** "Ateş" kelimesi (uyarılı alev, hasar verir) ve Ejderha tahtaları tutuşturur. Yanan tahta komşu tahtalara saniyede ~%45 olasılıkla yayılır, 5 sn yanar, sonra **kömürleşir** (tahta zemin kömür zemin olur, tahta ev duvarı çöker ve geçilebilir olur). Yanan karede duran saniyede 1 hasar alır. Çimen/patika/kömür yanmaz (üstüne düşen alev 2,5 sn kalır, yayılmaz).
 - **Evler:** 5×4 karelik, 2 kare genişliğinde kapılı, sokaklar 2 kare geniş (karakterler takılmaz). Çatı kiremitle çizilir; içine girince çatı yumuşakça kaybolur, çıkınca geri gelir. Ev yanarken ya da yanıp çökünce çatı açık kalır.
 - Lav/uçuruma itilen bot oradan en yakın güvenli kareye koşar (itilmenin etkisi korunur, hasar alır).

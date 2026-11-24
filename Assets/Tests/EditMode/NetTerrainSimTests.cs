@@ -63,29 +63,6 @@ public class NetTerrainSimTests
     }
 
     [Test]
-    public void Lava_HurtsAnAvatarStandingInIt()
-    {
-        map.Set(20, 10, TileType.Lava);
-
-        sim.Tick(0.05f);
-
-        Assert.AreEqual(9, victim.Health.Current);
-    }
-
-    [Test]
-    public void Chasm_TakesAHealth_AndTheAvatarIsTeleportedToSafeGround()
-    {
-        map.Set(20, 10, TileType.Chasm);
-
-        sim.Tick(0.05f);
-
-        Assert.AreEqual(9, victim.Health.Current);
-        Assert.AreEqual(1, avatars.Teleports.Count);
-        Assert.AreEqual(2, avatars.Teleports[0].id);
-        Assert.IsTrue(TerrainMap.IsWalkable(map.At(avatars.Teleports[0].to)));
-    }
-
-    [Test]
     public void FireWord_StrikesTheTargetSpot_AndLightsTheWoodThere()
     {
         for (int x = 17; x <= 23; x++) for (int y = 7; y <= 13; y++) map.Set(x, y, TileType.WoodFloor);

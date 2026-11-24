@@ -64,10 +64,11 @@ public class TerrainHazards
             Vector2Int cell = map.CellOf(position.Value);
             TileType type = map.At(cell.x, cell.y);
 
-            if (type == TileType.Chasm && t.FallCooldown <= 0f) Fall(player, position.Value, t, teleport);
+            // Lava ya da uçuruma düşen (itilen ya da kendi yürüyen) düşme animasyonuyla bütün canını kaybeder.
+            if (type == TileType.Chasm) { StartFall(player, FallKind.Chasm); continue; }
+            if (type == TileType.Lava) { StartFall(player, FallKind.Lava); continue; }
 
-            // Lav ve ateş: girişte hemen, sonra her aralıkta bir hasar. Çıkınca sayaç sıfırlanır.
-            t.LavaLeft = TickDamage(type == TileType.Lava, t.LavaLeft, dt, config.lavaDamageIntervalSeconds, config.lavaDamage, player);
+            // Ateş: girişte hemen, sonra her aralıkta bir hasar. Çıkınca sayaç sıfırlanır.
             bool onFire = fire != null && fire.IsBurning(cell.x, cell.y);
             t.FireLeft = TickDamage(onFire, t.FireLeft, dt, config.terrainFireDamageIntervalSeconds, config.terrainFireDamage, player);
         }

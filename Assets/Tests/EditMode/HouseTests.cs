@@ -153,4 +153,43 @@ public class HouseTests
         Assert.IsTrue(safe.IsAlive);
         Assert.AreEqual(FallKind.None, chasmVictim.Falling);
     }
+
+    [Test]
+    public void Walking_IntoLavaOrChasm_AlsoStartsAFall_AndKillsOutright()
+    {
+        var map = new TerrainMap(12, 8);
+        map.Set(6, 4, TileType.Chasm);
+        map.Set(3, 6, TileType.Lava);
+        var sim = new TerrainSim(config, map, new System.Random(1));
+
+        var a = new PlayerState(1, "a", 3);
+        var b = new PlayerState(2, "b", 3);
+        var players = new System.Collections.Generic.List<PlayerState> { a, b };
+        System.Func<int, Vector2?> where = id => id == 1 ? map.CellCenter(6, 4) : map.CellCenter(3, 6);
+
+        sim.Tick(0.1f, null, players, where, (id, to) => { });
+        Assert.AreEqual(FallKind.Chasm, a.Falling);
+        Assert.AreEqual(FallKind.Lava, b.Falling);
+        Assert.AreEqual(3, a.Health.Current, "animasyon sürerken can duruyor");
+
+        sim.Tick(config.fallSeconds + 0.1f, null, players, where, (id, to) => { });
+        Assert.IsFalse(a.IsAlive);
+        Assert.IsFalse(b.IsAlive);
+    }
+
+    [Test]
+    public void Fall_IgnoresShield()
+    {
+        var map = new TerrainMap(12, 8);
+        map.Set(6, 4, TileType.Lava);
+        var sim = new TerrainSim(config, map, new System.Random(1));
+        var p = new PlayerState(1, "a", 3);
+        p.Status.ApplyShield(1, 30f);
+        var players = new System.Collections.Generic.List<PlayerState> { p };
+        System.Func<int, Vector2?> where = id => map.CellCenter(6, 4);
+
+        sim.Tick(0.1f, null, players, where, (id, to) => { });
+        sim.Tick(config.fallSeconds + 0.1f, null, players, where, (id, to) => { });
+        Assert.IsFalse(p.IsAlive);
+    }
 }
