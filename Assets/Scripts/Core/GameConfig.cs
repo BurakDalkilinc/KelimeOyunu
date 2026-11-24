@@ -140,6 +140,12 @@ public class GameConfig : ScriptableObject
     [Tooltip("Açıksa kovalayan yaratıklar tek kişiyi vurup kaybolmaz: hep en yakındakine geçer, süresi bitene kadar herkesi avlar.")]
     public bool creaturesHuntEveryone = true;
 
+    [Tooltip("Ateşten hasar alan karakterin yanma (alev görüntüsü) süresi (sn).")]
+    [Min(0f)] public float burnSeconds = 2.5f;
+
+    [Tooltip("Her ateş hasarında kömürleşmenin artışı (1 = simsiyah).")]
+    [Range(0f, 1f)] public float charPerFireHit = 0.35f;
+
     [Tooltip("Araç kelimesi hız yazmıyorsa aracın hızı (birim/sn).")]
     [Min(0.1f)] public float vehicleDefaultSpeed = 9f;
 

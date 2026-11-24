@@ -176,6 +176,27 @@ public class StatusEffects
         flightTimeLeft = Mathf.Max(flightTimeLeft, seconds);
     }
 
+    // ---- Yanma ----
+
+    float burnTimeLeft;
+    float charLevel;
+
+    /// <summary>Karakter şu an yanıyor mu (ateşten hasar aldıktan sonra kısa bir süre)?</summary>
+    public bool IsBurning => burnTimeLeft > 0f;
+
+    /// <summary>Kalan yanma süresi (sn).</summary>
+    public float BurnTimeLeft => burnTimeLeft;
+
+    /// <summary>Kömürleşme (0 = hiç, 1 = simsiyah). Her ateş hasarında artar, kendiliğinden azalmaz.</summary>
+    public float CharLevel => charLevel;
+
+    /// <summary>Tutuşturur: <paramref name="seconds"/> boyunca yanar (süre kısalmaz), kömürleşme <paramref name="charAmount"/> kadar artar.</summary>
+    public void Ignite(float seconds, float charAmount)
+    {
+        if (seconds > 0f) burnTimeLeft = Mathf.Max(burnTimeLeft, seconds);
+        charLevel = Mathf.Clamp01(charLevel + Mathf.Max(0f, charAmount));
+    }
+
     // ---- Araç ----
 
     WordEntry vehicleWord;
@@ -198,6 +219,7 @@ public class StatusEffects
         vehicleWord = vehicle;
         vehicleTimeLeft = seconds;
         vehicleHits.Clear();
+        VehicleCrushes = 0;
     }
 
     /// <summary>Araçtan indirir.</summary>
@@ -206,10 +228,17 @@ public class StatusEffects
         vehicleWord = null;
         vehicleTimeLeft = 0f;
         vehicleHits.Clear();
+        VehicleCrushes = 0;
     }
 
     /// <summary>Bu sürüşte o oyuncu henüz ezilmediyse işaretler ve true döner (aynı kişi bir sürüşte bir kez ezilir).</summary>
     public bool MarkVehicleHit(int playerId) => vehicleHits.Add(playerId);
+
+    /// <summary>Bu sürüşte gerçekten ezilen (canı giden) kişi sayısı.</summary>
+    public int VehicleCrushes { get; private set; }
+
+    /// <summary>Bir ezme sayar ve yeni sayıyı döner.</summary>
+    public int CountVehicleCrush() => ++VehicleCrushes;
 
     // ---- Silah ----
 
@@ -302,6 +331,8 @@ public class StatusEffects
             if (stealthTimeLeft <= 0f) stealthTimeLeft = 0f;
         }
 
+        if (burnTimeLeft > 0f) burnTimeLeft = Mathf.Max(0f, burnTimeLeft - dt);
+
         if (vehicleTimeLeft > 0f)
         {
             vehicleTimeLeft -= dt;
@@ -341,5 +372,7 @@ public class StatusEffects
         flightSpeedMultiplier = 1f;
         DropWeapon();
         Dismount();
+        burnTimeLeft = 0f;
+        charLevel = 0f;
     }
 }

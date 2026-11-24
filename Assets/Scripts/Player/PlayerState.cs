@@ -31,6 +31,14 @@ public class PlayerState
     public FallKind Falling { get; set; }
 
     /// <summary>Bütün canı anında alır (lava/uçuruma düşme). Kalkan da engelleyemez.</summary>
+    /// <summary>Ateşten hasar: can gider (kalkan korur) ve hasar işlediyse karakter tutuşur, biraz kömürleşir.</summary>
+    public void TakeFireDamage(int amount, GameConfig config)
+    {
+        int before = Health.Current;
+        TakeDamage(amount);
+        if (Health.Current < before && config != null) Status.Ignite(config.burnSeconds, config.charPerFireHit);
+    }
+
     public void Eliminate()
     {
         Falling = FallKind.None;

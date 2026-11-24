@@ -47,6 +47,9 @@ public class NetworkPlayer : NetworkBehaviour
     /// <summary>Her araç patlamasında artar; istemciler patlama görüntüsünü oynatır.</summary>
     readonly NetworkVariable<int> crashCount = new NetworkVariable<int>(0);
 
+    /// <summary>Kömürleşme (0..1); her istemci karakteri o kadar karartır.</summary>
+    readonly NetworkVariable<float> charLevel = new NetworkVariable<float>(0f);
+
     readonly KnockbackMotion knockback = new KnockbackMotion();
 
     /// <summary>Yön mesajı hız sınırı: normal oyunda yalnızca tuş değişince gider; seli engeller.</summary>
@@ -182,7 +185,8 @@ public class NetworkPlayer : NetworkBehaviour
         shoveLeftChangedAt = Time.unscaledTime;
         Everyone.Add(this);
         GoreEmitter.Attach(gameObject, () => health.Value,
-                           () => (Status & StatusFlags.FallLava) != 0 ? FallKind.Lava : (Status & StatusFlags.FallChasm) != 0 ? FallKind.Chasm : FallKind.None); // Kan ve parçalanma (her istemcide)
+                           () => (Status & StatusFlags.FallLava) != 0 ? FallKind.Lava : (Status & StatusFlags.FallChasm) != 0 ? FallKind.Chasm : FallKind.None) // Kan ve parçalanma (her istemcide)
+                   .Charred = () => (Status & StatusFlags.Burning) != 0 || charLevel.Value >= 0.5f;
 
         if (IsServer) InitOnServer();
 
@@ -257,6 +261,10 @@ public class NetworkPlayer : NetworkBehaviour
             fall.Kind = (Status & StatusFlags.FallChasm) != 0 ? FallKind.Chasm : (Status & StatusFlags.FallLava) != 0 ? FallKind.Lava : FallKind.None;
         }
         FlightVisual.Attach(gameObject).Flying = !IsGhost && (Status & StatusFlags.Flight) != 0; // Uçarken gölge ve alev
+        bool burning = !IsGhost && (Status & StatusFlags.Burning) != 0;
+        BurnVisual.Attach(gameObject).Burning = burning; // Ateş aldı: alevler
+        if (spriteRenderer != null && !IsGhost && (burning || charLevel.Value > 0f))
+            spriteRenderer.color = StatusTint.Burnt(StatusFlagsUtil.Tint(PlayerColors.For(playerId.Value), Status), charLevel.Value, burning);
         VehicleVisual car = VehicleVisual.Attach(gameObject);
         car.SpriteName = IsGhost ? null : vehicleSprite.Value.ToString();
         car.WorldSize = vehicleSize.Value;
@@ -357,6 +365,8 @@ public class NetworkPlayer : NetworkBehaviour
             int flags = (int)StatusFlagsUtil.Of(state.Status);
             if (state.Status.HasWeapon) flags |= (int)StatusFlags.Weapon;
             if (state.Status.IsDriving) flags |= (int)StatusFlags.Vehicle;
+            if (state.Status.IsBurning) flags |= (int)StatusFlags.Burning;
+            if (Mathf.Abs(charLevel.Value - state.Status.CharLevel) > 0.05f) charLevel.Value = state.Status.CharLevel;
             string carSprite = state.IsAlive && state.Status.IsDriving ? SpriteLibrary.NameFor(state.Status.Vehicle) : string.Empty;
             if (vehicleSprite.Value.ToString() != carSprite) vehicleSprite.Value = new FixedString32Bytes(carSprite);
             if (state.Status.IsDriving) vehicleSize.Value = VehicleRules.BodyRadius(state.Status.Vehicle, config) * 2f;

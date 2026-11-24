@@ -119,6 +119,10 @@ public class CreatureModel
     /// </summary>
     public bool IgnitesTerrain { get; set; }
 
+    /// <summary>Ateşli yaratığın (ejderha, ateş) vurduğunu tutuşturma süresi ve kömürleştirme miktarı (fabrika ayardan doldurur).</summary>
+    public float BurnSecondsOnHit { get; set; } = 2.5f;
+    public float CharPerHit { get; set; } = 0.35f;
+
     /// <summary>Ateşin aynı oyuncuya iki hasarı arasındaki süre (sn). "fire" etiketi GameConfig'ten ayarlar.</summary>
     public float AreaDamageIntervalSeconds { get; set; } = 1f;
 
@@ -570,7 +574,9 @@ public class CreatureModel
     {
         if (nextBurnAt.TryGetValue(player.Id, out float readyAt) && areaClock < readyAt) return;
 
+        int before = player.Health.Current;
         player.TakeDamage(Damage);
+        if (player.Health.Current < before) player.Status.Ignite(BurnSecondsOnHit, CharPerHit); // Ateş alanı tutuşturur
         nextBurnAt[player.Id] = areaClock + Mathf.Max(0.05f, AreaDamageIntervalSeconds);
     }
 
@@ -637,7 +643,9 @@ public class CreatureModel
             if ((playerPosition - Position).magnitude > Radius + playerRadius) continue;
             if (IsProtectedFromThis(player)) continue;
 
+            int healthBefore = player.Health.Current;
             if (Damage > 0) player.TakeDamage(Damage);
+            if (IgnitesTerrain && player.Health.Current < healthBefore) player.Status.Ignite(BurnSecondsOnHit, CharPerHit); // "Ateş" vuruşu tutuşturur
             if (SlowSeconds > 0f) player.Status.ApplySlow(SlowMultiplier, SlowSeconds);
             affected++;
 

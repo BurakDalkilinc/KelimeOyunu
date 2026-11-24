@@ -121,6 +121,28 @@ public class VehicleTests
     }
 
     [Test]
+    public void Car_StopsAfterCrushingOnePerson_MotorKeepsGoing()
+    {
+        var world = new FakeWorld();
+        PlayerState driver = MountedDriver(world, "araba", Vector2.zero);
+        PlayerState first = world.Add(2, new Vector2(0.8f, 0f));
+        PlayerState second = world.Add(3, new Vector2(-0.8f, 0f));
+
+        Assert.AreEqual(1, VehicleRules.Crush(driver, Vector2.zero, world, config), "ilk kişiyi ezer, durur");
+        Assert.IsFalse(first.IsAlive);
+        Assert.IsTrue(second.IsAlive, "ikinciye geçmez");
+        Assert.IsFalse(driver.Status.IsDriving, "araba durdu");
+        Assert.IsTrue(driver.IsAlive, "sürücü sağ iner");
+
+        var world2 = new FakeWorld();
+        PlayerState biker = MountedDriver(world2, "motor", Vector2.zero);
+        world2.Add(2, new Vector2(0.8f, 0f));
+        world2.Add(3, new Vector2(-0.8f, 0f));
+        Assert.AreEqual(2, VehicleRules.Crush(biker, Vector2.zero, world2, config), "motor sınırsız");
+        Assert.IsTrue(biker.Status.IsDriving);
+    }
+
+    [Test]
     public void Crash_ExplodingVehicle_KillsDriverEvenWithShield_HurtsAndPushesNearby()
     {
         var world = new FakeWorld();

@@ -34,6 +34,19 @@ public static class StatusTint
         if (status.HasShield) color = Color.Lerp(color, ShieldTint, 0.5f);
         if (status.IsFlying) color = Color.Lerp(color, FlightTint, 0.5f);
         if (status.IsStealthed) color.a = Mathf.Min(color.a, StealthAlpha);
+        return Burnt(color, status.CharLevel, status.IsBurning);
+    }
+
+    static readonly Color CharColor = new Color(0.09f, 0.07f, 0.06f);
+    static readonly Color BurnGlow = new Color(1f, 0.45f, 0.1f);
+
+    /// <summary>Kömürleşme rengi koyulaştırır; yanarken turuncu titrer. Saydamlık korunur.</summary>
+    public static Color Burnt(Color color, float charLevel, bool burning)
+    {
+        float alpha = color.a;
+        if (charLevel > 0f) color = Color.Lerp(color, CharColor, Mathf.Clamp01(charLevel) * 0.85f);
+        if (burning) color = Color.Lerp(color, BurnGlow, 0.25f + 0.2f * Mathf.Sin(Time.time * 25f));
+        color.a = alpha;
         return color;
     }
 }

@@ -9,5 +9,10 @@ public class IgniteTag : ITagBehaviour
     public void Configure(CreatureModel creature, SpawnContext context)
     {
         creature.IgnitesTerrain = true;
+        if (context.Config != null)
+        {
+            creature.BurnSecondsOnHit = context.Config.burnSeconds;   // Vurduğunu tutuşturur
+            creature.CharPerHit = context.Config.charPerFireHit;
+        }
     }
 }

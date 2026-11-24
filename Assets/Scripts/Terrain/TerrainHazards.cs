@@ -70,19 +70,20 @@ public class TerrainHazards
 
             // Ateş: girişte hemen, sonra her aralıkta bir hasar. Çıkınca sayaç sıfırlanır.
             bool onFire = fire != null && fire.IsBurning(cell.x, cell.y);
-            t.FireLeft = TickDamage(onFire, t.FireLeft, dt, config.terrainFireDamageIntervalSeconds, config.terrainFireDamage, player);
+            t.FireLeft = TickFire(onFire, t.FireLeft, dt, player);
         }
     }
 
-    static float TickDamage(bool inside, float left, float dt, float interval, int damage, PlayerState player)
+    /// <summary>Yanan karodaki oyuncu: girişte hemen, sonra her aralıkta ateş hasarı alır ve tutuşur. Çıkınca sayaç sıfırlanır.</summary>
+    float TickFire(bool inside, float left, float dt, PlayerState player)
     {
         if (!inside) return 0f;
 
         left -= dt;
         if (left > 0f) return left;
 
-        player.TakeDamage(damage);
-        return Mathf.Max(0.1f, interval);
+        player.TakeFireDamage(config.terrainFireDamage, config);
+        return Mathf.Max(0.1f, config.terrainFireDamageIntervalSeconds);
     }
 
     void Fall(PlayerState player, Vector2 position, PlayerTimers t, Action<int, Vector2> teleport)

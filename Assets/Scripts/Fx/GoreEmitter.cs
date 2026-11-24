@@ -10,9 +10,13 @@ public class GoreEmitter : MonoBehaviour
 {
     Func<int> health;
     Func<FallKind> falling;
+
+    /// <summary>Karakter yanıyor ya da çok kömürleşmiş mi? Öyle ölürse kara parçalara ayrılır.</summary>
+    public Func<bool> Charred { get; set; }
     SpriteRenderer body;
     int lastHealth = int.MinValue;
     FallKind wasFalling;
+    bool wasCharred;
     Color aliveColor = Color.white;
     Sprite aliveSprite;
 
@@ -43,13 +47,15 @@ public class GoreEmitter : MonoBehaviour
             }
             else if (wasFalling == FallKind.None)
             {
-                if (current <= 0) Gore.Explode(aliveSprite, at, transform.lossyScale.x, aliveColor);
+                if (current <= 0 && (wasCharred || (Charred != null && Charred()))) Gore.ExplodeCharred(aliveSprite, at, transform.lossyScale.x, aliveColor);
+                else if (current <= 0) Gore.Explode(aliveSprite, at, transform.lossyScale.x, aliveColor);
                 else Gore.Splash(at, 12 * Mathf.Min(3, lastHealth - current), 1f);
             }
         }
 
         lastHealth = current;
         wasFalling = falling != null ? falling() : FallKind.None;
+        if (current > 0) wasCharred = Charred != null && Charred(); // Ölünce etkiler silinse de son hâli hatırlanır
 
         // Parçalanırken canlı hâlinin resmini ve rengini kullan (öldükten sonra hayalet rengine döner).
         if (current > 0 && body != null)

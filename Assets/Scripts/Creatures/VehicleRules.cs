@@ -4,7 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// Araç (motor, araba) kuralları: araç süresi bitene kadar hiç durmaz, oyuncu yalnızca yön verir; arenanın kenarından seker.
-/// Değdiği kişiyi ezer (kelimenin hasarı, kalkan korur; her kişi bir sürüşte bir kez ezilir). "explosive" etiketli araç bir
+/// Değdiği kişiyi ezer (kelimenin hasarı, kalkan korur; her kişi bir sürüşte bir kez ezilir; "stats.count" kadar ezince araç durur). "explosive" etiketli araç bir
 /// binaya/duvara çarparsa patlar: sürücü ölür, çevredekiler hasar alıp savrulur, tahtalar tutuşur. Patlamayan araç çarpınca durur.
 /// Tek kişilik sahne ve ağ maçı aynı kuralı kullanır. Düz C# sınıfı, test edilebilir.
 /// </summary>
@@ -32,6 +32,9 @@ public static class VehicleRules
         float damage = vehicle?.stats != null ? vehicle.stats.damage : 0f;
         return damage > 0f ? Mathf.Max(1, Mathf.RoundToInt(damage)) : 1;
     }
+
+    /// <summary>Kaç kişiyi ezince araç durur ("stats.count"); 0 ise sınırsız.</summary>
+    public static int MaxCrushes(WordEntry vehicle) => vehicle?.stats != null ? Mathf.Max(0, vehicle.stats.count) : 0;
 
     /// <summary>Çarpınca patlar mı ("explosive" etiketi)?</summary>
     public static bool Explodes(WordEntry vehicle)
@@ -104,9 +107,18 @@ public static class VehicleRules
             if (!world.TryGetPosition(other.Id, out Vector2 at) || (at - position).magnitude > reach) continue;
             if (!driver.Status.MarkVehicleHit(other.Id)) continue;
 
+            int before = other.Health.Current;
             other.TakeDamage(damage);
             victims?.Add(other);
             count++;
+
+            // Ezme sınırı (araba: 1 kişi): dolunca araç durur, sürücü sağ salim iner.
+            int limit = MaxCrushes(vehicle);
+            if (other.Health.Current < before && limit > 0 && driver.Status.CountVehicleCrush() >= limit)
+            {
+                driver.Status.Dismount();
+                break;
+            }
         }
         return count;
     }
@@ -138,7 +150,7 @@ public static class VehicleRules
                 float distance = delta.magnitude;
                 if (distance > radius + config.playerRadius) continue;
 
-                other.TakeDamage(config.vehicleCrashDamage);
+                other.TakeFireDamage(config.vehicleCrashDamage, config); // Patlama: yanar ve kömürleşir
                 Vector2 away = distance > 0.0001f ? delta / distance : Vector2.up;
                 knockback?.Invoke(other.Id, away * config.shoveDistance);
             }

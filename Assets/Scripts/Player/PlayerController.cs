@@ -41,7 +41,8 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
         State = state;
         State.Health.Died += OnDied;
         GoreEmitter.Attach(gameObject, () => State != null ? State.Health.Current : 0,
-                           () => State != null ? State.Falling : FallKind.None); // Vurulunca kan, ölünce parçalanma
+                           () => State != null ? State.Falling : FallKind.None) // Vurulunca kan, ölünce parçalanma
+                   .Charred = () => State != null && (State.Status.IsBurning || State.Status.CharLevel >= 0.5f);
     }
 
     void Awake()
@@ -150,6 +151,7 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
         if (fall == null) fall = FallAnimation.Attach(gameObject, config.fallSeconds);
         fall.Kind = State.Falling;
         FlightVisual.Attach(gameObject).Flying = State.IsAlive && State.Status.IsFlying; // Uçarken gölge ve alev
+        BurnVisual.Attach(gameObject).Burning = State.IsAlive && State.Status.IsBurning; // Ateş aldı: alevler
         DisguiseVisual.Attach(gameObject).SpriteName = State.IsAlive ? State.Status.StealthDisguise : null; // Kamuflaj: çalı
         VehicleVisual vehicleVisual = VehicleVisual.Attach(gameObject);
         vehicleVisual.SpriteName = State.IsAlive && State.Status.IsDriving ? SpriteLibrary.NameFor(State.Status.Vehicle) : null;

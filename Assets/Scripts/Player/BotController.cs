@@ -67,7 +67,8 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         transform.localScale = Vector3.one * (config.playerRadius * 2f);
 
         State.Health.Died += OnDied;
-        GoreEmitter.Attach(gameObject, () => State.Health.Current, () => State.Falling); // Kan ve parçalanma
+        GoreEmitter.Attach(gameObject, () => State.Health.Current, () => State.Falling) // Kan ve parçalanma
+                   .Charred = () => State.Status.IsBurning || State.Status.CharLevel >= 0.5f;
     }
 
     void OnDestroy()
@@ -151,6 +152,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         if (fall == null) fall = FallAnimation.Attach(gameObject, config.fallSeconds);
         fall.Kind = State.Falling;
         FlightVisual.Attach(gameObject).Flying = State.Status.IsFlying; // Uçarken gölge ve alev
+        BurnVisual.Attach(gameObject).Burning = State.Status.IsBurning; // Ateş aldı: alevler
         DisguiseVisual.Attach(gameObject).SpriteName = State.Status.StealthDisguise; // Kamuflaj: çalı
         if (State.Falling != FallKind.None) return;
 
@@ -244,6 +246,8 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         State.Status.Clear();
         var vehicleVisual = GetComponent<VehicleVisual>();
         if (vehicleVisual != null) vehicleVisual.SpriteName = null;
+        var burn = GetComponent<BurnVisual>();
+        if (burn != null) burn.Burning = false;
         var flight = GetComponent<FlightVisual>();
         if (flight != null) flight.Flying = false;
         var disguise = GetComponent<DisguiseVisual>();
