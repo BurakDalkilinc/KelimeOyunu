@@ -2,8 +2,6 @@
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
-/[Bb]uild/
-/[Bb]uilds/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
 /[Mm]emoryCaptures/
@@ -37,3 +35,6 @@ crashlytics-build.properties
 
 # Claude yerel ayarları (kişisel, paylaşılmaz)
 .claude/settings.local.json
+
+# Build: oyunla birlikte gönderilmeyecek hata ayıklama yedeği
+*_BackUpThisFolder_ButDontShipItWithYourGame/
