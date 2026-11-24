@@ -15,7 +15,9 @@ public static class StatusText
         if (status.IsSlowed) parts.Add($"Yavaşladın! ({Mathf.CeilToInt(status.SlowTimeLeft)} sn)");
         if (status.IsPulled) parts.Add("Çekiliyorsun!");
         if (status.HasShield) parts.Add("Kalkan var");
-        if (status.IsStealthed) parts.Add($"Görünmezsin ({Mathf.CeilToInt(status.StealthTimeLeft)} sn)");
+        if (status.IsStealthed) parts.Add(status.StealthDisguise != null
+            ? $"Kamufle oldun ({Mathf.CeilToInt(status.StealthTimeLeft)} sn)"
+            : $"Görünmezsin ({Mathf.CeilToInt(status.StealthTimeLeft)} sn)");
         if (status.IsFlying) parts.Add($"Uçuyorsun ({Mathf.CeilToInt(status.FlightTimeLeft)} sn)");
         return string.Join("  ", parts);
     }

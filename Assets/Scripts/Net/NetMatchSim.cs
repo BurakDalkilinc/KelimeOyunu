@@ -242,10 +242,21 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
     /// <summary>
     /// Silahla ateş (host'ta): insan baktığı yöne, bot menzildeki en yakın rakibe nişan alır. Atış yapıldıysa true.
     /// </summary>
+    readonly List<PlayerState> meleeVictims = new List<PlayerState>();
+
     public bool TryFireWeapon(PlayerState shooter, Vector2 facing, bool onlyIfVictims)
     {
         if (shooter == null || !shooter.IsAlive || !shooter.Status.HasWeapon) return false;
         if (!avatars.TryGetPosition(shooter.Id, out Vector2 from)) return false;
+
+        // Kılıç/sopa: ateş etmez, önündekini biçer.
+        if (MeleeRules.IsMelee(shooter.Status.Weapon))
+        {
+            if (onlyIfVictims && MeleeRules.Strike(shooter, from, facing, shooter.Status.Weapon, this, config, false, meleeVictims) == 0) return false;
+            if (!shooter.Status.TryUseWeaponShot(config.weaponShotIntervalSeconds, out WordEntry used)) return false;
+            MeleeRules.Strike(shooter, from, facing, used, this, config, true, meleeVictims);
+            return true;
+        }
 
         Vector2 direction = facing;
         if (onlyIfVictims && !WeaponFire.TryAimAtNearest(shooter, from, this, config.weaponRange * 0.8f, out direction)) return false;

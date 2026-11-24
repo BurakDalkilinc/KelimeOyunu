@@ -32,6 +32,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
 
     float shoveThinkTimer;
     CreatureModel attackingBoss;
+    bool huntingWithMelee;
     System.Random shoveRandom;
 
     /// <summary>Son yürüdüğü yön. Henüz yürümediyse yukarı.</summary>
@@ -66,6 +67,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         transform.localScale = Vector3.one * (config.playerRadius * 2f);
 
         State.Health.Died += OnDied;
+        GoreEmitter.Attach(gameObject, () => State.Health.Current, () => State.Falling != FallKind.None); // Kan ve parçalanma
     }
 
     void OnDestroy()
@@ -97,6 +99,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
 
         // Boss'a saldırıyorsa her düşünüşte vurmayı dener (önünde boss yoksa hak harcanmaz).
         if (attackingBoss != null && !attackingBoss.IsFinished) { Bootstrap.TryShove(State.Id, true); return; }
+        if (huntingWithMelee) { Bootstrap.TryShove(State.Id, true); return; } // Kılıç/sopa: kurban önündeyse vurur
 
         if (shoveRandom.NextDouble() < config.botShoveChancePerSecond * 0.25f)
             Bootstrap.TryShove(State.Id, true);
@@ -148,6 +151,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         if (fall == null) fall = FallAnimation.Attach(gameObject, config.fallSeconds);
         fall.Kind = State.Falling;
         FlightVisual.Attach(gameObject).Flying = State.Status.IsFlying; // Uçarken gölge ve alev
+        DisguiseVisual.Attach(gameObject).SpriteName = State.Status.StealthDisguise; // Kamuflaj: çalı
         if (State.Falling != FallKind.None) return;
 
         Vector2 pushed = knockback.Step(Time.deltaTime);
@@ -181,6 +185,20 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
             : BossRules.PickBossToAttack(Bootstrap.CreatureSource(), State, transform.position, config);
 
         Vector2 direction;
+
+        // Elinde kılıç/sopa varsa en yakın rakibi kovalar ve yanına varınca vurur.
+        huntingWithMelee = false;
+        if (attackingBoss == null && State.Status.HasWeapon && MeleeRules.IsMelee(State.Status.Weapon) && refuge == null && !sheltered
+            && MeleeRules.TryFindPrey(State, transform.position, Bootstrap, config.botBossAggroRange, out Vector2 prey))
+        {
+            huntingWithMelee = true;
+            direction = brain.ThinkBossAttack(transform.position, dangers, prey, 0f, out Vector2 faceToPrey);
+            FacingDirection = faceToPrey;
+            if (direction != Vector2.zero)
+                MoveBy(direction * (config.botMoveSpeed * State.Status.SpeedMultiplier * Time.deltaTime), voluntary: true);
+            return;
+        }
+
         if (attackingBoss != null)
         {
             direction = brain.ThinkBossAttack(transform.position, dangers, attackingBoss.Position, attackingBoss.Radius, out Vector2 face);

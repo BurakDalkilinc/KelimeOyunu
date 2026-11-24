@@ -45,7 +45,13 @@ public class CreatureView : MonoBehaviour
         UpdateStrikeVisual();
         if (Model.IsBoss && labelMesh != null) labelMesh.text = BossRules.Label(Model); // "Godzilla 7/10"
 
-        if (Model.IsFinished) Destroy(gameObject);
+        if (Model.IsFinished)
+        {
+            // Öldürülen boss parçalara ayrılır (süresi bitip giden değil).
+            if (Model.IsBoss && Model.BossHealth <= 0 && bodyRenderer != null)
+                Gore.Explode(bodyRenderer.sprite, Model.Position, bodyRenderer.bounds.size.x, bodyRenderer.color);
+            Destroy(gameObject);
+        }
     }
 
     void Advance(float dt)

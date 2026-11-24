@@ -573,6 +573,43 @@ def make_ag():
     return c
 
 
+# ---------------- Kelime paketi 3: kamuflaj ve yakın dövüş silahları ----------------
+def make_cali():
+    c = Canvas()
+    c.ellipse(7.5, 9.5, 6.6, 5.4, D)        # çalı gövdesi
+    c.ellipse(4.5, 7, 3.4, 3.0, l)          # yapraklı tümsekler
+    c.ellipse(10.5, 6.5, 3.6, 3.2, l)
+    c.ellipse(7.5, 5, 3.0, 2.6, L)
+    c.set(4, 6, L); c.set(11, 5, L); c.set(6, 10, l); c.set(10, 11, l)
+    c.set(5, 9, R); c.set(10, 9, R)         # küçük meyveler
+    c.outline()
+    return c
+
+
+def make_kilic():
+    c = Canvas()
+    for i in range(2, 11):                  # çapraz bıçak
+        c.set(i + 2, 13 - i, w); c.set(i + 3, 13 - i, W)
+    c.set(14, 1, W)
+    c.rect(2, 10, 6, 11, y)                 # balçak
+    c.set(3, 12, N); c.set(2, 13, N); c.set(1, 14, Y)   # kabza ve topuz
+    c.outline()
+    return c
+
+
+def make_sopa():
+    c = Canvas()
+    for i in range(0, 12):                  # kalınlaşan tahta sopa
+        x = 2 + i; y_ = 13 - i
+        c.set(x, y_, N); c.set(x + 1, y_, N)
+        if i > 4: c.set(x, y_ - 1, N); c.set(x + 1, y_ - 1, n)
+    c.set(2, 14, n); c.set(1, 14, n)
+    for xx, yy in ((9, 5), (11, 4), (12, 2)):   # çiviler
+        c.set(xx, yy, w)
+    c.outline()
+    return c
+
+
 def make_mermi():
     c = Canvas()
     c.ellipse(7.5, 7.5, 3.6, 3.6, O)        # parlayan mermi
@@ -914,7 +951,7 @@ def main():
         "yarasa": make_yarasa, "karinca": make_karinca, "boga": make_boga, "ninja": make_ninja,
     }
     static = {
-        "yumruk": make_yumruk, "muz_kabugu": make_muz, "miknatis": make_miknatis, "bomba": make_bomba, "mermi": make_mermi,
+        "yumruk": make_yumruk, "muz_kabugu": make_muz, "miknatis": make_miknatis, "bomba": make_bomba, "mermi": make_mermi, "cali": make_cali, "kilic": make_kilic, "sopa": make_sopa,
         "ok": make_ok, "bumerang": make_bumerang, "lazer": make_lazer, "kartopu": make_kartopu, "tas": make_tas,
         "yildirim": make_yildirim, "mayin": make_mayin, "ag": make_ag,
         "shelter": make_shelter, "tower": make_tower, "cave": make_cave, "houses": make_houses,

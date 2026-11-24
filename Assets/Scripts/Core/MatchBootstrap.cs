@@ -197,7 +197,22 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
     /// </summary>
     bool TryFireWeapon(PlayerState shooter, bool onlyIfVictims)
     {
-        if (SpawnCreature == null || !TryGetPosition(shooter.Id, out Vector2 from)) return false;
+        if (!TryGetPosition(shooter.Id, out Vector2 from)) return false;
+
+        // Kılıç/sopa: ateş etmez, önündekini biçer.
+        if (MeleeRules.IsMelee(shooter.Status.Weapon))
+        {
+            Vector2 facing = TryGetFacing(shooter.Id, out Vector2 face) ? face : Vector2.up;
+            WordEntry melee = shooter.Status.Weapon;
+            if (onlyIfVictims && MeleeRules.Strike(shooter, from, facing, melee, this, config, false, meleeVictims) == 0) return false;
+            if (!shooter.Status.TryUseWeaponShot(config.weaponShotIntervalSeconds, out WordEntry used)) return false;
+
+            MeleeRules.Strike(shooter, from, facing, used, this, config, true, meleeVictims);
+            MeleeSwingEffect.Spawn(from, facing, MeleeRules.Reach(used, config), SpriteLibrary.Get(SpriteLibrary.NameFor(used)));
+            return true;
+        }
+
+        if (SpawnCreature == null) return false;
 
         Vector2 direction;
         if (onlyIfVictims)
@@ -213,6 +228,7 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
     }
 
     readonly List<Vector2> bodyPositions = new List<Vector2>();
+    readonly List<PlayerState> meleeVictims = new List<PlayerState>();
     readonly List<bool> bodySolid = new List<bool>();
     readonly List<Transform> bodyTransforms = new List<Transform>();
     readonly List<PlayerState> bodyStates = new List<PlayerState>();

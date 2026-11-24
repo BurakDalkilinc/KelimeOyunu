@@ -14,6 +14,8 @@ public class StealthTag : ITagBehaviour, ISelfEffectTag
             ? context.Word.stats.duration
             : (context.Config != null ? context.Config.stealthDefaultSeconds : 6f);
 
-        context.Writer.Status.ApplyStealth(seconds);
+        // Kelimenin kendi resmi varsa (kamuflaj → çalı) karakter ona bürünür; yoksa yalnızca soluklaşır.
+        string disguise = context.Word != null && !string.IsNullOrEmpty(context.Word.sprite) ? context.Word.sprite : null;
+        context.Writer.Status.ApplyStealth(seconds, disguise);
     }
 }

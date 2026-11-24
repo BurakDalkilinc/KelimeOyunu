@@ -40,6 +40,8 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
         if (State != null) State.Health.Died -= OnDied;
         State = state;
         State.Health.Died += OnDied;
+        GoreEmitter.Attach(gameObject, () => State != null ? State.Health.Current : 0,
+                           () => State != null && State.Falling != FallKind.None); // Vurulunca kan, ölünce parçalanma
     }
 
     void Awake()
@@ -148,6 +150,7 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
         if (fall == null) fall = FallAnimation.Attach(gameObject, config.fallSeconds);
         fall.Kind = State.Falling;
         FlightVisual.Attach(gameObject).Flying = State.IsAlive && State.Status.IsFlying; // Uçarken gölge ve alev
+        DisguiseVisual.Attach(gameObject).SpriteName = State.IsAlive ? State.Status.StealthDisguise : null; // Kamuflaj: çalı
         if (!CanMove || State.Falling != FallKind.None) return;
 
         Vector2 input = ReadMoveInput();

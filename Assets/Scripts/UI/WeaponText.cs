@@ -11,6 +11,8 @@ public static class WeaponText
         if (status == null || !status.HasWeapon) return string.Empty;
 
         string name = status.Weapon != null && !string.IsNullOrEmpty(status.Weapon.display) ? status.Weapon.display : "Silah";
+        if (MeleeRules.IsMelee(status.Weapon))
+            return $"{name} (Boşluk ile vur): {status.WeaponShots} vuruş, {Mathf.CeilToInt(status.WeaponTimeLeft)} sn";
         return $"{name} (Boşluk ile ateş): {status.WeaponShots} atış, {Mathf.CeilToInt(status.WeaponTimeLeft)} sn";
     }
 }

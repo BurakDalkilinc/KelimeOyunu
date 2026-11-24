@@ -141,9 +141,23 @@ public class StatusEffects
     /// <summary>Görünmez yapar (süre tazelenir, kısalmaz). Süre 0 ya da negatifse bir şey yapmaz.</summary>
     public void ApplyStealth(float seconds)
     {
+        ApplyStealth(seconds, null);
+    }
+
+    /// <summary>
+    /// Görünmez yapar; <paramref name="disguise"/> verilirse karakter o resme (ör. çalı) bürünür. Süre kısalmaz.
+    /// </summary>
+    public void ApplyStealth(float seconds, string disguise)
+    {
         if (seconds <= 0f) return;
         stealthTimeLeft = Mathf.Max(stealthTimeLeft, seconds);
+        stealthDisguise = string.IsNullOrEmpty(disguise) ? null : disguise;
     }
+
+    /// <summary>Görünmezken büründüğü resmin adı (kamuflajda "cali"); kılık yoksa ya da görünmez değilse null.</summary>
+    public string StealthDisguise => IsStealthed ? stealthDisguise : null;
+
+    string stealthDisguise;
 
     // ---- Uçma ----
 
@@ -280,6 +294,7 @@ public class StatusEffects
         shieldTimeLeft = 0f;
         shieldCharges = 0;
         stealthTimeLeft = 0f;
+        stealthDisguise = null;
         flightTimeLeft = 0f;
         flightSpeedMultiplier = 1f;
         DropWeapon();

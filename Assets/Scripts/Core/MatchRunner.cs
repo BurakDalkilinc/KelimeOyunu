@@ -46,7 +46,24 @@ public class MatchRunner : TurnViewSource
         }
     }
 
-    public override string DescribeLocalStatus() => StatusText.Describe(LocalPlayer?.Status);
+    public override string DescribeLocalStatus()
+    {
+        string status = StatusText.Describe(LocalPlayer?.Status);
+        string chance = DescribeChance();
+        if (string.IsNullOrEmpty(chance)) return status;
+        return string.IsNullOrEmpty(status) ? chance : status + "\n" + chance;
+    }
+
+    /// <summary>"Seçilme şansın: %12" (bir sonraki zarda); oyuncu elendiyse boş.</summary>
+    string DescribeChance()
+    {
+        PlayerState local = LocalPlayer;
+        if (dice == null || local == null || !local.IsAlive) return string.Empty;
+        float chance = dice.ChanceOf(local, bootstrap.Match.Players);
+        return $"Seçilme şansın: %{Mathf.RoundToInt(chance * 100f)}";
+    }
+
+    Dice dice;
 
     public override string DescribeShove()
     {
@@ -83,7 +100,7 @@ public class MatchRunner : TurnViewSource
         Words = WordDatabase.LoadFromResources(config.maxWordLength);
         WordTracker = new MatchWordTracker(Words);
 
-        var dice = new Dice(bootstrap.Random, config.diceBonusPerMissedTurn);
+        dice = new Dice(bootstrap.Random, config.diceBonusPerMissedTurn);
         Turns = new TurnManager(config, bootstrap.Match, dice, WordTracker);
     }
 

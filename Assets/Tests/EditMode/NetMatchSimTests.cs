@@ -178,6 +178,7 @@ public class NetMatchSimTests
     [Test]
     public void ChasingCreature_ReachesTarget_AndDamagesIt()
     {
+        config.creaturesHuntEveryone = false; // Yalnızca hedefe ulaşmayı ölçer (avcılık BrutalPackTests'te)
         sim.OnWordPlayed(writer, Word("kurt"));
 
         Run(8f);
@@ -305,6 +306,7 @@ public class NetMatchSimTests
         var third = new PlayerState(3, "Ucuncu", config.startingHealth);
         match = new MatchState(new[] { writer, victim, third });
         avatars.Positions[3] = new Vector2(5f, 5f);
+        config.creaturesHuntEveryone = false; // Seçilen hedefi ölçer; avcı yaratık sonra herkese geçerdi
         sim = new NetMatchSim(config, match, avatars, new System.Random(5));
         bool ended = false;
         sim.TargetingEnded += () => ended = true;

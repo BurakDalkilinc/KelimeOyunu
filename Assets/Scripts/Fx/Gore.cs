@@ -1,0 +1,106 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+/// <summary>
+/// Kan ve parçalanma görüntüleri: vurulana kan sıçrar, damlalar yere düşüp kalıcı leke olur; elenen karakter
+/// resminden kesilmiş parçalara ayrılıp savrulur, sekip yerde kalır. Yalnızca görüntüdür, oyun kurallarını değiştirmez.
+/// Çok fazla leke/parça birikirse en eskileri silinir (oyun yavaşlamasın).
+/// </summary>
+public static class Gore
+{
+    /// <summary>Yere düşmüş lekelerin sırası: zeminin hemen üstü, karakterlerin altı.</summary>
+    public const int StainOrder = -6;
+
+    /// <summary>Havadaki damla ve parçaların sırası (karakterlerin üstü).</summary>
+    public const int AirOrder = 12;
+
+    const int MaxStains = 1500;
+    const int MaxGibs = 300;
+
+    static readonly Queue<GameObject> stains = new Queue<GameObject>();
+    static readonly Queue<GameObject> gibs = new Queue<GameObject>();
+    static Sprite pixel;
+
+    static readonly Color[] BloodColors =
+    {
+        new Color(0.62f, 0.04f, 0.06f), new Color(0.78f, 0.08f, 0.09f), new Color(0.48f, 0.02f, 0.05f), new Color(0.9f, 0.15f, 0.12f),
+    };
+
+    /// <summary>Tek piksellik beyaz kare (renk sonradan verilir).</summary>
+    public static Sprite Pixel
+    {
+        get
+        {
+            if (pixel != null) return pixel;
+            var texture = new Texture2D(1, 1) { filterMode = FilterMode.Point };
+            texture.SetPixel(0, 0, Color.white);
+            texture.Apply();
+            pixel = Sprite.Create(texture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0.5f), 1f);
+            return pixel;
+        }
+    }
+
+    public static Color RandomBlood() => BloodColors[Random.Range(0, BloodColors.Length)];
+
+    /// <summary>Bir noktadan <paramref name="count"/> kan damlası saçar.</summary>
+    public static void Splash(Vector2 at, int count, float power = 1f)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            Vector2 dir = Random.insideUnitCircle.normalized;
+            float speed = Random.Range(1.5f, 5.5f) * power;
+            BloodDrop.Spawn(at, dir * speed, Random.Range(0.2f, 0.6f), Random.Range(2f, 7f) * power);
+        }
+    }
+
+    /// <summary>
+    /// Karakteri parçalara ayırır: <paramref name="source"/> resmi 2 sütun x 3 satır parçaya kesilir, her parça
+    /// merkezden dışarı savrulur ve arkasında kan izi bırakır. Bir de büyük kan sıçraması olur.
+    /// </summary>
+    public static void Explode(Sprite source, Vector2 at, float worldSize, Color tint)
+    {
+        Splash(at, 45, 1.3f);
+        if (source == null) return;
+
+        Rect rect = source.textureRect;
+        const int columns = 2, rows = 3;
+        float cellW = rect.width / columns, cellH = rect.height / rows;
+        float pixelsPerUnit = source.pixelsPerUnit;
+        float scale = worldSize / Mathf.Max(1f, rect.width / pixelsPerUnit);
+
+        for (int cx = 0; cx < columns; cx++)
+        for (int cy = 0; cy < rows; cy++)
+        {
+            var cell = new Rect(rect.x + cx * cellW, rect.y + cy * cellH, cellW, cellH);
+            Sprite piece = Sprite.Create(source.texture, cell, new Vector2(0.5f, 0.5f), pixelsPerUnit);
+
+            // Parçanın karakter içindeki yeri (merkeze göre); oradan dışarı savrulur.
+            Vector2 offset = new Vector2((cx + 0.5f) / columns - 0.5f, (cy + 0.5f) / rows - 0.5f) * worldSize;
+            Vector2 dir = (offset.sqrMagnitude > 0.0001f ? offset.normalized : Random.insideUnitCircle.normalized)
+                          + Random.insideUnitCircle * 0.6f;
+            GibPiece.Spawn(piece, at + offset, dir.normalized * Random.Range(2f, 4.5f), Random.Range(5f, 9f), scale, tint);
+        }
+    }
+
+    /// <summary>Lekeyi kayda alır; çok birikirse en eskisini siler.</summary>
+    public static void RegisterStain(GameObject stain)
+    {
+        stains.Enqueue(stain);
+        while (stains.Count > MaxStains)
+        {
+            GameObject old = stains.Dequeue();
+            if (old != null) Object.Destroy(old);
+        }
+    }
+
+    /// <summary>Parçayı kayda alır; çok birikirse en eskisini siler.</summary>
+    public static void RegisterGib(GameObject gib)
+    {
+        gibs.Enqueue(gib);
+        while (gibs.Count > MaxGibs)
+        {
+            GameObject old = gibs.Dequeue();
+            if (old != null) Object.Destroy(old);
+        }
+    }
+}

@@ -38,10 +38,25 @@ public static class CreatureBuilder
                 model.PlaceAt(at);
             }
 
+            if (config.creaturesHuntEveryone) MakeHunter(model);
             models.Add(model);
         }
 
         return models;
+    }
+
+    /// <summary>
+    /// Kovalayan yaratığı avcı yapar: vurduktan sonra kaybolmaz, en yakındakine geçer, hedef ölünce yenisini seçer.
+    /// Yerinde patlayan, alan, tuzak, çekim ve hedefin üstüne düşen yaratıklar olduğu gibi kalır.
+    /// </summary>
+    public static void MakeHunter(CreatureModel model)
+    {
+        if (model == null || model.IsStrike || model.IsArea || model.IsTrap || model.IsPull || model.IsProjectile || model.PlacesNearTarget) return;
+        if (model.Speed <= 0f) return;
+
+        model.Persistent = true;
+        model.TargetsNearest = true;
+        model.RetargetsWhenTargetDies = true;
     }
 
     /// <summary>Bilinmeyen kelimenin zararsız "???" yaratığı: arenanın rastgele bir yerinde doğar.</summary>

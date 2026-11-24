@@ -137,6 +137,9 @@ public class GameConfig : ScriptableObject
     [Tooltip("Boss'u bitirenin kazandığı can (canı tamsa onun yerine bir vuruşluk kalkan alır).")]
     [Min(0)] public int bossKillReward = 1;
 
+    [Tooltip("Açıksa kovalayan yaratıklar tek kişiyi vurup kaybolmaz: hep en yakındakine geçer, süresi bitene kadar herkesi avlar.")]
+    public bool creaturesHuntEveryone = true;
+
     [Tooltip("Bot en az bu kadar canı varsa boss'a saldırır; daha azsa ondan kaçar.")]
     [Min(1)] public int botBossAttackMinHealth = 2;
 

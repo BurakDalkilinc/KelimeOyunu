@@ -27,6 +27,20 @@ public class Dice
     /// Hayattaki adaylar arasından ağırlıklı rastgele birini seçer. Sayaçları değiştirmez
     /// (bunu <see cref="TurnManager"/> yapar). Hayatta aday yoksa hata fırlatır.
     /// </summary>
+    /// <summary>
+    /// Bir sonraki zarda bu oyuncunun seçilme olasılığı (0..1): kendi ağırlığı / hayattakilerin toplam ağırlığı.
+    /// Ölüyse 0.
+    /// </summary>
+    public float ChanceOf(PlayerState player, IEnumerable<PlayerState> candidates)
+    {
+        if (player == null || !player.IsAlive || candidates == null) return 0f;
+
+        double total = 0;
+        foreach (PlayerState other in candidates)
+            if (other != null && other.IsAlive) total += GetWeight(other);
+        return total > 0 ? (float)(GetWeight(player) / total) : 0f;
+    }
+
     public PlayerState Roll(IReadOnlyList<PlayerState> candidates)
     {
         if (candidates == null) throw new ArgumentNullException(nameof(candidates));

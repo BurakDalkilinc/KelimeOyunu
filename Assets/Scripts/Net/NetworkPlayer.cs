@@ -172,6 +172,8 @@ public class NetworkPlayer : NetworkBehaviour
         shoveCount.OnValueChanged += (_, __) => { if (config != null) ShoveEffect.Spawn(transform.position, config.shoveRange); };
         shoveLeftChangedAt = Time.unscaledTime;
         Everyone.Add(this);
+        GoreEmitter.Attach(gameObject, () => health.Value,
+                           () => (Status & (StatusFlags.FallChasm | StatusFlags.FallLava)) != 0); // Kan ve parçalanma (her istemcide)
 
         if (IsServer) InitOnServer();
 
@@ -417,8 +419,17 @@ public class NetworkPlayer : NetworkBehaviour
         Vector2? refuge = refugeProvider.TryGetRefuge(state, at, out Vector2 point) ? point : (Vector2?)null;
         bool sheltered = refugeProvider.IsSheltered(state);
 
-        // Büyük tehdit yoksa ve canı yetiyorsa yakındaki boss'a saldırır.
+        // Elinde kılıç/sopa varsa en yakın rakibi kovalar.
         botBossFacing = null;
+        if (!refuge.HasValue && !sheltered && state.Status.HasWeapon && MeleeRules.IsMelee(state.Status.Weapon)
+            && MeleeRules.TryFindPrey(state, at, sim, config.botBossAggroRange, out Vector2 prey))
+        {
+            Vector2 chase = botBrain.ThinkBossAttack(at, sim.Dangers, prey, 0f, out Vector2 faceToPrey);
+            botBossFacing = faceToPrey;
+            return chase;
+        }
+
+        // Büyük tehdit yoksa ve canı yetiyorsa yakındaki boss'a saldırır.
         CreatureModel boss = refuge.HasValue || sheltered ? null : BossRules.PickBossToAttack(sim.CreatureModels, state, at, config);
         if (boss != null)
         {

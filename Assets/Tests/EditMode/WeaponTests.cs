@@ -190,7 +190,7 @@ public class WeaponTests
     [Test]
     public void SilahWord_IsInTheDatabase_AndArmsOnUse()
     {
-        WordEntry word = WordDatabase.LoadFromResources(50).Lookup("tabanca").Entry;
+        WordEntry word = WordDatabase.LoadFromResources(50).Lookup("gun").Entry;
         Assert.IsNotNull(word);
         Assert.AreEqual("silah", word.id);
         CollectionAssert.Contains(word.tags, "weapon");

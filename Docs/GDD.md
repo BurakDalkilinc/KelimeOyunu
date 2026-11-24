@@ -78,6 +78,7 @@
 | `revive` | Elenenlerden biri yeniden doğar |
 | `ignite` | Haritadaki tahtaları tutuşturur (yangın yayılır) |
 | `weapon` | Yazana silah verir: Boşluk itiş yerine ateş eder, mermi değdiği ilk rakibe vurur (kalkan korur, duvar durdurur) |
+| `melee` | `weapon` ile birlikte: silah ateş etmez, Boşluk ile önündeki yay içindekilere (menzil `stats.radius`) kelimenin hasarı kadar vurur (Kılıç, Sopa). Yakın silahlı bot en yakın rakibi kovalar |
 | `boss` | Can barlı dev (Godzilla): en yakına saldırır; herkes Boşluk ile vurup canını eritir, son vuran +1 can (canı tamsa kalkan) alır. Canı en az 2 olan botlar da yakındaki boss'a gidip vurur (silahlı ya da canı az bot kaçar) |
 
 ## Harita ve arazi
