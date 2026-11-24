@@ -80,6 +80,9 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     /// <summary>Host'tan gelen son harita durumu (her karo için bir harf; yanan karo büyük harf). Boşsa harita henüz gelmedi.</summary>
     public string LatestTerrain { get; private set; } = "";
 
+    /// <summary>Evlerin yerleri ("x,y,w,h;..."): çatı çizimi için.</summary>
+    public string LatestHouses { get; private set; } = "";
+
     /// <summary>Yeni harita durumu geldikçe artar.</summary>
     public int TerrainVersion { get; private set; }
 
@@ -332,7 +335,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         {
             terrainSendPending = false;
             Sim.Terrain.Dirty = false;
-            TerrainRpc(Sim.Terrain.Map.Encode(Sim.Terrain.Fire.IsBurning));
+            TerrainRpc(Sim.Terrain.Map.Encode(Sim.Terrain.Fire.IsBurning), Sim.Terrain.Map.EncodeHouses());
         }
 
         Sim.SnapshotZones(zoneBuffer);
@@ -494,8 +497,9 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    void TerrainRpc(string encodedTerrain)
+    void TerrainRpc(string encodedTerrain, string encodedHouses)
     {
+        LatestHouses = encodedHouses ?? "";
         LatestTerrain = encodedTerrain ?? "";
         TerrainVersion++;
     }
@@ -520,6 +524,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     void ResetMatchRpc()
     {
         LatestTerrain = ""; // Harita bir sonraki maçta yeniden gelir
+        LatestHouses = "";
         TerrainVersion++;
         Client.Reset();
         Feedback = "";

@@ -568,6 +568,54 @@ def make_t_charred():
     return c
 
 
+def _shingles(c, main, light, dark):
+    """Kiremit deseni: dört piksel yüksekliğinde sıralar, her sırada kaydırılmış dikey ayrımlar."""
+    _fill(c, main)
+    for yy in range(16):
+        row = yy // 4
+        if yy % 4 == 0:
+            for xx in range(16):
+                c.px[yy][xx] = light            # kiremit üst parlaması
+        elif yy % 4 == 3:
+            for xx in range(16):
+                c.px[yy][xx] = dark             # kiremit alt gölgesi
+        offset = 3 if row % 2 else 0
+        for xx in range(16):
+            if (xx + offset) % 6 == 5 and yy % 4 in (1, 2):
+                c.px[yy][xx] = dark             # kiremit araları
+
+
+def make_t_roof(variant):
+    c = Canvas()
+    if variant == "a":
+        _shingles(c, (172, 74, 56), (206, 104, 74), (116, 46, 42))
+    else:
+        _shingles(c, (146, 60, 50), (178, 84, 62), (96, 38, 38))
+    return c
+
+
+def make_t_roof_ridge():
+    c = Canvas()
+    _shingles(c, (172, 74, 56), (206, 104, 74), (116, 46, 42))
+    for xx in range(16):                    # çatı sırtı: ortada parlak şerit
+        for yy in range(5, 11):
+            c.px[yy][xx] = (222, 132, 92)
+        c.px[5][xx] = (244, 168, 116)
+        c.px[10][xx] = (110, 42, 40)
+        c.px[11][xx] = (84, 32, 34)
+    return c
+
+
+def make_t_roof_eave():
+    c = Canvas()
+    _shingles(c, (146, 60, 50), (178, 84, 62), (96, 38, 38))
+    for xx in range(16):                    # saçak: alt kenarda koyu çıkıntı ve gölge
+        c.px[13][xx] = (84, 32, 34)
+        c.px[14][xx] = (60, 24, 28)
+        c.px[15][xx] = (38, 18, 22)
+    return c
+
+
 def make_t_fire(frame):
     """Karonun üstüne bindirilen alev (saydam zemin): iki karede dilleri oynar."""
     c = Canvas()
@@ -606,6 +654,8 @@ def main():
         "t_chasm": lambda: make_t_chasm(False), "t_chasm_edge": lambda: make_t_chasm(True),
         "t_charred": make_t_charred,
         "t_fire": lambda: make_t_fire(0), "t_fire_b": lambda: make_t_fire(1),
+        "t_roof_a": lambda: make_t_roof("a"), "t_roof_b": lambda: make_t_roof("b"),
+        "t_roof_ridge": make_t_roof_ridge, "t_roof_eave": make_t_roof_eave,
     }
     for name, fn in animated.items():
         save_animated(fn(), name)

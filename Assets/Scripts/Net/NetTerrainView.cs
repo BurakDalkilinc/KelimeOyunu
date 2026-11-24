@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
@@ -13,6 +14,7 @@ public class NetTerrainView : MonoBehaviour
     TerrainMap map;
     bool[] burning;
     int appliedVersion = -1;
+    string appliedHouses = null;
 
     void Awake()
     {
@@ -26,6 +28,15 @@ public class NetTerrainView : MonoBehaviour
         map = new TerrainMap(Mathf.RoundToInt(config.arenaSize.x), Mathf.RoundToInt(config.arenaSize.y));
         burning = new bool[map.Width * map.Height];
         view.Bind(map, (x, y) => burning[map.Index(x, y)]);
+        view.ViewerPosition = LocalAvatarPosition;
+    }
+
+    /// <summary>Bu bilgisayardaki oyuncunun karakteri (çatı, içindeyken saydamlaşır); yoksa null.</summary>
+    static Vector2? LocalAvatarPosition()
+    {
+        var manager = NetworkManager.Singleton;
+        if (manager == null || manager.LocalClient == null || manager.LocalClient.PlayerObject == null) return null;
+        return (Vector2)manager.LocalClient.PlayerObject.transform.position;
     }
 
     void Update()
@@ -41,9 +52,19 @@ public class NetTerrainView : MonoBehaviour
                 for (int x = 0; x < map.Width; x++)
                     map.Set(x, y, TileType.Grass);
             System.Array.Clear(burning, 0, burning.Length);
+            appliedHouses = "";
+            map.TryApplyHouses("");
             return;
         }
 
         map.TryApply(text, burning);
+
+        // Evler maç boyunca değişmez; yalnızca farklıysa yeniden kur.
+        string houses = channel.LatestHouses ?? "";
+        if (houses != appliedHouses)
+        {
+            appliedHouses = houses;
+            map.TryApplyHouses(houses);
+        }
     }
 }

@@ -269,11 +269,15 @@ public class NetworkPlayer : NetworkBehaviour
             }
 
             float speedMultiplier = state != null ? state.Status.SpeedMultiplier : 1f;
-            Vector2 input = isBot.Value ? BotDirection(dt, next, sim, state) : serverInput;
+            // İtilen bot lav/uçurum/alevden en yakın güvenli kareye koşar; kaçınma engelleri bu sırada kapalıdır (aksi halde
+            // her karede dışarı fırlatılır ve itmenin etkisi kalmaz).
+            bool escaping = isBot.Value && sim != null && sim.Terrain != null && state != null
+                            && !state.Status.IsFlying && sim.Terrain.IsHazardousAt(next);
+            Vector2 input = escaping ? sim.Terrain.EscapeDirection(next) : isBot.Value ? BotDirection(dt, next, sim, state) : serverInput;
             if (input != Vector2.zero) facing = input.normalized;
 
             float speed = (isBot.Value ? config.botMoveSpeed : config.playerMoveSpeed) * speedMultiplier;
-            next = AvatarMover.Step(next, input, speed, dt, config.playerRadius, arena, voluntary);
+            next = AvatarMover.Step(next, input, speed, dt, config.playerRadius, arena, escaping ? obstacles : voluntary);
 
             // Duvar tam üstüne çıktıysa karakter dışarı itilir.
             if (obstacles != null)

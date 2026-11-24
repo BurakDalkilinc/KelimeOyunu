@@ -46,6 +46,21 @@ public class TerrainSim
         Fire.BurnChanged += (_, __) => Dirty = true;
     }
 
+    /// <summary>Nokta lav, uçurum ya da yanan bir karoda mı? (Botlar buradan çıkmaya çalışır.)</summary>
+    public bool IsHazardousAt(Vector2 point)
+    {
+        Vector2Int cell = Map.CellOf(point);
+        return TerrainMap.IsHazard(Map.At(cell.x, cell.y)) || Fire.IsBurning(cell.x, cell.y);
+    }
+
+    /// <summary>Noktadan en yakın güvenli (yürünür, yanmayan) kareye doğru birim yön; güvenli yer yoksa sıfır.</summary>
+    public Vector2 EscapeDirection(Vector2 point)
+    {
+        if (!Map.TryFindNearestWalkable(point, out Vector2 safe, Fire.IsBurning)) return Vector2.zero;
+        Vector2 toward = safe - point;
+        return toward.sqrMagnitude < 0.0001f ? Vector2.zero : toward.normalized;
+    }
+
     /// <summary>Yanan karoları botların kaçacağı tehlike alanları olarak listeye ekler (en çok 60).</summary>
     public void AppendFireDangers(IList<DangerZone> into)
     {

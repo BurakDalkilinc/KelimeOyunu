@@ -27,6 +27,25 @@ public enum TileType : byte
     CharredFloor = 6,
 }
 
+/// <summary>Bir evin kapladığı dikdörtgen (duvarlar dahil, karo cinsinden). Çatı bu alanın üstüne çizilir.</summary>
+public readonly struct House
+{
+    public int X { get; }
+    public int Y { get; }
+    public int W { get; }
+    public int H { get; }
+
+    public House(int x, int y, int w, int h)
+    {
+        X = x;
+        Y = y;
+        W = w;
+        H = h;
+    }
+
+    public bool Contains(int x, int y) => x >= X && x < X + W && y >= Y && y < Y + H;
+}
+
 /// <summary>
 /// Haritanın karo ızgarası (her kare 1×1 birim, merkezde 0,0). Hangi karonun ne olduğunu ve türlerin özelliklerini
 /// (içinden geçilir mi, tehlikeli mi, yanar mı) bilir. Düz C# sınıfı, test edilebilir.
@@ -35,8 +54,16 @@ public class TerrainMap
 {
     readonly TileType[] tiles;
 
+    readonly List<House> houses = new List<House>();
+
     public int Width { get; }
     public int Height { get; }
+
+    /// <summary>Haritadaki evler (çatı çizimi için).</summary>
+    public IReadOnlyList<House> Houses => houses;
+
+    /// <summary>Evlerin listesi değişti (üretimde eklendi, ağdan geldi).</summary>
+    public event Action HousesChanged;
 
     /// <summary>(0,0) karosunun sol alt köşesinin dünya konumu.</summary>
     public Vector2 Origin { get; }
@@ -51,6 +78,44 @@ public class TerrainMap
         Height = height;
         Origin = new Vector2(-width * 0.5f, -height * 0.5f);
         tiles = new TileType[width * height];
+    }
+
+    // ---- Evler ----
+
+    public void AddHouse(House house)
+    {
+        houses.Add(house);
+        HousesChanged?.Invoke();
+    }
+
+    /// <summary>Evleri "x,y,w,h;x,y,w,h" metnine çevirir (ağda karo durumuyla birlikte gider).</summary>
+    public string EncodeHouses()
+    {
+        var parts = new List<string>();
+        foreach (House h in houses) parts.Add($"{h.X},{h.Y},{h.W},{h.H}");
+        return string.Join(";", parts);
+    }
+
+    /// <summary>Evleri metinden kurar; bozuksa hiçbir şey değiştirmeden false döner. Boş metin "ev yok" demektir.</summary>
+    public bool TryApplyHouses(string encoded)
+    {
+        var parsed = new List<House>();
+        if (!string.IsNullOrEmpty(encoded))
+        {
+            foreach (string part in encoded.Split(';'))
+            {
+                string[] f = part.Split(',');
+                if (f.Length != 4 || !int.TryParse(f[0], out int x) || !int.TryParse(f[1], out int y)
+                    || !int.TryParse(f[2], out int w) || !int.TryParse(f[3], out int h) || w < 1 || h < 1)
+                    return false;
+                parsed.Add(new House(x, y, w, h));
+            }
+        }
+
+        houses.Clear();
+        houses.AddRange(parsed);
+        HousesChanged?.Invoke();
+        return true;
     }
 
     // ---- Türlerin özellikleri ----

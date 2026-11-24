@@ -136,11 +136,19 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
             refuge = refugePoint;
 
         bool sheltered = Refuge != null && Refuge.IsSheltered(State);
-        Vector2 direction = brain.Think(Time.deltaTime, transform.position, dangers, refuge, sheltered);
+
+        // Lava/uçuruma/aleve itilen bot oradan en yakın güvenli kareye koşar. Bu sırada "kaçınma" engelleri kapalıdır:
+        // yoksa kaçınma engeli onu her karede dışarı fırlatır ve itilmenin hiçbir etkisi kalmaz.
+        TerrainSim terrain = Bootstrap != null ? Bootstrap.Terrain : null;
+        bool escaping = terrain != null && !State.Status.IsFlying && terrain.IsHazardousAt(transform.position);
+
+        Vector2 direction = escaping
+            ? terrain.EscapeDirection(transform.position)
+            : brain.Think(Time.deltaTime, transform.position, dangers, refuge, sheltered);
         if (direction == Vector2.zero) return;
 
         FacingDirection = direction;
-        MoveBy(direction * (config.botMoveSpeed * State.Status.SpeedMultiplier * Time.deltaTime), voluntary: true);
+        MoveBy(direction * (config.botMoveSpeed * State.Status.SpeedMultiplier * Time.deltaTime), voluntary: !escaping);
     }
 
     /// <summary>Botu kısa bir süreye yayarak kaydırır (bir yaratık fırlattığında).</summary>

@@ -22,8 +22,12 @@ public static class MapGenerator
     const int MaxAttempts = 30;
     const float MinConnectedFraction = 0.93f;
     const int EdgeMargin = 2;
-    const int HouseWidth = 4;
-    const int HouseHeight = 3;
+    /// <summary>Ev boyutu (duvarlar dahil). İç mekân 3×2, kapı 2 kare geniş: çapı 1 olan karakter rahat geçer.</summary>
+    public const int HouseWidth = 5;
+    public const int HouseHeight = 4;
+
+    /// <summary>Sokak ve evler arası yürüyüş yolu genişliği (kare). 2: karakterler duvara sürtmeden yan yana geçebilir.</summary>
+    const int StreetWidth = 2;
 
     /// <summary>Köy alanının kapladığı kutu (kenarlar dahil). Lav ve uçurum buradan uzak durur.</summary>
     struct Box
@@ -72,58 +76,79 @@ public static class MapGenerator
 
     // ---- Köyler ----
 
+    /// <summary>
+    /// Köy: iki sütun ev (aralarında 2 karelik dikey yol). Büyük köyde iki sıra ev ve aralarında 2 karelik sokak,
+    /// küçük köyde tek sıra ev ve altında sokak vardır. Yollar köyün dışına 2 kare taşar. Evlerin kapısı sokağa bakar.
+    /// </summary>
     static void PlaceVillages(TerrainMap map, System.Random random, int count, List<Box> villages)
     {
-        // Köy: 2×2 ev (her biri 4×3) ve aralarında 1 karelik tahta yol; yollar köyün dışına 2 kare uzanır.
-        int villageW = HouseWidth * 2 + 1;
-        int villageH = HouseHeight * 2 + 1;
+        int villageW = HouseWidth * 2 + StreetWidth;
+        int bigH = HouseHeight * 2 + StreetWidth;
+        int smallH = HouseHeight + StreetWidth;
 
         for (int i = 0; i < count; i++)
         {
-            for (int attempt = 0; attempt < 80; attempt++)
+            // İlk köyler büyük; sığmazsa küçüğe düşer.
+            bool placed = false;
+            foreach (bool big in new[] { i < 2, false })
             {
-                int margin = EdgeMargin + 1; // Yürüyüş yolları köyün 2 kare dışına taşar: kenarda 1 kare boşluk kalır
-                int x0 = random.Next(margin, Math.Max(margin + 1, map.Width - villageW - margin));
-                int y0 = random.Next(margin, Math.Max(margin + 1, map.Height - villageH - margin));
-                var box = new Box { X0 = x0, Y0 = y0, X1 = x0 + villageW - 1, Y1 = y0 + villageH - 1 };
+                int villageH = big ? bigH : smallH;
+                for (int attempt = 0; attempt < 120 && !placed; attempt++)
+                {
+                    int margin = EdgeMargin + 1; // Yürüyüş yolları köyün 2 kare dışına taşar: kenarda 1 kare boşluk kalır
+                    int x0 = random.Next(margin, Math.Max(margin + 1, map.Width - villageW - margin));
+                    int y0 = random.Next(margin, Math.Max(margin + 1, map.Height - villageH - margin));
+                    var box = new Box { X0 = x0, Y0 = y0, X1 = x0 + villageW - 1, Y1 = y0 + villageH - 1 };
 
-                if (box.X1 >= map.Width - EdgeMargin || box.Y1 >= map.Height - EdgeMargin) continue;
-                if (villages.Exists(v => v.Overlaps(box, 2))) continue;
+                    if (box.X1 >= map.Width - EdgeMargin || box.Y1 >= map.Height - EdgeMargin) continue;
+                    if (villages.Exists(v => v.Overlaps(box, 2))) continue;
 
-                BuildVillage(map, box, random);
-                villages.Add(box);
-                break;
+                    BuildVillage(map, box, big, random);
+                    villages.Add(box);
+                    placed = true;
+                }
+                if (placed) break;
             }
         }
     }
 
-    static void BuildVillage(TerrainMap map, Box box, System.Random random)
+    static void BuildVillage(TerrainMap map, Box box, bool big, System.Random random)
     {
-        int midX = box.X0 + HouseWidth;   // Dikey yürüyüş yolu
-        int midY = box.Y0 + HouseHeight;  // Yatay yürüyüş yolu
+        int gapX = box.X0 + HouseWidth;                   // Dikey yol (2 kare geniş): gapX ve gapX+1
+        int streetY = big ? box.Y0 + HouseHeight : box.Y0; // Sokak (2 kare yüksek): streetY ve streetY+1
 
         // Yürüyüş yolları (köyün dışına 2 kare taşar).
-        for (int x = box.X0 - 2; x <= box.X1 + 2; x++) SetIfGrass(map, x, midY);
-        for (int y = box.Y0 - 2; y <= box.Y1 + 2; y++) SetIfGrass(map, midX, y);
+        for (int x = box.X0 - 2; x <= box.X1 + 2; x++)
+            for (int t = 0; t < StreetWidth; t++) SetIfGrass(map, x, streetY + t);
+        for (int y = box.Y0 - 2; y <= box.Y1 + 2; y++)
+            for (int t = 0; t < StreetWidth; t++) SetIfGrass(map, gapX + t, y);
 
-        // Dört ev; ikisi yoksa köy boş kalır, o yüzden en az iki ev yapılır.
-        var origins = new List<Vector2Int>
+        int rightX = gapX + StreetWidth;
+        var houses = new List<(int x, int y, bool doorUp)>();
+        if (big)
         {
-            new Vector2Int(box.X0, box.Y0),
-            new Vector2Int(midX + 1, box.Y0),
-            new Vector2Int(box.X0, midY + 1),
-            new Vector2Int(midX + 1, midY + 1),
-        };
-        int skip = random.Next(0, 3); // 0-2 ev eksik: köyler birbirine benzemesin
-        for (int i = 0; i < origins.Count; i++)
-        {
-            if (skip > 0 && i >= origins.Count - skip) continue;
-            BuildHouse(map, origins[i].x, origins[i].y, i < 2, random);
+            houses.Add((box.X0, box.Y0, true));                         // Alt sıra: kapı yukarı (sokağa)
+            houses.Add((rightX, box.Y0, true));
+            houses.Add((box.X0, streetY + StreetWidth, false));         // Üst sıra: kapı aşağı
+            houses.Add((rightX, streetY + StreetWidth, false));
         }
+        else
+        {
+            houses.Add((box.X0, streetY + StreetWidth, false));         // Tek sıra: sokağın üstünde, kapı aşağı
+            houses.Add((rightX, streetY + StreetWidth, false));
+        }
+
+        // Büyük köyde bir ev eksik olabilir (köyler birbirine benzemesin); en az 3 ev kalır.
+        int skip = big && random.Next(3) == 0 ? 1 : -1;
+        for (int i = 0; i < houses.Count; i++)
+            if (i != skip) BuildHouse(map, houses[i].x, houses[i].y, houses[i].doorUp, random);
     }
 
-    /// <summary>Evin kapısı yola bakar: alttaki evler (i&lt;2) yukarıya, üsttekiler aşağıya.</summary>
-    static void BuildHouse(TerrainMap map, int x0, int y0, bool doorTop, System.Random random)
+    /// <summary>
+    /// Ev: çevresi tahta duvar, içi tahta zemin (3×2), sokağa bakan duvarda 2 kare geniş kapı.
+    /// Evin yeri haritaya kaydedilir (çatı çizimi için).
+    /// </summary>
+    static void BuildHouse(TerrainMap map, int x0, int y0, bool doorUp, System.Random random)
     {
         for (int y = y0; y < y0 + HouseHeight; y++)
         {
@@ -134,10 +159,13 @@ public static class MapGenerator
             }
         }
 
-        // Kapı: yola bakan kenarın ortasındaki kare (2 kare geniş ev içi için soldan ikinci).
-        int doorX = x0 + 1 + random.Next(0, HouseWidth - 2);
-        int doorY = doorTop ? y0 + HouseHeight - 1 : y0;
+        // Kapı: iç mekânın üstündeki iki kare (soldan ya da sağdan hizalı).
+        int doorX = x0 + 1 + random.Next(0, 2);
+        int doorY = doorUp ? y0 + HouseHeight - 1 : y0;
         map.Set(doorX, doorY, TileType.WoodFloor);
+        map.Set(doorX + 1, doorY, TileType.WoodFloor);
+
+        map.AddHouse(new House(x0, y0, HouseWidth, HouseHeight));
     }
 
     static void SetIfGrass(TerrainMap map, int x, int y)
