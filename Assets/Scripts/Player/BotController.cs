@@ -154,6 +154,10 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
             if (State.Falling != FallKind.None) { fall.Kind = State.Falling; return; } // Düştü: kımıldamaz
         }
 
+        // Savrulurken bot kendi yürümez. Yürüseydi "lav/uçuruma girme" engeli onu her karede kenara geri iterdi
+        // ve itilen bot kenarda çakılı kalırdı.
+        if (knockback.IsActive) return;
+
         Vector2 pulled = State.Status.GetPullStep(transform.position, Time.deltaTime);
         if (pulled != Vector2.zero) MoveBy(pulled);
 

@@ -294,7 +294,10 @@ public class NetworkPlayer : NetworkBehaviour
 
             float speedMultiplier = state != null ? state.Status.SpeedMultiplier : 1f;
             bool falling = state != null && state.Falling != FallKind.None; // Lava/uçuruma düşüyor: kımıldamaz
-            Vector2 input = falling ? Vector2.zero : isBot.Value ? BotDirection(dt, next, sim, state) : serverInput;
+
+            // Savrulan bot kendi yürümez; yürüseydi "lav/uçuruma girme" engeli onu kenara geri iterdi.
+            bool stunnedBot = isBot.Value && knockback.IsActive;
+            Vector2 input = falling || stunnedBot ? Vector2.zero : isBot.Value ? BotDirection(dt, next, sim, state) : serverInput;
             if (input != Vector2.zero) facing = input.normalized;
 
             float speed = (isBot.Value ? config.botMoveSpeed : config.playerMoveSpeed) * speedMultiplier;
