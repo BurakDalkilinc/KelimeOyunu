@@ -151,6 +151,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
             Vector2 before = transform.position;
             MoveBy(pushed);
             LandOnHazard(before);
+            if (State.Falling != FallKind.None) { fall.Kind = State.Falling; return; } // Düştü: kımıldamaz
         }
 
         Vector2 pulled = State.Status.GetPullStep(transform.position, Time.deltaTime);
@@ -162,18 +163,15 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
 
         bool sheltered = Refuge != null && Refuge.IsSheltered(State);
 
-        // Lava/uçuruma/aleve itilen bot oradan en yakın güvenli kareye koşar. Bu sırada "kaçınma" engelleri kapalıdır:
-        // yoksa kaçınma engeli onu her karede dışarı fırlatır ve itilmenin hiçbir etkisi kalmaz.
+        // Gezinme hedefi lav/uçurum/duvar (ve kenarları) olmasın: bot oraya doğru yürüyüp takılmasın.
         TerrainSim terrain = Bootstrap != null ? Bootstrap.Terrain : null;
-        bool escaping = terrain != null && !State.Status.IsFlying && terrain.IsHazardousAt(transform.position);
+        if (terrain != null && brain.IsBadTarget == null) brain.IsBadTarget = terrain.IsBadWanderTarget;
 
-        Vector2 direction = escaping
-            ? terrain.EscapeDirection(transform.position)
-            : brain.Think(Time.deltaTime, transform.position, dangers, refuge, sheltered);
+        Vector2 direction = brain.Think(Time.deltaTime, transform.position, dangers, refuge, sheltered);
         if (direction == Vector2.zero) return;
 
         FacingDirection = direction;
-        MoveBy(direction * (config.botMoveSpeed * State.Status.SpeedMultiplier * Time.deltaTime), voluntary: !escaping);
+        MoveBy(direction * (config.botMoveSpeed * State.Status.SpeedMultiplier * Time.deltaTime), voluntary: true);
     }
 
     /// <summary>Botu kısa bir süreye yayarak kaydırır (bir yaratık fırlattığında).</summary>

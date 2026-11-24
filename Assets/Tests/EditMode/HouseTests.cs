@@ -192,4 +192,36 @@ public class HouseTests
         sim.Tick(config.fallSeconds + 0.1f, null, players, where, (id, to) => { });
         Assert.IsFalse(p.IsAlive);
     }
+
+    [Test]
+    public void BotWanderTargets_AvoidLavaChasmAndTheirEdges()
+    {
+        TerrainMap map = MapGenerator.Generate(34, 19, 7, MapRecipe.Default);
+        var sim = new TerrainSim(config, map, new System.Random(1));
+        var brain = new BotBrain(config, new ArenaBounds(config.arenaSize), new System.Random(3));
+        brain.IsBadTarget = sim.IsBadWanderTarget;
+
+        int bad = 0;
+        Vector2 at = Vector2.zero;
+        for (int i = 0; i < 200; i++)
+        {
+            brain.Think(0.016f, brain.Target, null); // Hedefe "vardı": bekle ve yeni hedef seç
+            brain.Think(60f, at, null);              // Bekleme bitsin, yeni hedef seçilsin
+            if (sim.IsBadWanderTarget(brain.Target)) bad++;
+        }
+        Assert.LessOrEqual(bad, 4, "hedeflerin neredeyse hepsi güvenli yerde olmalı");
+    }
+
+    [Test]
+    public void BotBrain_GivesUpATargetItCannotReach()
+    {
+        var brain = new BotBrain(config, new ArenaBounds(config.arenaSize), new System.Random(5));
+        Vector2 stuckAt = new Vector2(-3f, 0f);
+
+        Vector2 first = brain.Think(0.1f, stuckAt, null);
+        Vector2 firstTarget = brain.Target;
+        for (int i = 0; i < 20; i++) brain.Think(0.1f, stuckAt, null); // 2 sn hiç ilerleyemedi
+
+        Assert.AreNotEqual(firstTarget, brain.Target, "takılan bot başka hedef seçmeli");
+    }
 }

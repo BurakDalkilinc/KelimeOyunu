@@ -110,6 +110,25 @@ public class TerrainSim
         }
     }
 
+    /// <summary>
+    /// Bot gezinme hedefi için kötü yer mi: duvar, lav, uçurum ya da yanan kare, veya bunlardan birine bitişik (kenarda takılmasın).
+    /// </summary>
+    public bool IsBadWanderTarget(Vector2 point)
+    {
+        Vector2Int cell = Map.CellOf(point);
+        for (int dy = -1; dy <= 1; dy++)
+        {
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                int x = cell.x + dx, y = cell.y + dy;
+                if (!Map.InBounds(x, y)) continue;
+                TileType type = Map.At(x, y);
+                if (TerrainMap.IsSolid(type) || TerrainMap.IsHazard(type) || Fire.IsBurning(x, y)) return true;
+            }
+        }
+        return false;
+    }
+
     /// <summary>Dünya noktası duvar, lav ya da uçurum karosunda mı? (Kule/sığınak yerleşimi buradan kaçınır.)</summary>
     public bool IsBlocked(Vector2 point) => Map.IsBlockedPoint(point);
 

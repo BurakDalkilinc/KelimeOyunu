@@ -15,6 +15,20 @@ public class BotBrain
     Vector2 target;
     bool hasTarget;
     float pauseLeft;
+    float bestDistance;
+    float stuckFor;
+
+    /// <summary>Takılan bot (hedefe yaklaşamıyor) bu kadar saniye sonra yeni hedef seçer.</summary>
+    const float StuckSeconds = 1.2f;
+
+    /// <summary>Hedef seçilirken kaç kez yeniden denenir (kötü yere düşerse).</summary>
+    const int TargetTries = 12;
+
+    /// <summary>
+    /// Gezinme hedefi olamayacak yerler (lav, uçurum, duvar ve kenarları). Boşsa her yer olur.
+    /// Bot böylece uçuruma doğru yürüyüp kenarında takılı kalmaz.
+    /// </summary>
+    public System.Func<Vector2, bool> IsBadTarget { get; set; }
 
     public BotBrain(GameConfig config, ArenaBounds arena, System.Random random)
     {
@@ -174,12 +188,30 @@ public class BotBrain
             PickTarget();
 
         Vector2 toTarget = target - position;
-        if (toTarget.magnitude <= config.botArrivalDistance)
+        float distance = toTarget.magnitude;
+        if (distance <= config.botArrivalDistance)
         {
             // Vardı: biraz bekle, sonra yeni hedef seç.
             hasTarget = false;
             pauseLeft = RandomRange(config.botPauseMin, config.botPauseMax);
             return Vector2.zero;
+        }
+
+        // Takıldı mı? (Duvar ya da lav kenarına dayanıp yaklaşamıyor.) Öyleyse başka yere git.
+        if (distance < bestDistance - 0.25f)
+        {
+            bestDistance = distance;
+            stuckFor = 0f;
+        }
+        else
+        {
+            stuckFor += Mathf.Max(0f, deltaSeconds);
+            if (stuckFor >= StuckSeconds)
+            {
+                PickTarget();
+                toTarget = target - position;
+                if (toTarget.sqrMagnitude < 0.0001f) return Vector2.zero;
+            }
         }
 
         return toTarget.normalized;
@@ -190,8 +222,14 @@ public class BotBrain
         Vector2 half = arena.HalfSize;
         float maxX = Mathf.Max(0f, half.x - config.botWanderMargin);
         float maxY = Mathf.Max(0f, half.y - config.botWanderMargin);
-        target = new Vector2(RandomRange(-maxX, maxX), RandomRange(-maxY, maxY));
+        for (int i = 0; i < TargetTries; i++)
+        {
+            target = new Vector2(RandomRange(-maxX, maxX), RandomRange(-maxY, maxY));
+            if (IsBadTarget == null || !IsBadTarget(target)) break;
+        }
         hasTarget = true;
+        bestDistance = float.MaxValue;
+        stuckFor = 0f;
     }
 
     float RandomRange(float min, float max)

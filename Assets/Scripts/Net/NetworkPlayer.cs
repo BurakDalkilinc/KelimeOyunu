@@ -293,16 +293,12 @@ public class NetworkPlayer : NetworkBehaviour
             }
 
             float speedMultiplier = state != null ? state.Status.SpeedMultiplier : 1f;
-            // İtilen bot lav/uçurum/alevden en yakın güvenli kareye koşar; kaçınma engelleri bu sırada kapalıdır (aksi halde
-            // her karede dışarı fırlatılır ve itmenin etkisi kalmaz).
-            bool escaping = isBot.Value && sim != null && sim.Terrain != null && state != null
-                            && !state.Status.IsFlying && sim.Terrain.IsHazardousAt(next);
-            bool falling = state != null && state.Falling != FallKind.None;
-            Vector2 input = falling ? Vector2.zero : escaping ? sim.Terrain.EscapeDirection(next) : isBot.Value ? BotDirection(dt, next, sim, state) : serverInput;
+            bool falling = state != null && state.Falling != FallKind.None; // Lava/uçuruma düşüyor: kımıldamaz
+            Vector2 input = falling ? Vector2.zero : isBot.Value ? BotDirection(dt, next, sim, state) : serverInput;
             if (input != Vector2.zero) facing = input.normalized;
 
             float speed = (isBot.Value ? config.botMoveSpeed : config.playerMoveSpeed) * speedMultiplier;
-            next = AvatarMover.Step(next, input, speed, dt, config.playerRadius, arena, escaping ? obstacles : voluntary);
+            next = AvatarMover.Step(next, input, speed, dt, config.playerRadius, arena, voluntary);
 
             // Duvar tam üstüne çıktıysa karakter dışarı itilir.
             if (obstacles != null)
@@ -390,6 +386,9 @@ public class NetworkPlayer : NetworkBehaviour
     {
         if (botBrain == null) return Vector2.zero;
         if (sim == null || state == null) return botBrain.Think(dt, at, NoDangers);
+
+        // Gezinme hedefi lav/uçurum/duvar (ve kenarları) olmasın.
+        if (sim.Terrain != null && botBrain.IsBadTarget == null) botBrain.IsBadTarget = sim.Terrain.IsBadWanderTarget;
 
         // Büyük tehdit varken bot en yakın boş sığınağa koşar; sığındıysa orada kalır.
         IRefugeProvider refugeProvider = sim;
