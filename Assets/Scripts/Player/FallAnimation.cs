@@ -51,8 +51,15 @@ public class FallAnimation : MonoBehaviour
         }
         else
         {
-            transform.localScale = new Vector3(baseScale.x, baseScale.y * (1f - 0.7f * p), baseScale.z) * (1f - 0.3f * p);
-            if (sprite != null) sprite.color = Color.Lerp(sprite.color, new Color(1f, 0.25f, 0.05f, 1f - p * 0.8f), 0.5f);
+            // Lavda batış: kızarır, yanıp titrer, yassılıp saydamlaşır.
+            float flicker = 0.5f + 0.5f * Mathf.Sin(elapsed * 40f);
+            transform.localScale = new Vector3(baseScale.x * (1f - 0.35f * p), baseScale.y * (1f - 0.9f * p), baseScale.z);
+            if (sprite != null)
+            {
+                Color hot = Color.Lerp(new Color(1f, 0.55f, 0.1f), new Color(1f, 0.15f, 0f), flicker);
+                hot.a = 1f - p;
+                sprite.color = hot;
+            }
         }
     }
 
