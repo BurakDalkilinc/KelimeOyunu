@@ -146,6 +146,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
     void Step()
     {
         State.Status.Tick(Time.deltaTime);
+        spriteRenderer.enabled = true; // Dirildiyse yeniden görünür
         spriteRenderer.color = StatusTint.Apply(baseColor, State.Status); // Etkilere göre renk
 
         // Lava/uçuruma düşüyor: animasyon oynar, hareket edemez.
@@ -253,12 +254,8 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         var disguise = GetComponent<DisguiseVisual>();
         if (disguise != null) disguise.SpriteName = null;
 
-        // Eleme: bot durur ve soluklaşır. Hayalet modu ileride (Player/Ghost) eklenecek.
-        if (spriteRenderer != null)
-        {
-            Color faded = baseColor;
-            faded.a = 0.25f;
-            spriteRenderer.color = faded;
-        }
+        // Elenen botun hayaleti görünmez (oyuncu başkalarının hayaletini görmek istemiyor). Geriye yerdeki
+        // parçaları ya da kömür cesedi kalır. Dirilirse Step yeniden görünür yapar.
+        if (spriteRenderer != null) spriteRenderer.enabled = false;
     }
 }

@@ -261,6 +261,7 @@ public class NetworkPlayer : NetworkBehaviour
             fall.Kind = (Status & StatusFlags.FallChasm) != 0 ? FallKind.Chasm : (Status & StatusFlags.FallLava) != 0 ? FallKind.Lava : FallKind.None;
         }
         FlightVisual.Attach(gameObject).Flying = !IsGhost && (Status & StatusFlags.Flight) != 0; // Uçarken gölge ve alev
+        if (spriteRenderer != null) spriteRenderer.enabled = !IsGhost || (IsOwner && !isBot.Value); // Başkalarının hayaleti görünmez
         bool burning = !IsGhost && (Status & StatusFlags.Burning) != 0;
         BurnVisual.Attach(gameObject).Burning = burning; // Ateş aldı: alevler
         if (spriteRenderer != null && !IsGhost && (burning || charLevel.Value > 0f))

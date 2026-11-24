@@ -82,28 +82,33 @@ public static class Gore
         }
     }
 
-    /// <summary>Yanarak/kömürleşerek ölen: kara parçalar savrulur, kıvılcım ve duman çıkar, az kan.</summary>
+    /// <summary>
+    /// Yanarak/kömürleşerek ölen: karakter parçalanmaz, simsiyah kömür hâlinde yere yatar ve maç boyunca orada kalır.
+    /// Üstünden birkaç saniye duman ve kıvılcım çıkar, çevresine kül saçılır.
+    /// </summary>
     public static void ExplodeCharred(Sprite source, Vector2 at, float worldSize, Color tint)
     {
         Burn(at);
-        Color charred = Color.Lerp(tint, new Color(0.09f, 0.07f, 0.06f), 0.85f);
-        Splash(at, 10, 0.8f);
-        if (source == null) return;
 
-        // Explode'un parçalarını kullan ama kara renkle; büyük kan sıçraması olmadan.
-        Rect rect = source.textureRect;
-        const int columns = 2, rows = 3;
-        float cellW = rect.width / columns, cellH = rect.height / rows;
-        float scale = worldSize / Mathf.Max(1f, rect.width / source.pixelsPerUnit);
-        for (int cx = 0; cx < columns; cx++)
-        for (int cy = 0; cy < rows; cy++)
-        {
-            var cell = new Rect(rect.x + cx * cellW, rect.y + cy * cellH, cellW, cellH);
-            Sprite piece = Sprite.Create(source.texture, cell, new Vector2(0.5f, 0.5f), source.pixelsPerUnit);
-            Vector2 offset = new Vector2((cx + 0.5f) / columns - 0.5f, (cy + 0.5f) / rows - 0.5f) * worldSize;
-            Vector2 dir = (offset.sqrMagnitude > 0.0001f ? offset.normalized : Random.insideUnitCircle.normalized) + Random.insideUnitCircle * 0.6f;
-            GibPiece.Spawn(piece, at + offset, dir.normalized * Random.Range(1.5f, 3.5f), Random.Range(4f, 8f), scale, charred);
-        }
+        var corpse = new GameObject("Kömür ceset");
+        corpse.transform.position = new Vector3(at.x, at.y - worldSize * 0.15f, 0f);
+        corpse.transform.rotation = Quaternion.Euler(0f, 0f, Random.value < 0.5f ? 90f : -90f); // Yana yatmış
+        corpse.transform.localScale = Vector3.one * worldSize;
+        var sr = corpse.AddComponent<SpriteRenderer>();
+        sr.sprite = source != null ? source : SpriteFactory.Circle();
+        sr.color = new Color(0.07f, 0.055f, 0.05f, 1f);
+        sr.sortingOrder = StainOrder + 2;
+        RegisterGib(corpse);
+
+        // Bir süre tüter.
+        BurnVisual smoke = BurnVisual.Attach(corpse);
+        smoke.Burning = true;
+        Object.Destroy(smoke, 3f);
+
+        // Yanık izi ve kül.
+        Color ash = new Color(0.12f, 0.1f, 0.09f);
+        for (int i = 0; i < 12; i++)
+            BloodDrop.Spawn(at, Random.insideUnitCircle * 1.5f, 0.2f, Random.Range(1f, 3f), Random.Range(0.08f, 0.16f), ash, true);
     }
 
     /// <summary>Lavda yanan karakter: kıvılcımlar ve duman yükselir, birkaç kömürleşmiş parça savrulur.</summary>
