@@ -27,6 +27,12 @@ public class PlayerState
         return Health.TakeDamage(amount);
     }
 
+    /// <summary>Bütün canı anında alır (lava/uçuruma itilme). Kalkan da engelleyemez.</summary>
+    public void Eliminate()
+    {
+        if (IsAlive) Health.TakeDamage(Health.Current);
+    }
+
     /// <summary>Elendi mi? Elenenler hayalet olur: izlemeye devam eder, hiçbir şeyi etkilemez, hiçbir şey ona işlemez.</summary>
     public bool IsGhost => Health.IsDead;
 

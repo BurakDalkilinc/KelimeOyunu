@@ -366,7 +366,12 @@ public class NetworkPlayer : NetworkBehaviour
         shoveCooldown.TryUse();
         shoveLeft.Value = shoveCooldown.Remaining;
         shoveCount.Value++;
-        foreach (ShoveHit hit in shoveHits) shoveAvatars[hit.Index].ApplyKnockback(hit.Push);
+        foreach (ShoveHit hit in shoveHits)
+        {
+            // Lava ya da uçuruma itilen bütün canını kaybeder.
+            if (sim.Terrain != null) sim.Terrain.TryEliminateByPush(shoveStates[hit.Index], shovePositions[hit.Index], hit.Push);
+            shoveAvatars[hit.Index].ApplyKnockback(hit.Push);
+        }
         return true;
     }
 

@@ -75,6 +75,35 @@ public class TerrainSim
         return to;
     }
 
+    /// <summary>
+    /// İtiş lava ya da uçuruma varır mı? Yolda önce lav/uçurum gelirse true; önce tahta duvar gelirse (itiş orada durur) false.
+    /// </summary>
+    public bool PushReachesDeadlyTile(Vector2 from, Vector2 push)
+    {
+        const float step = 0.2f;
+        int steps = Mathf.CeilToInt(push.magnitude / step);
+        for (int i = 1; i <= steps; i++)
+        {
+            TileType type = Map.At(Vector2.Lerp(from, from + push, i / (float)steps));
+            if (TerrainMap.IsSolid(type)) return false;
+            if (TerrainMap.IsHazard(type)) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Lava ya da uçuruma itilen oyuncunun bütün canı gider. İtildiği anda hesaplanır (kayma karelerine bağlı değil).
+    /// Kayıp olduysa true.
+    /// </summary>
+    public bool TryEliminateByPush(PlayerState victim, Vector2 from, Vector2 push)
+    {
+        if (victim == null || !victim.IsAlive || victim.Status.IsFlying) return false;
+        if (!PushReachesDeadlyTile(from, push)) return false;
+
+        victim.Eliminate();
+        return true;
+    }
+
     /// <summary>Noktadan en yakın güvenli (yürünür, yanmayan) kareye doğru birim yön; güvenli yer yoksa sıfır.</summary>
     public Vector2 EscapeDirection(Vector2 point)
     {

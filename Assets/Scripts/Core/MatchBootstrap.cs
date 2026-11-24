@@ -162,7 +162,12 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
         if (onlyIfVictims && shoveHits.Count == 0) return false;
 
         cooldown.TryUse();
-        foreach (ShoveHit hit in shoveHits) TryApplyKnockback(shoveStates[hit.Index].Id, hit.Push);
+        foreach (ShoveHit hit in shoveHits)
+        {
+            // Lava ya da uçuruma itilen bütün canını kaybeder.
+            if (Terrain != null) Terrain.TryEliminateByPush(shoveStates[hit.Index], shovePositions[hit.Index], hit.Push);
+            TryApplyKnockback(shoveStates[hit.Index].Id, hit.Push);
+        }
         ShoveEffect.Spawn(shovePositions[shoverIndex], config.shoveRange);
         return true;
     }

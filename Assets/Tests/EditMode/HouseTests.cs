@@ -121,4 +121,30 @@ public class HouseTests
         motion.Cancel();
         Assert.AreEqual(Vector2.zero, motion.Step(0.1f));
     }
+
+    [Test]
+    public void Push_IntoChasmOrLava_EliminatesVictim()
+    {
+        var map = new TerrainMap(12, 8);
+        map.Set(6, 4, TileType.Chasm);
+        map.Set(3, 6, TileType.Lava);
+        map.Set(9, 2, TileType.WoodWall);
+        map.Set(10, 2, TileType.Lava);
+        var sim = new TerrainSim(config, map, new System.Random(1));
+
+        var chasmVictim = new PlayerState(1, "a", 3);
+        Assert.IsTrue(sim.TryEliminateByPush(chasmVictim, map.CellCenter(4, 4), new Vector2(3f, 0f)));
+        Assert.IsFalse(chasmVictim.IsAlive);
+
+        var lavaVictim = new PlayerState(2, "b", 3);
+        Assert.IsTrue(sim.TryEliminateByPush(lavaVictim, map.CellCenter(3, 4), new Vector2(0f, 3f)));
+        Assert.IsFalse(lavaVictim.IsAlive);
+
+        var safe = new PlayerState(3, "c", 3);
+        Assert.IsFalse(sim.TryEliminateByPush(safe, map.CellCenter(1, 1), new Vector2(3f, 0f)));
+        Assert.IsTrue(safe.IsAlive);
+
+        var shielded = new PlayerState(4, "d", 3);
+        Assert.IsFalse(sim.TryEliminateByPush(shielded, map.CellCenter(8, 2), new Vector2(3f, 0f)), "duvar önce gelir");
+    }
 }
