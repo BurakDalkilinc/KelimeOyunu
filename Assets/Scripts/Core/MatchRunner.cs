@@ -108,6 +108,9 @@ public class MatchRunner : TurnViewSource
     {
         // Ekran bileşenleri OnEnable'da olaylara abone oldu; şimdi ilk zar atılabilir.
         Turns.Start();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        DebugPanel.EnsureExists(); // F1 deneme paneli (oyuncuya giden sürümde yok)
+#endif
     }
 
     void Update()

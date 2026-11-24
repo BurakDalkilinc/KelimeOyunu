@@ -57,6 +57,26 @@ public class TurnManagerTests
 
     static void Kill(PlayerState player) => player.Health.TakeDamage(999);
 
+    // ---- Deneme paneli ----
+
+    [Test]
+    public void DebugPlay_PlaysForAnyAlivePlayer_WithoutLockingTheWord()
+    {
+        GoToTyping();
+        PlayerState other = match.Players[3];
+        WordEntry wolf = WordDatabase.FromJson(WordsJson, config.maxWordLength).Lookup("kurt").Entry;
+        PlayerState playedBy = null;
+        turns.WordPlayed += (writer, word) => playedBy = writer;
+
+        Assert.IsTrue(turns.DebugPlay(other, wolf));
+        Assert.AreEqual(other, playedBy);
+        Assert.AreEqual(TurnPhase.Result, turns.Phase);
+        Assert.AreEqual(0, words.UsedWords.Count, "kilitlenmez: maçta yine yazılabilir");
+
+        Kill(match.Players[0]);
+        Assert.IsFalse(turns.DebugPlay(match.Players[0], wolf), "elenen yazamaz");
+    }
+
     // ---- Başlangıç ----
 
     [Test]

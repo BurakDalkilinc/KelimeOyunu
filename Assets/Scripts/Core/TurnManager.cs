@@ -163,6 +163,18 @@ public class TurnManager : ITurnView
         SetPhase(TurnPhase.Typing, config.typingSeconds);
     }
 
+    /// <summary>
+    /// Deneme aracı için: sırayı beklemeden ve kelimeyi kilitlemeden, <paramref name="writer"/> yazmış gibi kelimeyi oynatır
+    /// (yaratıklar, tehditler, kendine etkiler normal yoldan çıkar). Maç sürmüyorsa ya da yazan elenmişse bir şey yapmaz.
+    /// </summary>
+    public bool DebugPlay(PlayerState writer, WordEntry entry)
+    {
+        if (!IsRunning || writer == null || !writer.IsAlive || entry == null) return false;
+        Writer = writer;
+        BeginResult(entry);
+        return true;
+    }
+
     void BeginResult(WordEntry entry)
     {
         CurrentWord = entry;
