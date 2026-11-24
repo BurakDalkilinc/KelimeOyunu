@@ -53,6 +53,28 @@ public class TerrainSim
         return TerrainMap.IsHazard(Map.At(cell.x, cell.y)) || Fire.IsBurning(cell.x, cell.y);
     }
 
+    /// <summary>
+    /// Kayan karakterin yolunu (from → to) küçük adımlarla tarar; ilk lav/uçurum/alevli karede durur.
+    /// Böylece hızlı itilen biri ince bir uçurumun üstünden atlayıp geçemez. Tehlike yoksa <paramref name="to"/> aynen verilir.
+    /// </summary>
+    public Vector2 FirstHazardOnPath(Vector2 from, Vector2 to, out bool hit)
+    {
+        const float step = 0.2f;
+        float length = Vector2.Distance(from, to);
+        int steps = Mathf.CeilToInt(length / step);
+        for (int i = 1; i <= steps; i++)
+        {
+            Vector2 point = Vector2.Lerp(from, to, i / (float)steps);
+            if (IsHazardousAt(point))
+            {
+                hit = true;
+                return point;
+            }
+        }
+        hit = false;
+        return to;
+    }
+
     /// <summary>Noktadan en yakın güvenli (yürünür, yanmayan) kareye doğru birim yön; güvenli yer yoksa sıfır.</summary>
     public Vector2 EscapeDirection(Vector2 point)
     {

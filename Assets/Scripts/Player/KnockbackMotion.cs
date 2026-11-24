@@ -21,6 +21,12 @@ public class KnockbackMotion
         elapsed = 0f;
     }
 
+    /// <summary>Kaymayı hemen keser (ör. lava ya da uçuruma düşünce).</summary>
+    public void Cancel()
+    {
+        total = Vector2.zero;
+    }
+
     /// <summary>Bu karede kayılacak miktar. Fırlatma yoksa ya da bittiyse sıfır.</summary>
     public Vector2 Step(float deltaSeconds)
     {

@@ -262,7 +262,18 @@ public class NetworkPlayer : NetworkBehaviour
             {
                 // Fırlatılma ve mıknatıs çekimi, yazarken ya da hareketsizken de olur.
                 Vector2 pushed = knockback.Step(dt);
-                if (pushed != Vector2.zero) next = MoveBy(next, pushed, obstacles);
+                if (pushed != Vector2.zero)
+                {
+                    Vector2 before = next;
+                    next = MoveBy(next, pushed, obstacles);
+
+                    // Yolda lav/uçuruma değdiyse orada dur (ince uçurumun üstünden atlayıp geçme).
+                    if (sim != null && sim.Terrain != null && !state.Status.IsFlying)
+                    {
+                        next = sim.Terrain.FirstHazardOnPath(before, next, out bool hitHazard);
+                        if (hitHazard) knockback.Cancel();
+                    }
+                }
 
                 Vector2 pulled = state.Status.GetPullStep(next, dt);
                 if (pulled != Vector2.zero) next = MoveBy(next, pulled, obstacles);

@@ -94,4 +94,31 @@ public class HouseTests
         Assert.AreEqual(1f, direction.magnitude, 0.01f);
         Assert.AreEqual(Vector2.zero, sim.EscapeDirection(map.CellCenter(8, 1)) == Vector2.zero ? Vector2.zero : Vector2.zero);
     }
+
+    [Test]
+    public void Slide_StopsAtThinChasm_InsteadOfJumpingOver()
+    {
+        var map = new TerrainMap(10, 8);
+        map.Set(5, 4, TileType.Chasm); // 1 karelik ince yarık
+        var sim = new TerrainSim(config, map, new System.Random(1));
+
+        Vector2 from = map.CellCenter(3, 4);
+        Vector2 stopped = sim.FirstHazardOnPath(from, from + new Vector2(3f, 0f), out bool hit);
+
+        Assert.IsTrue(hit);
+        Assert.AreEqual(TileType.Chasm, map.At(stopped));
+
+        Vector2 free = sim.FirstHazardOnPath(from, from + new Vector2(1f, 0f), out bool freeHit);
+        Assert.IsFalse(freeHit);
+        Assert.AreEqual(from + new Vector2(1f, 0f), free);
+    }
+
+    [Test]
+    public void Knockback_Cancel_StopsSliding()
+    {
+        var motion = new KnockbackMotion();
+        motion.Start(new Vector2(3f, 0f), 0.25f);
+        motion.Cancel();
+        Assert.AreEqual(Vector2.zero, motion.Step(0.1f));
+    }
 }

@@ -100,6 +100,18 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
         transform.position = ObstacleMover.Move(from, from + delta, config.playerRadius, arena, config.playerRadius, obstacles);
     }
 
+    /// <summary>İtilen karakter yolda lav/uçuruma değdiyse orada durur (üstünden atlayıp geçmez).</summary>
+    void LandOnHazard(Vector2 before)
+    {
+        TerrainSim terrain = Bootstrap != null ? Bootstrap.Terrain : null;
+        if (terrain == null || State.Status.IsFlying) return;
+
+        Vector2 landed = terrain.FirstHazardOnPath(before, transform.position, out bool hit);
+        if (!hit) return;
+        transform.position = new Vector3(landed.x, landed.y, transform.position.z);
+        knockback.Cancel();
+    }
+
     /// <summary>Karakter bir duvarın içine girmişse (duvar tam üstüne çıktı ya da fırlatıldı) dışarı iter.</summary>
     void ResolveObstacles()
     {
@@ -119,7 +131,12 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
 
         // Fırlatılma, yazarken ya da hareket kilitliyken de olur.
         Vector2 pushed = knockback.Step(Time.deltaTime);
-        if (pushed != Vector2.zero) MoveBy(pushed);
+        if (pushed != Vector2.zero)
+        {
+            Vector2 before = transform.position;
+            MoveBy(pushed);
+            LandOnHazard(before);
+        }
 
         // Mıknatıs çekiyorsa karakter noktaya doğru kayar; kendi hızıyla ters yönde yürüyerek direnebilir.
         Vector2 pulled = State.Status.GetPullStep(transform.position, Time.deltaTime);
