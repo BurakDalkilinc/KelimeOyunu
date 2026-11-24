@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -38,6 +39,13 @@ public class NetworkPlayer : NetworkBehaviour
 
     /// <summary>Her itişte artar; herkes artışı görünce halka efekti çıkarır.</summary>
     readonly NetworkVariable<int> shoveCount = new NetworkVariable<int>(0);
+
+    /// <summary>Sürülen aracın resmi ("" ise araç yok) ve genişliği; her istemci aracı çizer.</summary>
+    readonly NetworkVariable<FixedString32Bytes> vehicleSprite = new NetworkVariable<FixedString32Bytes>(default);
+    readonly NetworkVariable<float> vehicleSize = new NetworkVariable<float>(1.2f);
+
+    /// <summary>Her araç patlamasında artar; istemciler patlama görüntüsünü oynatır.</summary>
+    readonly NetworkVariable<int> crashCount = new NetworkVariable<int>(0);
 
     readonly KnockbackMotion knockback = new KnockbackMotion();
 
@@ -170,10 +178,11 @@ public class NetworkPlayer : NetworkBehaviour
         statusFlags.OnValueChanged += (_, __) => ApplyLook();
         shoveLeft.OnValueChanged += (_, __) => shoveLeftChangedAt = Time.unscaledTime;
         shoveCount.OnValueChanged += (_, __) => { if (config != null) ShoveEffect.Spawn(transform.position, config.shoveRange); };
+        crashCount.OnValueChanged += (_, __) => { if (config != null) ExplosionEffect.Spawn(transform.position, config.vehicleCrashRadius); };
         shoveLeftChangedAt = Time.unscaledTime;
         Everyone.Add(this);
         GoreEmitter.Attach(gameObject, () => health.Value,
-                           () => (Status & (StatusFlags.FallChasm | StatusFlags.FallLava)) != 0); // Kan ve parçalanma (her istemcide)
+                           () => (Status & StatusFlags.FallLava) != 0 ? FallKind.Lava : (Status & StatusFlags.FallChasm) != 0 ? FallKind.Chasm : FallKind.None); // Kan ve parçalanma (her istemcide)
 
         if (IsServer) InitOnServer();
 
@@ -248,6 +257,9 @@ public class NetworkPlayer : NetworkBehaviour
             fall.Kind = (Status & StatusFlags.FallChasm) != 0 ? FallKind.Chasm : (Status & StatusFlags.FallLava) != 0 ? FallKind.Lava : FallKind.None;
         }
         FlightVisual.Attach(gameObject).Flying = !IsGhost && (Status & StatusFlags.Flight) != 0; // Uçarken gölge ve alev
+        VehicleVisual car = VehicleVisual.Attach(gameObject);
+        car.SpriteName = IsGhost ? null : vehicleSprite.Value.ToString();
+        car.WorldSize = vehicleSize.Value;
     }
 
     FallAnimation fall;
@@ -305,8 +317,25 @@ public class NetworkPlayer : NetworkBehaviour
             if (input != Vector2.zero) facing = input.normalized;
             if (isBot.Value && botBossFacing.HasValue) facing = botBossFacing.Value; // Saldırdığı boss'a bakar
 
-            float speed = (isBot.Value ? config.botMoveSpeed : config.playerMoveSpeed) * speedMultiplier;
-            next = AvatarMover.Step(next, input, speed, dt, config.playerRadius, arena, voluntary);
+            if (state != null && state.IsAlive && state.Status.IsDriving && !falling && sim != null)
+            {
+                // Araç: hiç durmaz, girdi yalnızca yön verir; bot en yakın rakibin üstüne sürer.
+                if (isBot.Value)
+                    input = MeleeRules.TryFindPrey(state, next, sim, 60f, out Vector2 prey) ? (prey - next).normalized : Vector2.zero;
+                Vector2 before = next;
+                next = sim.DriveVehicle(state, next, ref facing, input, dt, obstacles, out bool exploded);
+                if (exploded) crashCount.Value++;
+                if (sim.Terrain != null && !state.Status.IsFlying)
+                {
+                    next = sim.Terrain.FirstHazardOnPath(before, next, out bool hitHazard);
+                    if (hitHazard) sim.Terrain.TryStartFall(state, next);
+                }
+            }
+            else
+            {
+                float speed = (isBot.Value ? config.botMoveSpeed : config.playerMoveSpeed) * speedMultiplier;
+                next = AvatarMover.Step(next, input, speed, dt, config.playerRadius, arena, voluntary);
+            }
 
             // Duvar tam üstüne çıktıysa karakter dışarı itilir.
             if (obstacles != null)
@@ -327,6 +356,10 @@ public class NetworkPlayer : NetworkBehaviour
 
             int flags = (int)StatusFlagsUtil.Of(state.Status);
             if (state.Status.HasWeapon) flags |= (int)StatusFlags.Weapon;
+            if (state.Status.IsDriving) flags |= (int)StatusFlags.Vehicle;
+            string carSprite = state.IsAlive && state.Status.IsDriving ? SpriteLibrary.NameFor(state.Status.Vehicle) : string.Empty;
+            if (vehicleSprite.Value.ToString() != carSprite) vehicleSprite.Value = new FixedString32Bytes(carSprite);
+            if (state.Status.IsDriving) vehicleSize.Value = VehicleRules.BodyRadius(state.Status.Vehicle, config) * 2f;
             if (state.Falling == FallKind.Chasm) flags |= (int)StatusFlags.FallChasm;
             else if (state.Falling == FallKind.Lava) flags |= (int)StatusFlags.FallLava;
             if (statusFlags.Value != flags) statusFlags.Value = flags;
@@ -367,6 +400,8 @@ public class NetworkPlayer : NetworkBehaviour
     {
         NetMatchSim sim = channel != null ? channel.Sim : null;
         PlayerState me = sim != null ? sim.FindPlayer(playerId.Value) : null;
+
+        if (me != null && me.Status.IsDriving) return false; // Araç sürerken Boşluk bir şey yapmaz
 
         // Silahı olan Boşluk'la itmez, ateş eder.
         if (me != null && me.IsAlive && me.Status.HasWeapon) return sim.TryFireWeapon(me, facing, onlyIfVictims);

@@ -140,6 +140,21 @@ public class GameConfig : ScriptableObject
     [Tooltip("Açıksa kovalayan yaratıklar tek kişiyi vurup kaybolmaz: hep en yakındakine geçer, süresi bitene kadar herkesi avlar.")]
     public bool creaturesHuntEveryone = true;
 
+    [Tooltip("Araç kelimesi hız yazmıyorsa aracın hızı (birim/sn).")]
+    [Min(0.1f)] public float vehicleDefaultSpeed = 9f;
+
+    [Tooltip("Araç kelimesi süre yazmıyorsa sürüş süresi (sn).")]
+    [Min(0.1f)] public float vehicleDefaultSeconds = 8f;
+
+    [Tooltip("Araç kelimesi yarıçap yazmıyorsa aracın ezme yarıçapı (birim).")]
+    [Min(0.1f)] public float vehicleDefaultRadius = 0.6f;
+
+    [Tooltip("Patlayan aracın patlama yarıçapı (birim): içindekiler hasar alır, tahtalar tutuşur.")]
+    [Min(0.1f)] public float vehicleCrashRadius = 2f;
+
+    [Tooltip("Patlamanın çevredekilere verdiği hasar (sürücü her durumda ölür).")]
+    [Min(0)] public int vehicleCrashDamage = 2;
+
     [Tooltip("Bot en az bu kadar canı varsa boss'a saldırır; daha azsa ondan kaçar.")]
     [Min(1)] public int botBossAttackMinHealth = 2;
 

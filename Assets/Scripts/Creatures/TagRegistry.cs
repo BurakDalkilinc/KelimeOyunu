@@ -35,6 +35,7 @@ public static class TagRegistry
         new FireTag(),
         new WeaponTag(),
         new MeleeTag(),
+        new VehicleTag(),
         new BossTag());
 
     /// <summary>Hız zaten kelimenin değerinden geldiği için ek davranışı olmayan etiketler.</summary>

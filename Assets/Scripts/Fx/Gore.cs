@@ -82,6 +82,21 @@ public static class Gore
         }
     }
 
+    /// <summary>Lavda yanan karakter: kıvılcımlar ve duman yükselir, birkaç kömürleşmiş parça savrulur.</summary>
+    public static void Burn(Vector2 at)
+    {
+        Color[] embers = { new Color(1f, 0.8f, 0.2f), new Color(1f, 0.45f, 0.05f), new Color(0.9f, 0.2f, 0.05f) };
+        for (int i = 0; i < 30; i++)
+            BloodDrop.Spawn(at, Random.insideUnitCircle * 2.5f, Random.Range(0.1f, 0.5f), Random.Range(4f, 10f),
+                            Random.Range(0.08f, 0.16f), embers[Random.Range(0, embers.Length)], false);
+        for (int i = 0; i < 10; i++)
+            BloodDrop.Spawn(at, Random.insideUnitCircle * 1.2f, Random.Range(0.4f, 1f), Random.Range(5f, 9f),
+                            Random.Range(0.25f, 0.4f), new Color(0.2f, 0.2f, 0.22f, 0.75f), false);
+        for (int i = 0; i < 4; i++)
+            BloodDrop.Spawn(at, Random.insideUnitCircle.normalized * Random.Range(1.5f, 3f), 0.3f, Random.Range(4f, 7f),
+                            Random.Range(0.15f, 0.25f), new Color(0.12f, 0.08f, 0.06f), true); // Kömür parçaları yerde kalır
+    }
+
     /// <summary>Lekeyi kayda alır; çok birikirse en eskisini siler.</summary>
     public static void RegisterStain(GameObject stain)
     {

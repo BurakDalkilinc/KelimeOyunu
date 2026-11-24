@@ -14,6 +14,7 @@ public enum StatusFlags
     FallChasm = 32,
     FallLava = 64,
     Weapon = 128,
+    Vehicle = 256,
 }
 
 /// <summary>Etkiler ile bayraklar arasında çeviri ve bayraklara göre renk. Düz hesap, test edilebilir.</summary>

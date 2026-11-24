@@ -41,7 +41,7 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
         State = state;
         State.Health.Died += OnDied;
         GoreEmitter.Attach(gameObject, () => State != null ? State.Health.Current : 0,
-                           () => State != null && State.Falling != FallKind.None); // Vurulunca kan, ölünce parçalanma
+                           () => State != null ? State.Falling : FallKind.None); // Vurulunca kan, ölünce parçalanma
     }
 
     void Awake()
@@ -151,6 +151,23 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
         fall.Kind = State.Falling;
         FlightVisual.Attach(gameObject).Flying = State.IsAlive && State.Status.IsFlying; // Uçarken gölge ve alev
         DisguiseVisual.Attach(gameObject).SpriteName = State.IsAlive ? State.Status.StealthDisguise : null; // Kamuflaj: çalı
+        VehicleVisual vehicleVisual = VehicleVisual.Attach(gameObject);
+        vehicleVisual.SpriteName = State.IsAlive && State.Status.IsDriving ? SpriteLibrary.NameFor(State.Status.Vehicle) : null;
+        if (State.Status.IsDriving) vehicleVisual.WorldSize = VehicleRules.BodyRadius(State.Status.Vehicle, config) * 2f;
+
+        // Araç sürerken hiç durmaz; WASD yalnızca yön verir (yazarken de araç gitmeye devam eder).
+        if (State.IsAlive && State.Status.IsDriving && State.Falling == FallKind.None && Bootstrap != null)
+        {
+            Vector2 heading = FacingDirection;
+            Vector2 before = transform.position;
+            Vector2 moved = Bootstrap.DriveVehicle(State, before, ref heading, CanMove ? ReadMoveInput() : Vector2.zero,
+                                                   Time.deltaTime, MovementRules.EffectiveObstacles(State, Obstacles));
+            FacingDirection = heading;
+            transform.position = new Vector3(moved.x, moved.y, transform.position.z);
+            LandOnHazard(before);
+            return;
+        }
+
         if (!CanMove || State.Falling != FallKind.None) return;
 
         Vector2 input = ReadMoveInput();

@@ -67,7 +67,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         transform.localScale = Vector3.one * (config.playerRadius * 2f);
 
         State.Health.Died += OnDied;
-        GoreEmitter.Attach(gameObject, () => State.Health.Current, () => State.Falling != FallKind.None); // Kan ve parçalanma
+        GoreEmitter.Attach(gameObject, () => State.Health.Current, () => State.Falling); // Kan ve parçalanma
     }
 
     void OnDestroy()
@@ -170,6 +170,22 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         Vector2 pulled = State.Status.GetPullStep(transform.position, Time.deltaTime);
         if (pulled != Vector2.zero) MoveBy(pulled);
 
+        // Araç süren bot en yakın rakibin üstüne sürer (ezmek için); kimse yoksa düz gider.
+        VehicleVisual vehicleVisual = VehicleVisual.Attach(gameObject);
+        vehicleVisual.SpriteName = State.Status.IsDriving ? SpriteLibrary.NameFor(State.Status.Vehicle) : null;
+        if (State.Status.IsDriving && Bootstrap != null)
+        {
+            vehicleVisual.WorldSize = VehicleRules.BodyRadius(State.Status.Vehicle, config) * 2f;
+            Vector2 here = transform.position;
+            Vector2 steer = MeleeRules.TryFindPrey(State, here, Bootstrap, 60f, out Vector2 victimAt) ? (victimAt - here).normalized : Vector2.zero;
+            Vector2 heading = FacingDirection;
+            Vector2 moved = Bootstrap.DriveVehicle(State, here, ref heading, steer, Time.deltaTime, MovementRules.EffectiveObstacles(State, Obstacles));
+            FacingDirection = heading;
+            transform.position = new Vector3(moved.x, moved.y, transform.position.z);
+            LandOnHazard(here);
+            return;
+        }
+
         Vector2? refuge = null;
         if (Refuge != null && Refuge.TryGetRefuge(State, transform.position, out Vector2 refugePoint))
             refuge = refugePoint;
@@ -224,6 +240,15 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
 
     void OnDied()
     {
+        // Elenen bot araçtan iner, silahı düşer, etkileri kalkar (cesedinin altında araba kalmasın).
+        State.Status.Clear();
+        var vehicleVisual = GetComponent<VehicleVisual>();
+        if (vehicleVisual != null) vehicleVisual.SpriteName = null;
+        var flight = GetComponent<FlightVisual>();
+        if (flight != null) flight.Flying = false;
+        var disguise = GetComponent<DisguiseVisual>();
+        if (disguise != null) disguise.SpriteName = null;
+
         // Eleme: bot durur ve soluklaşır. Hayalet modu ileride (Player/Ghost) eklenecek.
         if (spriteRenderer != null)
         {

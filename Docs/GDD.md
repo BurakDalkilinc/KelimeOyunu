@@ -79,6 +79,7 @@
 | `ignite` | Haritadaki tahtaları tutuşturur (yangın yayılır) |
 | `weapon` | Yazana silah verir: Boşluk itiş yerine ateş eder, mermi değdiği ilk rakibe vurur (kalkan korur, duvar durdurur) |
 | `melee` | `weapon` ile birlikte: silah ateş etmez, Boşluk ile önündeki yay içindekilere (menzil `stats.radius`) kelimenin hasarı kadar vurur (Kılıç, Sopa). Yakın silahlı bot en yakın rakibi kovalar |
+| `vehicle` | Yazan araca biner (Motor, Araba): süresi bitene kadar hiç durmaz, WASD yön verir, değdiğini ezer (kalkan korur). `explosive` ile birlikte binaya/duvara çarpınca patlar: sürücü ölür, çevredekiler hasar alıp savrulur, tahtalar tutuşur. Botlar en yakın rakibin üstüne sürer |
 | `boss` | Can barlı dev (Godzilla): en yakına saldırır; herkes Boşluk ile vurup canını eritir, son vuran +1 can (canı tamsa kalkan) alır. Canı en az 2 olan botlar da yakındaki boss'a gidip vurur (silahlı ya da canı az bot kaçar) |
 
 ## Harita ve arazi

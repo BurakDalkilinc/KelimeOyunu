@@ -244,6 +244,29 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
     /// </summary>
     readonly List<PlayerState> meleeVictims = new List<PlayerState>();
 
+    /// <summary>
+    /// Sürücünün aracını bir kare sürer (host'ta): değdiğini ezer, binaya çarparsa patlatır. Yeni konumu döner;
+    /// <paramref name="exploded"/> patladıysa true (istemciler patlama görüntüsünü gösterir).
+    /// </summary>
+    public Vector2 DriveVehicle(PlayerState driver, Vector2 from, ref Vector2 heading, Vector2 input, float dt,
+                                IObstacleField obstacles, out bool exploded)
+    {
+        exploded = false;
+        WordEntry vehicle = driver.Status.Vehicle;
+        Vector2 next = VehicleRules.Drive(from, ref heading, input, VehicleRules.Speed(vehicle, config), dt,
+                                          config.playerRadius, arena, obstacles, out bool crashed);
+        if (crashed)
+        {
+            Vector2 at = next + heading * config.playerRadius;
+            exploded = VehicleRules.Crash(driver, at, this, (id, push) => avatars.TryApplyKnockback(id, push),
+                                          Terrain != null ? Terrain.Fire : null, config);
+            return next;
+        }
+
+        VehicleRules.Crush(driver, next, this, config);
+        return next;
+    }
+
     public bool TryFireWeapon(PlayerState shooter, Vector2 facing, bool onlyIfVictims)
     {
         if (shooter == null || !shooter.IsAlive || !shooter.Status.HasWeapon) return false;

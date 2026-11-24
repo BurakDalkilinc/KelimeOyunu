@@ -14,8 +14,14 @@ public class BloodDrop : MonoBehaviour
     float height;
     float verticalSpeed;
     SpriteRenderer sr;
+    bool leavesStain = true;
 
-    public static BloodDrop Spawn(Vector2 at, Vector2 velocity, float height, float upSpeed, float size = 0f)
+    /// <summary>
+    /// Damla fırlatır. <paramref name="color"/> verilirse kan yerine o renktir (kıvılcım, duman);
+    /// <paramref name="stain"/> false ise yere değince leke bırakmadan kaybolur.
+    /// </summary>
+    public static BloodDrop Spawn(Vector2 at, Vector2 velocity, float height, float upSpeed, float size = 0f,
+                                  Color? color = null, bool stain = true)
     {
         var go = new GameObject("Kan");
         var drop = go.AddComponent<BloodDrop>();
@@ -25,7 +31,8 @@ public class BloodDrop : MonoBehaviour
         drop.verticalSpeed = upSpeed;
         drop.sr = go.AddComponent<SpriteRenderer>();
         drop.sr.sprite = Gore.Pixel;
-        drop.sr.color = Gore.RandomBlood();
+        drop.sr.color = color ?? Gore.RandomBlood();
+        drop.leavesStain = stain;
         drop.sr.sortingOrder = Gore.AirOrder;
         go.transform.localScale = Vector3.one * (size > 0f ? size : Random.Range(0.07f, 0.14f));
         drop.Place();
@@ -57,6 +64,7 @@ public class BloodDrop : MonoBehaviour
     {
         height = 0f;
         Place();
+        if (!leavesStain) { Destroy(gameObject); return; } // Kıvılcım/duman iz bırakmaz
 
         // Leke: yere yayılır, biraz koyulaşır ve kalıcı olur.
         float size = transform.localScale.x * Random.Range(1.4f, 2.6f);

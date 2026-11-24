@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -175,6 +176,41 @@ public class StatusEffects
         flightTimeLeft = Mathf.Max(flightTimeLeft, seconds);
     }
 
+    // ---- Araç ----
+
+    WordEntry vehicleWord;
+    float vehicleTimeLeft;
+    readonly HashSet<int> vehicleHits = new HashSet<int>();
+
+    /// <summary>Bir araç (motor, araba) sürüyor mu?</summary>
+    public bool IsDriving => vehicleWord != null && vehicleTimeLeft > 0f;
+
+    /// <summary>Sürdüğü aracın kelimesi (yoksa null).</summary>
+    public WordEntry Vehicle => IsDriving ? vehicleWord : null;
+
+    /// <summary>Aracın kalan süresi (sn).</summary>
+    public float VehicleTimeLeft => IsDriving ? vehicleTimeLeft : 0f;
+
+    /// <summary>Araca bindirir (eskisinin yerine geçer). Ezilenler listesi sıfırlanır.</summary>
+    public void Mount(WordEntry vehicle, float seconds)
+    {
+        if (vehicle == null || seconds <= 0f) return;
+        vehicleWord = vehicle;
+        vehicleTimeLeft = seconds;
+        vehicleHits.Clear();
+    }
+
+    /// <summary>Araçtan indirir.</summary>
+    public void Dismount()
+    {
+        vehicleWord = null;
+        vehicleTimeLeft = 0f;
+        vehicleHits.Clear();
+    }
+
+    /// <summary>Bu sürüşte o oyuncu henüz ezilmediyse işaretler ve true döner (aynı kişi bir sürüşte bir kez ezilir).</summary>
+    public bool MarkVehicleHit(int playerId) => vehicleHits.Add(playerId);
+
     // ---- Silah ----
 
     WordEntry weaponWord;
@@ -266,6 +302,12 @@ public class StatusEffects
             if (stealthTimeLeft <= 0f) stealthTimeLeft = 0f;
         }
 
+        if (vehicleTimeLeft > 0f)
+        {
+            vehicleTimeLeft -= dt;
+            if (vehicleTimeLeft <= 0f) Dismount();
+        }
+
         if (weaponShotWait > 0f) weaponShotWait = Mathf.Max(0f, weaponShotWait - dt);
         if (weaponTimeLeft > 0f)
         {
@@ -298,5 +340,6 @@ public class StatusEffects
         flightTimeLeft = 0f;
         flightSpeedMultiplier = 1f;
         DropWeapon();
+        Dismount();
     }
 }

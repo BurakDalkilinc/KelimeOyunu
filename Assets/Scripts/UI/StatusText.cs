@@ -15,6 +15,7 @@ public static class StatusText
         if (status.IsSlowed) parts.Add($"Yavaşladın! ({Mathf.CeilToInt(status.SlowTimeLeft)} sn)");
         if (status.IsPulled) parts.Add("Çekiliyorsun!");
         if (status.HasShield) parts.Add("Kalkan var");
+        if (status.IsDriving) parts.Add($"{status.Vehicle.display} sürüyorsun ({Mathf.CeilToInt(status.VehicleTimeLeft)} sn) — eve çarparsan patlarsın!");
         if (status.IsStealthed) parts.Add(status.StealthDisguise != null
             ? $"Kamufle oldun ({Mathf.CeilToInt(status.StealthTimeLeft)} sn)"
             : $"Görünmezsin ({Mathf.CeilToInt(status.StealthTimeLeft)} sn)");
@@ -30,6 +31,7 @@ public static class StatusText
         if ((flags & StatusFlags.Shield) != 0) parts.Add("Kalkan var");
         if ((flags & StatusFlags.Stealth) != 0) parts.Add("Görünmezsin");
         if ((flags & StatusFlags.Flight) != 0) parts.Add("Uçuyorsun");
+        if ((flags & StatusFlags.Vehicle) != 0) parts.Add("Araç sürüyorsun — eve çarparsan patlarsın!");
         return string.Join("  ", parts);
     }
 }

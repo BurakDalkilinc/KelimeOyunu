@@ -141,6 +141,7 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
 
         // Silahı olan Boşluk'la itmez, ateş eder.
         PlayerState armed = FindPlayer(playerId);
+        if (armed != null && armed.Status.IsDriving) return false; // Araç sürerken Boşluk bir şey yapmaz
         if (armed != null && armed.IsAlive && armed.Status.HasWeapon) return TryFireWeapon(armed, onlyIfVictims);
 
         ShoveCooldown cooldown = ShoveCooldownOf(playerId);
@@ -229,6 +230,27 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
 
     readonly List<Vector2> bodyPositions = new List<Vector2>();
     readonly List<PlayerState> meleeVictims = new List<PlayerState>();
+
+    /// <summary>
+    /// Sürücünün aracını bir kare sürer: yön verir, ilerletir, değdiğini ezer; binaya çarparsa patlatır (görüntüsüyle).
+    /// Yeni konumu döner.
+    /// </summary>
+    public Vector2 DriveVehicle(PlayerState driver, Vector2 from, ref Vector2 heading, Vector2 input, float dt, IObstacleField obstacles)
+    {
+        WordEntry vehicle = driver.Status.Vehicle;
+        Vector2 next = VehicleRules.Drive(from, ref heading, input, VehicleRules.Speed(vehicle, config), dt,
+                                          config.playerRadius, new ArenaBounds(config.arenaSize), obstacles, out bool crashed);
+        if (crashed)
+        {
+            Vector2 at = next + heading * config.playerRadius;
+            if (VehicleRules.Crash(driver, at, this, (id, push) => TryApplyKnockback(id, push), Terrain != null ? Terrain.Fire : null, config))
+                ExplosionEffect.Spawn(at, config.vehicleCrashRadius);
+            return next;
+        }
+
+        VehicleRules.Crush(driver, next, this, config);
+        return next;
+    }
     readonly List<bool> bodySolid = new List<bool>();
     readonly List<Transform> bodyTransforms = new List<Transform>();
     readonly List<PlayerState> bodyStates = new List<PlayerState>();

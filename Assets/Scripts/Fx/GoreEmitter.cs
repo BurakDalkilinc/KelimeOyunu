@@ -3,21 +3,21 @@ using UnityEngine;
 
 /// <summary>
 /// Bir karakterin canını her kare izler: can azalınca kan sıçratır, sıfıra inince karakteri parçalara ayırır.
-/// Lava ya da uçuruma düşerek ölen parçalanmaz (onun kendi animasyonu var). Tek kişilik sahnede ve ağda
+/// Lavda ölen kömürleşip kıvılcım saçar; uçuruma düşen parçalanmaz (onun kendi animasyonu var). Tek kişilik sahnede ve ağda
 /// (her istemcide, eşitlenen candan) aynı şekilde çalışır.
 /// </summary>
 public class GoreEmitter : MonoBehaviour
 {
     Func<int> health;
-    Func<bool> falling;
+    Func<FallKind> falling;
     SpriteRenderer body;
     int lastHealth = int.MinValue;
-    bool wasFalling;
+    FallKind wasFalling;
     Color aliveColor = Color.white;
     Sprite aliveSprite;
 
     /// <summary>Karaktere bağlar. <paramref name="health"/> şu anki can, <paramref name="falling"/> düşüyor mu.</summary>
-    public static GoreEmitter Attach(GameObject target, Func<int> health, Func<bool> falling)
+    public static GoreEmitter Attach(GameObject target, Func<int> health, Func<FallKind> falling)
     {
         var emitter = target.GetComponent<GoreEmitter>();
         if (emitter == null) emitter = target.AddComponent<GoreEmitter>();
@@ -37,14 +37,19 @@ public class GoreEmitter : MonoBehaviour
         if (current < lastHealth && lastHealth > 0)
         {
             Vector2 at = transform.position;
-            if (current <= 0 && !wasFalling)
-                Gore.Explode(aliveSprite, at, transform.lossyScale.x, aliveColor);
-            else if (!wasFalling)
-                Gore.Splash(at, 12 * Mathf.Min(3, lastHealth - current), 1f);
+            if (wasFalling == FallKind.Lava)
+            {
+                if (current <= 0) Gore.Burn(at); // Lavda yanan: kömürleşmiş parçalar, kıvılcım ve duman
+            }
+            else if (wasFalling == FallKind.None)
+            {
+                if (current <= 0) Gore.Explode(aliveSprite, at, transform.lossyScale.x, aliveColor);
+                else Gore.Splash(at, 12 * Mathf.Min(3, lastHealth - current), 1f);
+            }
         }
 
         lastHealth = current;
-        wasFalling = falling != null && falling();
+        wasFalling = falling != null ? falling() : FallKind.None;
 
         // Parçalanırken canlı hâlinin resmini ve rengini kullan (öldükten sonra hayalet rengine döner).
         if (current > 0 && body != null)
