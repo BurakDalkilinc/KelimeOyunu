@@ -125,6 +125,18 @@ public class GameConfig : ScriptableObject
     [Tooltip("Fırlatmanın kaç saniyeye yayılacağı. Ani ışınlanma olmasın diye kısa bir kayma süresi.")]
     [Min(0.05f)] public float knockbackSeconds = 0.25f;
 
+    [Tooltip("Silah kelimesi süre yazmıyorsa silahın elde kalma süresi (sn).")]
+    [Min(1f)] public float weaponDefaultSeconds = 15f;
+
+    [Tooltip("Merminin gidebileceği en uzak mesafe (birim). Botlar da bu mesafenin içindekilere nişan alır.")]
+    [Min(1f)] public float weaponRange = 12f;
+
+    [Tooltip("Silah kelimesi hız yazmıyorsa merminin hızı (birim/sn).")]
+    [Min(1f)] public float projectileDefaultSpeed = 16f;
+
+    [Tooltip("İki atış arası en kısa süre (sn).")]
+    [Min(0f)] public float weaponShotIntervalSeconds = 0.35f;
+
     [Tooltip("Lava ya da uçuruma itilen karakterin düşme animasyonu süresi (sn); bitince canı tamamen gider.")]
     [Min(0.2f)] public float fallSeconds = 0.9f;
     [Tooltip("Anında vuran (instant) yaratığın uyarı süresi en az bu kadardır (sn). Kelimede daha uzunu yazıyorsa o kullanılır.")]

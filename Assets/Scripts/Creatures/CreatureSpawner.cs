@@ -38,6 +38,13 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
         revival = new GhostRevival(bootstrap.Match.Players, config, new System.Random(runner.Random.Next()));
         turns.WordPlayed += OnWordPlayed;
         bootstrap.CreatureSource = Models;
+        bootstrap.SpawnCreature = SpawnProjectile;
+    }
+
+    /// <summary>Mermi (silah atışı): yazısız, saldırı rengiyle.</summary>
+    void SpawnProjectile(CreatureModel model)
+    {
+        Create(model, attackColor, string.Empty);
     }
 
     /// <summary>Sahnedeki canlı yaratıkların modelleri (arazi bunlara bakıp tutuşturur).</summary>
@@ -51,6 +58,7 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
     {
         if (turns != null) turns.WordPlayed -= OnWordPlayed;
         if (bootstrap != null && bootstrap.CreatureSource == (System.Func<IEnumerable<CreatureModel>>)Models) bootstrap.CreatureSource = null;
+        if (bootstrap != null && bootstrap.SpawnCreature == (System.Action<CreatureModel>)SpawnProjectile) bootstrap.SpawnCreature = null;
     }
 
     /// <summary>Kelime kabul edilince: türüne göre yaratık doğur. Bilinmeyen kelimede <paramref name="word"/> null'dır.</summary>

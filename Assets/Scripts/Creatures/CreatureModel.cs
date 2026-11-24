@@ -237,6 +237,84 @@ public class CreatureModel
         IsFinished = LifeLeft <= 0f;
     }
 
+    // ---- Mermi (silah) ----
+
+    /// <summary>Mermiyi atan oyuncu (ona değmez). Mermi değilse null.</summary>
+    public PlayerState Owner { get; private set; }
+
+    /// <summary>Merminin hızı ve yönü (birim/sn).</summary>
+    public Vector2 Velocity { get; private set; }
+
+    /// <summary>Düz uçan bir mermi mi? (Silah kelimesinin atışı.)</summary>
+    public bool IsProjectile { get; private set; }
+
+    /// <summary>Yaratığı mermiye çevirir: <paramref name="velocity"/> ile düz uçar, <paramref name="owner"/>'a değmez.</summary>
+    public void MakeProjectile(PlayerState owner, Vector2 velocity)
+    {
+        Owner = owner;
+        Velocity = velocity;
+        IsProjectile = true;
+    }
+
+    /// <summary>
+    /// Mermiyi ilerletir: küçük adımlarla uçar; duvara ya da arena kenarına değince kaybolur, değdiği ilk hayattaki rakibe
+    /// hasar verip kaybolur (uçanlara değmez). Vurduğu oyuncuyu döndürür, yoksa null.
+    /// </summary>
+    public PlayerState TickProjectile(float deltaSeconds, IPlayerLocator world, float playerRadius)
+    {
+        if (IsFinished || !IsProjectile) return null;
+
+        float dt = Mathf.Max(0f, deltaSeconds);
+        LifeLeft -= dt;
+
+        Vector2 travel = Velocity * dt;
+        int steps = Mathf.Max(1, Mathf.CeilToInt(travel.magnitude / 0.2f));
+        for (int i = 0; i < steps; i++)
+        {
+            Vector2 next = Position + travel / steps;
+            bool blocked = !arena.Contains(next)
+                           || (Obstacles != null && (Obstacles.Resolve(next, Radius) - next).sqrMagnitude > 0.000001f);
+            if (blocked)
+            {
+                IsFinished = true;
+                return null;
+            }
+
+            Position = next;
+            PlayerState hit = FindProjectileVictim(world, playerRadius);
+            if (hit != null)
+            {
+                if (Damage > 0) hit.TakeDamage(Damage);
+                IsFinished = true;
+                return hit;
+            }
+        }
+
+        if (LifeLeft <= 0f) IsFinished = true;
+        return null;
+    }
+
+    PlayerState FindProjectileVictim(IPlayerLocator world, float playerRadius)
+    {
+        if (world == null) return null;
+
+        PlayerState best = null;
+        float bestDistance = float.MaxValue;
+        foreach (PlayerState player in world.Players)
+        {
+            if (player == null || player == Owner || !player.IsAlive || player.Status.IsFlying) continue;
+            if (!world.TryGetPosition(player.Id, out Vector2 at)) continue;
+
+            float distance = (at - Position).magnitude;
+            if (distance <= Radius + playerRadius && distance < bestDistance)
+            {
+                best = player;
+                bestDistance = distance;
+            }
+        }
+        return best;
+    }
+
     /// <summary>İlk vuruşu bu kadar saniye erteler (sürü üyelerini birbirinden ayırmak için).</summary>
     public void DelayFirstHit(float seconds)
     {

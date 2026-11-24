@@ -239,6 +239,23 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
         TagRegistry.ApplySelfEffects(word, new SelfEffectContext(writer, word, config, writerPosition, facing, Walls, this));
     }
 
+    /// <summary>
+    /// Silahla ateş (host'ta): insan baktığı yöne, bot menzildeki en yakın rakibe nişan alır. Atış yapıldıysa true.
+    /// </summary>
+    public bool TryFireWeapon(PlayerState shooter, Vector2 facing, bool onlyIfVictims)
+    {
+        if (shooter == null || !shooter.IsAlive || !shooter.Status.HasWeapon) return false;
+        if (!avatars.TryGetPosition(shooter.Id, out Vector2 from)) return false;
+
+        Vector2 direction = facing;
+        if (onlyIfVictims && !WeaponFire.TryAimAtNearest(shooter, from, this, config.weaponRange * 0.8f, out direction)) return false;
+
+        if (!shooter.Status.TryUseWeaponShot(config.weaponShotIntervalSeconds, out WordEntry weapon)) return false;
+
+        Add(WeaponFire.Build(shooter, weapon, from, direction, config, arena), string.Empty, false);
+        return true;
+    }
+
     // ---- IRevivalService: "yeniden canlanma" ----
 
     /// <summary>Elenenlerden rastgele biri 1 canla geri döner. Hayalet yoksa kelime boşa gider.</summary>

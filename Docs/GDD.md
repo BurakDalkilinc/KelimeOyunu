@@ -77,6 +77,7 @@
 | `stealth` | Hedef alınamaz |
 | `revive` | Elenenlerden biri yeniden doğar |
 | `ignite` | Haritadaki tahtaları tutuşturur (yangın yayılır) |
+| `weapon` | Yazana silah verir: Boşluk itiş yerine ateş eder, mermi değdiği ilk rakibe vurur (kalkan korur, duvar durdurur) |
 
 ## Harita ve arazi
 Harita 34 × 19 karelik bir ızgaradır (kare = 1 birim, 16×16 piksel). Her maçta tohumdan üretilir (`terrainSeed` 0 ise rastgele); ağ maçında host üretir, herkese durum gider.

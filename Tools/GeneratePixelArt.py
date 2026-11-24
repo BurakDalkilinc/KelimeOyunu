@@ -316,6 +316,15 @@ def make_bomba():
     return c
 
 
+def make_mermi():
+    c = Canvas()
+    c.ellipse(7.5, 7.5, 3.6, 3.6, O)        # parlayan mermi
+    c.ellipse(7.5, 7.5, 2.2, 2.2, Y)
+    c.set(7, 6, W); c.set(8, 6, W); c.set(7, 7, W)       # sıcak çekirdek
+    c.outline()
+    return c
+
+
 def make_ejderha():
     c = Canvas()
     c.poly([(0, 5), (4, 8), (0, 11)], D)    # kanatlar
@@ -645,7 +654,7 @@ def main():
         "bulut": make_bulut, "kaplumbaga": make_kaplumbaga, "ejderha": make_ejderha, "unknown": make_unknown,
     }
     static = {
-        "yumruk": make_yumruk, "muz_kabugu": make_muz, "miknatis": make_miknatis, "bomba": make_bomba,
+        "yumruk": make_yumruk, "muz_kabugu": make_muz, "miknatis": make_miknatis, "bomba": make_bomba, "mermi": make_mermi,
         "shelter": make_shelter, "tower": make_tower, "cave": make_cave, "houses": make_houses,
         "floor": make_floor, "wall": make_wall, "border": make_border,
         "t_grass": lambda: make_t_grass(0), "t_grass_alt": lambda: make_t_grass(1), "t_path": make_t_path,

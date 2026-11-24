@@ -139,6 +139,10 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
     {
         if (Match == null || config == null) return false;
 
+        // Silahı olan Boşluk'la itmez, ateş eder.
+        PlayerState armed = FindPlayer(playerId);
+        if (armed != null && armed.IsAlive && armed.Status.HasWeapon) return TryFireWeapon(armed, onlyIfVictims);
+
         ShoveCooldown cooldown = ShoveCooldownOf(playerId);
         if (!cooldown.IsReady) return false;
 
@@ -164,6 +168,38 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
         cooldown.TryUse();
         foreach (ShoveHit hit in shoveHits) TryApplyKnockback(shoveStates[hit.Index].Id, hit.Push);
         ShoveEffect.Spawn(shovePositions[shoverIndex], config.shoveRange);
+        return true;
+    }
+
+    /// <summary>
+    /// Sahneye yaratık koyan kanca (mermiler için). <see cref="CreatureSpawner"/> bağlar; boşsa silah ateş etmez.
+    /// </summary>
+    public System.Action<CreatureModel> SpawnCreature { get; set; }
+
+    PlayerState FindPlayer(int playerId)
+    {
+        foreach (PlayerState player in Match.Players)
+            if (player.Id == playerId) return player;
+        return null;
+    }
+
+    /// <summary>
+    /// Silahla ateş: insan baktığı yöne, bot menzildeki en yakın rakibe nişan alır (kimse yoksa atış harcamaz).
+    /// </summary>
+    bool TryFireWeapon(PlayerState shooter, bool onlyIfVictims)
+    {
+        if (SpawnCreature == null || !TryGetPosition(shooter.Id, out Vector2 from)) return false;
+
+        Vector2 direction;
+        if (onlyIfVictims)
+        {
+            if (!WeaponFire.TryAimAtNearest(shooter, from, this, config.weaponRange * 0.8f, out direction)) return false;
+        }
+        else direction = TryGetFacing(shooter.Id, out Vector2 f) ? f : Vector2.up;
+
+        if (!shooter.Status.TryUseWeaponShot(config.weaponShotIntervalSeconds, out WordEntry weapon)) return false;
+
+        SpawnCreature(WeaponFire.Build(shooter, weapon, from, direction, config, new ArenaBounds(config.arenaSize)));
         return true;
     }
 

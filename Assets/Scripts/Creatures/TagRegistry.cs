@@ -32,7 +32,8 @@ public static class TagRegistry
         new MapWideTag(),
         new WaterTag(),
         new SkyTag(),
-        new FireTag());
+        new FireTag(),
+        new WeaponTag());
 
     /// <summary>Hız zaten kelimenin değerinden geldiği için ek davranışı olmayan etiketler.</summary>
     public static readonly IReadOnlyCollection<string> LabelOnlyTags = new[] { "slow", "fast", "armored" };

@@ -10,7 +10,7 @@ public class TagRegistryTests
     {
         "slow", "fast", "flying", "swarm", "undead", "predator", "instant", "knockback", "trap",
         "slowdown", "pull", "armored", "explosive", "area", "water", "fire", "sky", "map_wide",
-        "shield", "heal", "wall", "escape", "stealth", "revive", "ignite"
+        "shield", "heal", "wall", "escape", "stealth", "revive", "ignite", "weapon"
     };
 
     ArenaBounds arena;

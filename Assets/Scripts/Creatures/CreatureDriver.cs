@@ -18,6 +18,13 @@ public static class CreatureDriver
     public static void Advance(CreatureModel model, float dt, ICreatureWorld world, GameConfig config,
                                List<CreatureHit> hits, BotBrain wanderBrain)
     {
+        // Mermi düz uçar, değdiği ilk rakibe vurur.
+        if (model.IsProjectile)
+        {
+            model.TickProjectile(dt, world, config.playerRadius);
+            return;
+        }
+
         if (model.Target == null)
         {
             if (wanderBrain == null) return;

@@ -321,6 +321,7 @@ public class NetworkPlayer : NetworkBehaviour
             if (health.Value != state.Health.Current) health.Value = state.Health.Current;
 
             int flags = (int)StatusFlagsUtil.Of(state.Status);
+            if (state.Status.HasWeapon) flags |= (int)StatusFlags.Weapon;
             if (state.Falling == FallKind.Chasm) flags |= (int)StatusFlags.FallChasm;
             else if (state.Falling == FallKind.Lava) flags |= (int)StatusFlags.FallLava;
             if (statusFlags.Value != flags) statusFlags.Value = flags;
@@ -358,6 +359,10 @@ public class NetworkPlayer : NetworkBehaviour
     {
         NetMatchSim sim = channel != null ? channel.Sim : null;
         PlayerState me = sim != null ? sim.FindPlayer(playerId.Value) : null;
+
+        // Silahı olan Boşluk'la itmez, ateş eder.
+        if (me != null && me.IsAlive && me.Status.HasWeapon) return sim.TryFireWeapon(me, facing, onlyIfVictims);
+
         if (me == null || !me.IsAlive || me.Status.IsFlying || shoveCooldown == null || !shoveCooldown.IsReady) return false;
 
         shoveStates.Clear(); shoveAvatars.Clear(); shovePositions.Clear(); shoveSolid.Clear();

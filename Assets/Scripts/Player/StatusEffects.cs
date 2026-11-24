@@ -161,6 +161,58 @@ public class StatusEffects
         flightTimeLeft = Mathf.Max(flightTimeLeft, seconds);
     }
 
+    // ---- Silah ----
+
+    WordEntry weaponWord;
+    int weaponShots;
+    float weaponTimeLeft;
+    float weaponShotWait;
+
+    /// <summary>Elinde ateş edebileceği bir silah var mı?</summary>
+    public bool HasWeapon => weaponWord != null && weaponShots > 0 && weaponTimeLeft > 0f;
+
+    /// <summary>Elindeki silahın kelimesi (yoksa null).</summary>
+    public WordEntry Weapon => HasWeapon ? weaponWord : null;
+
+    /// <summary>Kalan atış sayısı.</summary>
+    public int WeaponShots => HasWeapon ? weaponShots : 0;
+
+    /// <summary>Silahın elde kalacağı süre (sn).</summary>
+    public float WeaponTimeLeft => HasWeapon ? weaponTimeLeft : 0f;
+
+    /// <summary>Silah verir (eskisinin yerine geçer).</summary>
+    public void ArmWeapon(WordEntry word, int shots, float seconds)
+    {
+        if (word == null || shots <= 0 || seconds <= 0f) return;
+        weaponWord = word;
+        weaponShots = shots;
+        weaponTimeLeft = seconds;
+        weaponShotWait = 0f;
+    }
+
+    /// <summary>
+    /// Bir atış harcar. Silah yoksa ya da iki atış arası süre dolmadıysa false. Son atışta silah biter.
+    /// </summary>
+    public bool TryUseWeaponShot(float shotIntervalSeconds, out WordEntry weapon)
+    {
+        weapon = null;
+        if (!HasWeapon || weaponShotWait > 0f) return false;
+
+        weapon = weaponWord;
+        weaponShots--;
+        weaponShotWait = Mathf.Max(0f, shotIntervalSeconds);
+        if (weaponShots <= 0) DropWeapon();
+        return true;
+    }
+
+    void DropWeapon()
+    {
+        weaponWord = null;
+        weaponShots = 0;
+        weaponTimeLeft = 0f;
+        weaponShotWait = 0f;
+    }
+
     // ---- Zaman ----
 
     /// <summary>Zamanı ilerletir; süre dolan etkiler biter.</summary>
@@ -200,6 +252,13 @@ public class StatusEffects
             if (stealthTimeLeft <= 0f) stealthTimeLeft = 0f;
         }
 
+        if (weaponShotWait > 0f) weaponShotWait = Mathf.Max(0f, weaponShotWait - dt);
+        if (weaponTimeLeft > 0f)
+        {
+            weaponTimeLeft -= dt;
+            if (weaponTimeLeft <= 0f) DropWeapon();
+        }
+
         if (flightTimeLeft > 0f)
         {
             flightTimeLeft -= dt;
@@ -223,5 +282,6 @@ public class StatusEffects
         stealthTimeLeft = 0f;
         flightTimeLeft = 0f;
         flightSpeedMultiplier = 1f;
+        DropWeapon();
     }
 }

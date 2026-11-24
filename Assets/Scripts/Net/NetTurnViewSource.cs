@@ -53,6 +53,7 @@ public class NetTurnViewSource : TurnViewSource
 
         NetworkPlayer mine = manager.LocalClient.PlayerObject.GetComponent<NetworkPlayer>();
         if (mine == null || mine.IsGhost || !channel.MatchActive) return string.Empty;
+        if ((mine.Status & StatusFlags.Weapon) != 0) return WeaponText.ArmedOnNetwork;
         return ShoveCooldown.Describe(mine.ShoveLeft);
     }
 

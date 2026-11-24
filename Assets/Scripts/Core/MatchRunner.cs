@@ -52,6 +52,7 @@ public class MatchRunner : TurnViewSource
     {
         PlayerState local = LocalPlayer;
         if (local == null || !local.IsAlive) return string.Empty;
+        if (local.Status.HasWeapon) return WeaponText.Describe(local.Status);
         return ShoveCooldown.Describe(bootstrap.GetShoveCooldownLeft(local.Id));
     }
 
