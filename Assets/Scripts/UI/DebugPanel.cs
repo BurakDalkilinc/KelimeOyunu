@@ -202,10 +202,7 @@ public class DebugPanel : MonoBehaviour
 
     void ClearGore()
     {
-        int count = 0;
-        foreach (BloodDrop drop in FindObjectsByType<BloodDrop>(FindObjectsInactive.Include, FindObjectsSortMode.None)) { Destroy(drop.gameObject); count++; }
-        foreach (GibPiece gib in FindObjectsByType<GibPiece>(FindObjectsInactive.Include, FindObjectsSortMode.None)) { Destroy(gib.gameObject); count++; }
-        lastMessage = $"{count} kan izi/parça silindi.";
+        lastMessage = $"{Gore.ClearAll()} kan izi/parça silindi.";
     }
 
     void BuildStyles()

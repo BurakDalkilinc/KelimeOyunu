@@ -471,6 +471,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         Client.Reset();
         Client.SetRoster(roster, config.startingHealth);
         Feedback = "";
+        Gore.ClearAll(); // Yeni maç: önceki maçın kanı, parçaları, cesetleri silinir
     }
 
     [Rpc(SendTo.ClientsAndHost)]
@@ -523,6 +524,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     [Rpc(SendTo.ClientsAndHost)]
     void ResetMatchRpc()
     {
+        Gore.ClearAll(); // Maç bitti, yeni maça hazırlanılıyor: yerdeki kan ve cesetler temizlenir
         LatestTerrain = ""; // Harita bir sonraki maçta yeniden gelir
         LatestHouses = "";
         TerrainVersion++;

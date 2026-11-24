@@ -126,6 +126,21 @@ public static class Gore
                             Random.Range(0.15f, 0.25f), new Color(0.12f, 0.08f, 0.06f), true); // Kömür parçaları yerde kalır
     }
 
+    /// <summary>
+    /// Ekrandaki bütün kanı, parçaları, kömür cesetleri, is lekelerini ve havadaki kıvılcım/dumanları siler.
+    /// Yeni maç başlarken çağrılır (ağ maçında sahne yeniden yüklenmez, izler kalmasın).
+    /// </summary>
+    public static int ClearAll()
+    {
+        int count = 0;
+        while (stains.Count > 0) { GameObject go = stains.Dequeue(); if (go != null) { Object.Destroy(go); count++; } }
+        while (gibs.Count > 0) { GameObject go = gibs.Dequeue(); if (go != null) { Object.Destroy(go); count++; } }
+        foreach (BloodDrop drop in Object.FindObjectsByType<BloodDrop>(FindObjectsInactive.Include, FindObjectsSortMode.None)) { Object.Destroy(drop.gameObject); count++; }
+        foreach (GibPiece gib in Object.FindObjectsByType<GibPiece>(FindObjectsInactive.Include, FindObjectsSortMode.None)) { Object.Destroy(gib.gameObject); count++; }
+        foreach (ExplosionEffect blast in Object.FindObjectsByType<ExplosionEffect>(FindObjectsInactive.Include, FindObjectsSortMode.None)) { Object.Destroy(blast.gameObject); count++; }
+        return count;
+    }
+
     /// <summary>Lekeyi kayda alır; çok birikirse en eskisini siler.</summary>
     public static void RegisterStain(GameObject stain)
     {
