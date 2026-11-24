@@ -313,7 +313,7 @@ public class DefenseTagTests
         ApplyWord("kanat", writer);
 
         Assert.IsTrue(writer.Status.IsFlying);
-        Assert.AreEqual(5f, writer.Status.FlightTimeLeft, 0.001f);                              // words.json: duration 5
+        Assert.AreEqual(8f, writer.Status.FlightTimeLeft, 0.001f);                              // words.json: duration 8
         Assert.AreEqual(6f / config.playerMoveSpeed, writer.Status.SpeedMultiplier, 0.001f);   // words.json: speed 6
     }
 

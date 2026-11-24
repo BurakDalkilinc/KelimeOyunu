@@ -147,6 +147,7 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
 
         if (fall == null) fall = FallAnimation.Attach(gameObject, config.fallSeconds);
         fall.Kind = State.Falling;
+        FlightVisual.Attach(gameObject).Flying = State.IsAlive && State.Status.IsFlying; // Uçarken gölge ve alev
         if (!CanMove || State.Falling != FallKind.None) return;
 
         Vector2 input = ReadMoveInput();

@@ -147,6 +147,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         // Lava/uçuruma düşüyor: animasyon oynar, hareket edemez.
         if (fall == null) fall = FallAnimation.Attach(gameObject, config.fallSeconds);
         fall.Kind = State.Falling;
+        FlightVisual.Attach(gameObject).Flying = State.Status.IsFlying; // Uçarken gölge ve alev
         if (State.Falling != FallKind.None) return;
 
         Vector2 pushed = knockback.Step(Time.deltaTime);

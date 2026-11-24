@@ -245,6 +245,7 @@ public class NetworkPlayer : NetworkBehaviour
             if (fall == null) fall = FallAnimation.Attach(gameObject, config.fallSeconds);
             fall.Kind = (Status & StatusFlags.FallChasm) != 0 ? FallKind.Chasm : (Status & StatusFlags.FallLava) != 0 ? FallKind.Lava : FallKind.None;
         }
+        FlightVisual.Attach(gameObject).Flying = !IsGhost && (Status & StatusFlags.Flight) != 0; // Uçarken gölge ve alev
     }
 
     FallAnimation fall;
