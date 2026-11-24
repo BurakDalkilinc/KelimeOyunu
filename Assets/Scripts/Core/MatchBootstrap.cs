@@ -163,9 +163,18 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
 
         Vector2 facing = TryGetFacing(playerId, out Vector2 f) ? f : Vector2.up;
         ShoveRules.Find(shoverIndex, facing, shovePositions, shoveSolid, config.shoveRange, config.shoveHalfAngleDegrees, config.shoveDistance, shoveHits);
-        if (onlyIfVictims && shoveHits.Count == 0) return false;
 
-        cooldown.TryUse();
+        // Önündeki boss'a da vurur (boss dövmek için bekleme kısa).
+        IEnumerable<CreatureModel> creatures = CreatureSource != null ? CreatureSource() : null;
+        int bosses = BossRules.HitBosses(creatures, shover, shovePositions[shoverIndex], facing, config, apply: false);
+        if (onlyIfVictims && shoveHits.Count == 0 && bosses == 0) return false;
+
+        if (bosses > 0)
+        {
+            cooldown.TryUse(config.bossHitCooldownSeconds);
+            BossRules.HitBosses(creatures, shover, shovePositions[shoverIndex], facing, config, apply: true);
+        }
+        else cooldown.TryUse();
         foreach (ShoveHit hit in shoveHits) TryApplyKnockback(shoveStates[hit.Index].Id, hit.Push);
         ShoveEffect.Spawn(shovePositions[shoverIndex], config.shoveRange);
         return true;

@@ -316,6 +316,25 @@ def make_bomba():
     return c
 
 
+def make_godzilla():
+    c = Canvas()
+    c.poly([(2, 15), (5, 11), (6, 13)], l)  # kuyruk
+    c.ellipse(8, 10.5, 4.6, 4.2, l)         # gövde
+    c.ellipse(9.5, 10.5, 2.4, 3.0, L)       # karın
+    c.ellipse(10, 4.8, 3.6, 3.0, l)         # kafa
+    c.rect(11, 5, 14, 7, l)                 # burun
+    c.rect(12, 7, 14, 7, W)                 # dişler
+    c.set(13, 7, K)
+    c.set(11, 3, Y); c.set(12, 3, R)        # kızgın göz
+    c.rect(11, 9, 13, 10, l)                # kol
+    c.set(14, 10, W)                        # pençe
+    c.rect(6, 14, 7, 15, D); c.rect(10, 14, 11, 15, D)   # bacaklar
+    for xx, yy in ((6, 2), (5, 4), (4, 6), (3, 8), (3, 10)):   # sırt plakaları
+        c.set(xx, yy, C); c.set(xx + 1, yy + 1, C)
+    c.outline()
+    return c
+
+
 def make_mermi():
     c = Canvas()
     c.ellipse(7.5, 7.5, 3.6, 3.6, O)        # parlayan mermi
@@ -651,7 +670,7 @@ def make_t_fire(frame):
 def main():
     animated = {
         "char": make_char, "zombi": make_zombi, "ari": make_ari, "fare": make_fare, "kurt": make_kurt,
-        "bulut": make_bulut, "kaplumbaga": make_kaplumbaga, "ejderha": make_ejderha, "unknown": make_unknown,
+        "bulut": make_bulut, "kaplumbaga": make_kaplumbaga, "ejderha": make_ejderha, "unknown": make_unknown, "godzilla": make_godzilla,
     }
     static = {
         "yumruk": make_yumruk, "muz_kabugu": make_muz, "miknatis": make_miknatis, "bomba": make_bomba, "mermi": make_mermi,

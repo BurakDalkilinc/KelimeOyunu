@@ -43,6 +43,7 @@ public class CreatureView : MonoBehaviour
         Advance(Time.deltaTime);
         transform.position = Model.Position;
         UpdateStrikeVisual();
+        if (Model.IsBoss && labelMesh != null) labelMesh.text = BossRules.Label(Model); // "Godzilla 7/10"
 
         if (Model.IsFinished) Destroy(gameObject);
     }
@@ -69,7 +70,8 @@ public class CreatureView : MonoBehaviour
         {
             if (!isZone)
             {
-                body.transform.localScale = Vector3.one;
+                body.transform.localScale = Vector3.one * CreatureSpriteScale.ForRadius(radius); // Boss dev görünür
+                bodyRenderer.sortingOrder = CreatureSpriteScale.SortingOrder(radius);
                 body.AddComponent<SpriteAnimator>().SetFrames(frames);
                 bodyRenderer.color = Color.white;
                 return;

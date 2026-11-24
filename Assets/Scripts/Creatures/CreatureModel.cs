@@ -237,6 +237,38 @@ public class CreatureModel
         IsFinished = LifeLeft <= 0f;
     }
 
+    // ---- Boss ----
+
+    /// <summary>Can barlı dev mi? ("boss" etiketi.) Oyuncular Boşluk ile vurarak öldürür.</summary>
+    public bool IsBoss { get; private set; }
+
+    public int BossHealth { get; private set; }
+    public int BossMaxHealth { get; private set; }
+
+    /// <summary>Boss'a en son vuran oyuncu.</summary>
+    public PlayerState LastBossHitter { get; private set; }
+
+    /// <summary>Yaratığı <paramref name="health"/> canlı bir boss yapar.</summary>
+    public void MakeBoss(int health)
+    {
+        IsBoss = true;
+        BossMaxHealth = Mathf.Max(1, health);
+        BossHealth = BossMaxHealth;
+    }
+
+    /// <summary>Boss'a vurur; canı biterse boss ölür (kaybolur) ve true döner.</summary>
+    public bool TakeBossHit(PlayerState hitter, int damage)
+    {
+        if (!IsBoss || IsFinished || damage <= 0) return false;
+
+        BossHealth = Mathf.Max(0, BossHealth - damage);
+        LastBossHitter = hitter;
+        if (BossHealth > 0) return false;
+
+        IsFinished = true;
+        return true;
+    }
+
     // ---- Mermi (silah) ----
 
     /// <summary>Mermiyi atan oyuncu (ona değmez). Mermi değilse null.</summary>

@@ -125,6 +125,18 @@ public class GameConfig : ScriptableObject
     [Tooltip("Fırlatmanın kaç saniyeye yayılacağı. Ani ışınlanma olmasın diye kısa bir kayma süresi.")]
     [Min(0.05f)] public float knockbackSeconds = 0.25f;
 
+    [Tooltip("Boss kelimesi can yazmıyorsa boss'un canı (kaç vuruşta ölür).")]
+    [Min(1)] public int bossDefaultHealth = 10;
+
+    [Tooltip("Boşluk'la boss'a bir vuruşun verdiği hasar.")]
+    [Min(1)] public int bossHitDamage = 1;
+
+    [Tooltip("Boss'a vururken iki vuruş arası bekleme (sn). İtişin bekleme süresinden kısa: boss dövmek hızlı olsun.")]
+    [Min(0.1f)] public float bossHitCooldownSeconds = 0.5f;
+
+    [Tooltip("Boss'u bitirenin kazandığı can (canı tamsa onun yerine bir vuruşluk kalkan alır).")]
+    [Min(0)] public int bossKillReward = 1;
+
     [Tooltip("Silah kelimesi süre yazmıyorsa silahın elde kalma süresi (sn).")]
     [Min(1f)] public float weaponDefaultSeconds = 15f;
 

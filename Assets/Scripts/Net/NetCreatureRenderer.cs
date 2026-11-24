@@ -100,7 +100,9 @@ public class NetCreatureRenderer : MonoBehaviour
 
         if (frames.Length > 0 && !isZone)
         {
-            // Koşan yaratık sprite'ın kendisidir.
+            // Koşan yaratık sprite'ın kendisidir (boss dev görünür).
+            body.transform.localScale = Vector3.one * CreatureSpriteScale.ForRadius(s.Radius);
+            view.Body.sortingOrder = CreatureSpriteScale.SortingOrder(s.Radius);
             body.AddComponent<SpriteAnimator>().SetFrames(frames);
             view.Body.color = Color.white;
         }

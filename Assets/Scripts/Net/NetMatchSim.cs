@@ -322,6 +322,9 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
         Terrain?.AppendFireDangers(dangers); // Botlar alevden kaçar
     }
 
+    /// <summary>Canlı yaratıkların modelleri (boss'a vurmak için).</summary>
+    public IEnumerable<CreatureModel> CreatureModels => Models();
+
     IEnumerable<CreatureModel> Models()
     {
         foreach (SimCreature creature in creatures) yield return creature.Model;
@@ -364,7 +367,7 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
                 Progress = m.IsStrike ? m.StrikeProgress : 0f,
                 HasStruck = m.HasStruck,
                 Countdown = m.ShowsCountdown && !m.IsSky && m.IsStrike && !m.HasStruck ? Mathf.CeilToInt(m.StrikeWarningLeft) : 0,
-                Label = creature.Label,
+                Label = m.IsBoss ? BossRules.Label(m) : creature.Label,
             });
         }
     }

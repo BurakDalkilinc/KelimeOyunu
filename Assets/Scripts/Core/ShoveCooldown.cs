@@ -22,6 +22,14 @@ public class ShoveCooldown
         return true;
     }
 
+    /// <summary>Hazırsa kullanır ve bekleme süresini bu kez <paramref name="customSeconds"/> yapar (boss'a vuruş gibi).</summary>
+    public bool TryUse(float customSeconds)
+    {
+        if (!IsReady) return false;
+        Remaining = Mathf.Max(0f, customSeconds);
+        return true;
+    }
+
     public void Tick(float deltaSeconds)
     {
         if (Remaining > 0f) Remaining = Mathf.Max(0f, Remaining - Mathf.Max(0f, deltaSeconds));

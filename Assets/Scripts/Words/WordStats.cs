@@ -25,4 +25,6 @@ public class WordStats
     public int heal;
     /// <summary>Duvar uzunluğu (birim).</summary>
     public float length;
+    /// <summary>Boss'un canı (kaç vuruşta ölür).</summary>
+    public int hp;
 }

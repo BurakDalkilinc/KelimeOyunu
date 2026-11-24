@@ -381,9 +381,17 @@ public class NetworkPlayer : NetworkBehaviour
         if (myIndex < 0) return false;
 
         ShoveRules.Find(myIndex, facing, shovePositions, shoveSolid, config.shoveRange, config.shoveHalfAngleDegrees, config.shoveDistance, shoveHits);
-        if (onlyIfVictims && shoveHits.Count == 0) return false;
 
-        shoveCooldown.TryUse();
+        // Önündeki boss'a da vurur (boss dövmek için bekleme kısa).
+        int bosses = BossRules.HitBosses(sim.CreatureModels, me, shovePositions[myIndex], facing, config, apply: false);
+        if (onlyIfVictims && shoveHits.Count == 0 && bosses == 0) return false;
+
+        if (bosses > 0)
+        {
+            shoveCooldown.TryUse(config.bossHitCooldownSeconds);
+            BossRules.HitBosses(sim.CreatureModels, me, shovePositions[myIndex], facing, config, apply: true);
+        }
+        else shoveCooldown.TryUse();
         shoveLeft.Value = shoveCooldown.Remaining;
         shoveCount.Value++;
         foreach (ShoveHit hit in shoveHits) shoveAvatars[hit.Index].ApplyKnockback(hit.Push);

@@ -130,6 +130,7 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
 
     void Create(CreatureModel model, Color color, string label)
     {
+        model.Locator = bootstrap; // Hedefi ölünce ya da başkası yaklaşınca yeniden seçebilsin (boss, ejderha)
         model.Obstacles = bootstrap.Obstacles; // Uçmayan yaratıklar duvardan (oyuncu duvarları ve ev duvarları) geçemez
 
         var go = new GameObject("Yaratık: " + label);
