@@ -18,6 +18,13 @@ public class TerrainView : MonoBehaviour
     /// <summary>Katmanlı (3D piksel) ev duvarının yüksekliği (dilim = 1 piksel) ve çatının kalınlığı.</summary>
     const int WallLayers = 8;
     const int RoofLayers = 3;
+
+    /// <summary>Uçurumun ve lav havuzunun derinliği (piksel): kenardaki zemin bu kadar aşağı inen bir yüz olarak çizilir.</summary>
+    const int ChasmDepth = 10;
+
+    /// <summary>Uçurum ve lav karoları en altta: üstlerine kenardaki zeminin aşağı inen yüzü çizilir.</summary>
+    const int HoleOrder = -25;
+    const int LavaDepth = 3;
     const float Pixel = 1f / 16f;
 
     /// <summary>
@@ -36,6 +43,8 @@ public class TerrainView : MonoBehaviour
     SpriteRenderer[] tiles;
     GameObject[] flames;
     SpriteStack[] wallStacks;
+    GameObject[] cliffs;
+    int[] cliffDepths;
     readonly List<GameObject> roofObjects = new List<GameObject>();
     readonly List<SpriteStack[]> roofTiles = new List<SpriteStack[]>();
     readonly List<float> roofAlpha = new List<float>();
@@ -75,6 +84,8 @@ public class TerrainView : MonoBehaviour
         tiles = new SpriteRenderer[map.Width * map.Height];
         flames = new GameObject[tiles.Length];
         wallStacks = new SpriteStack[tiles.Length];
+        cliffs = new GameObject[tiles.Length];
+        cliffDepths = new int[tiles.Length];
 
         for (int y = 0; y < map.Height; y++)
         {
@@ -188,6 +199,9 @@ public class TerrainView : MonoBehaviour
 
         // Üstündeki uçurum kenarı sprite'ı komşuya bağlı: alttaki karoyu da tazele.
         if (map.InBounds(x, y - 1)) Refresh(x, y - 1);
+
+        // Kuzeydeki karonun uçurum yüzü bu karoya bağlı (bu karo uçurum/lav oldu ya da olmaktan çıktı).
+        if (map.InBounds(x, y + 1)) RefreshCliff(x, y + 1);
     }
 
     void Update()
@@ -229,6 +243,46 @@ public class TerrainView : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Güneyinde uçurum ya da lav olan zemin karosu, aşağı doğru inen bir yüz olarak çizilir: aynı resim katman katman 1 piksel
+    /// aşağıda ve gittikçe koyu tekrar edilir (uçurumda derin, lavda sığ). Böylece uçurum çukur, lav çökük havuz gibi görünür.
+    /// </summary>
+    void RefreshCliff(int x, int y)
+    {
+        int index = map.Index(x, y);
+        TileType here = map.At(x, y);
+        TileType south = map.InBounds(x, y - 1) ? map.At(x, y - 1) : here;
+        bool hereIsHole = here == TileType.Chasm || here == TileType.Lava;
+        int depth = hereIsHole ? 0 : south == TileType.Chasm ? ChasmDepth : south == TileType.Lava ? LavaDepth : 0;
+
+        // Karo ya da güneyi değişmiş olabilir (çimen kömürleşti, uçurum kapandı): yüzü baştan kur.
+        Sprite face = tiles[index].sprite;
+        if (cliffs[index] != null)
+        {
+            Destroy(cliffs[index]);
+            cliffs[index] = null;
+        }
+        cliffDepths[index] = depth;
+        if (depth == 0 || face == null) return;
+
+        var root = new GameObject($"Uçurum yüzü {x},{y}");
+        root.transform.SetParent(transform, false);
+        root.transform.position = map.CellCenter(x, y);
+        for (int i = 1; i <= depth; i++)
+        {
+            var layer = new GameObject("kat " + i);
+            layer.transform.SetParent(root.transform, false);
+            layer.transform.localPosition = new Vector3(0f, -i * Pixel, 0f);
+            var sr = layer.AddComponent<SpriteRenderer>();
+            sr.sprite = face;
+            float shade = Mathf.Lerp(0.75f, 0.25f, (float)i / depth); // Aşağı indikçe karanlık
+            sr.color = new Color(shade, shade * 0.95f, shade * 0.9f, 1f);
+            sr.sortingOrder = TerrainOrder - i; // Zeminin altında; yukarıdaki kat aşağıdakinin üstünde
+            sr.sortingLayerID = tiles[index].sortingLayerID;
+        }
+        cliffs[index] = root;
+    }
+
     GameObject CreateFlame(int x, int y)
     {
         var go = new GameObject($"Alev {x},{y}");
@@ -245,6 +299,7 @@ public class TerrainView : MonoBehaviour
     {
         SpriteRenderer sr = tiles[map.Index(x, y)];
         TileType type = map.At(x, y);
+        sr.sortingOrder = type == TileType.Chasm || type == TileType.Lava ? HoleOrder : TerrainOrder;
         RefreshWallStack(x, y, type);
 
         // Eski animasyonu temizle (lav → kömür gibi bir değişim olursa).
@@ -268,5 +323,7 @@ public class TerrainView : MonoBehaviour
                 sr.sprite = SpriteLibrary.Get(((x * 7 + y * 13) % 3 == 0) ? "t_grass_alt" : "t_grass");
                 break;
         }
+
+        RefreshCliff(x, y); // Karonun resmi belli olduktan sonra: uçurum yüzü o resimden yapılır
     }
 }

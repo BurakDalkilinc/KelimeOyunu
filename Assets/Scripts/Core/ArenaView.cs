@@ -36,7 +36,7 @@ public class ArenaView : MonoBehaviour
     {
         Vector2 size = config.arenaSize;
 
-        CreatePiece("Floor", Vector2.zero, size, floorColor, -10);
+        CreatePiece("Floor", Vector2.zero, size, floorColor, -50); // En altta: uçurum ve lav karoları (ve uçurum yüzleri) bunun üstünde
 
         float t = borderThickness;
         CreatePiece("BorderTop", new Vector2(0f, size.y * 0.5f + t * 0.5f), new Vector2(size.x + t * 2f, t), borderColor, -9);
