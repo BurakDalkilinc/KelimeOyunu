@@ -4,16 +4,19 @@
 - **Tür:** Çok oyunculu parti oyunu, son kalan kazanır. PC / Steam.
 - **Oyuncu:** 4–20, eksikleri botlar doldurur.
 - **Maç süresi hedefi:** 10–15 dakika.
+- **Kelime sayısı:** 208 (`Assets/Resources/Data/words.json`).
 
 ## Tur akışı
 1. **Zar (2 sn):** Hayattaki oyunculardan biri seçilir. Animasyon herkesin ekranının üstünde.
    - Seçilme ağırlığı = 1 + 0,5 × (üst üste kaç tur seçilmedi). Seçilen oyuncunun sayacı sıfırlanır. Elenenler seçilmez.
+   - HUD'da oyuncunun bir sonraki zardaki seçilme şansı yüzde olarak görünür ("Seçilme şansın: %12" = kendi ağırlığı / hayattakilerin toplam ağırlığı). Elenince gizlenir.
 2. **Yazma (10 sn):** Seçilen oyuncunun yazı kutusu açılır, karakteri durur. Diğerleri hareket edebilir.
    - Saldırı kelimesiyse yazan kişi, kelime kabul edildikten sonra 3 sn içinde fareyle bir oyuncuya tıklayarak hedef seçer. Süre dolarsa rastgele bir rakip seçilir; botlar rastgele seçer. Kimse kendini hedefleyemez.
    - Süre biterse tur yanar.
 3. **Sonuç (15–20 sn):** Kelime ortaya çıkar. Global tehditse çözümü de haritada belirir. Herkes gerçek zamanlı kaçar.
 4. **Eleme:** Canı biten oyuncu hayalet olur.
 5. Tek kişi kalana kadar 1'e dön.
+6. **Maç sonu:** son kalan kazanır ve o andan itibaren dokunulmaz olur (hasar almaz, lava/uçuruma düşmez); sahada kalan yaratık ve tehditler sonucu değiştiremez.
 
 ## Temel değerler (başlangıç, `GameConfig`'te ayarlanır)
 | Ayar | Değer |
@@ -27,6 +30,11 @@
 | Zar: seçilmeme bonusu | her seçilmeyen tur için +0,5 ağırlık (`diceBonusPerMissedTurn`) |
 | Harita | 34 × 19 birim (20 oyuncu için geniş) |
 | Kamera | Oyuncuyu yakından izler (384×216 piksel görüş, arenanın dışını göstermez). Hedef seçerken ve çözüm alanı (sığınak, kule, mağara, ev) çıkınca tüm arenayı gösterir (640×360) |
+| Yanma süresi | ateşten hasar alınca 2,5 sn yanar (`burnSeconds`) |
+| Kömürleşme | her ateş hasarında +0,35 (1 = simsiyah, azalmaz; `charPerFireHit`) |
+| Boss canı | kelimenin canı (yoksa 10) + her ek canlı oyuncu için 3 (`bossHealthPerExtraPlayer`) |
+| Boss vuruş bekleme süresi | oyuncu 0,5 sn, bot 1,5 sn (`bossHitCooldownSeconds`, `botBossHitCooldownSeconds`) |
+| Araç (kelime yazmıyorsa) | hız 9 birim/sn, süre 8 sn, ezme yarıçapı 0,6 birim; patlama yarıçapı 2 birim, hasarı 2 |
 
 ## Kurallar
 - Zar sadece kimin yazacağını seçer; uzun süredir seçilmeyenin şansı artar (adalet için).
@@ -45,9 +53,12 @@
 - Çekme (Mıknatıs, pull): arenanın merkezine düşer ve süresi boyunca (4 sn) hedefi saniyede 4 birim hızla oraya çeker. Oyuncu hızı 5 olduğu için ters yönde yürüyerek direnebilir. Botlar mıknatıstan kaçmaz.
 - Yavaşlatma (slowdown): hız yarıya iner. Alan yaratıkları (Bulut) içindeki herkesi yavaşlatır; alandan çıkınca etki 0,6 sn daha sürer.
 - Vur-kaç yaratıklar (ör. Kurt, predator): vurduktan sonra 2 sn geri çekilir, ömrünün son 1,5 sn'sinde sıkılıp gider. Sürü (swarm) üyelerinin ilk vuruşları 0,8 sn arayla kademelidir.
+- Kovalayanlar herkesi avlar (`creaturesHuntEveryone`, varsayılan açık): yürüyen/kovalayan yaratık bir kişiyi vurup kaybolmaz; hep en yakındakine geçer, hedefi ölünce yenisini seçer ve süresi bitene kadar sahada kalır. Hedefin üstüne/yanına düşenler (Yumruk, Bomba), alan, tuzak, çekim ve mermiler bu kurala girmez, olduğu gibi çalışır.
+- Yanma ve kömürleşme: ateş hasarı (Ateş, Ejderha alanı, yanan kare, patlayan araç) can götürdüyse karakter 2,5 sn tutuşur (üstünde alev) ve her hasarda kömürleşmesi 0,35 artar (karakter kararır, kendiliğinden geçmez). Kalkanın engellediği vuruş tutuşturmaz. Kömürleşmiş ya da yanarken ölen karakter parçalanmaz: simsiyah ceset olarak yana yatar, birkaç saniye tüter, çevresine kül saçılır ve maç boyunca yerde kalır.
+- Kan ve parçalanma (yalnızca görüntü, kurala dokunmaz): vurulana kan sıçrar, damlalar yerde kalıcı leke olur. Ateş dışı ölümde karakter 6 parçaya (2×3) ayrılıp savrulur, sekip yerde kalır. Lavda ölende kıvılcım, duman ve kömür parçaları çıkar. Çok birikirse en eskiler silinir (en çok 1500 leke, 300 parça/ceset). Yeni maç başlarken bütün kan, parça ve cesetler temizlenir.
 - İtiş (Boşluk tuşu, her karakterde): bakılan yönde 1,9 birim içindekileri (65° yelpaze) güçlü savurur (yakındakini ~3,5 birim). Bekleme süresi 3 sn; boşa atılsa da süre başlar. Elenen, uçan ve yazı sırasındaki (yazarken karakter sabit) oyuncu itiş atamaz; hayalet ve uçanlar itilmez. Botlar önlerinde biri varken kendiliğinden itiş atar. İtiş hasar vermez; kuleden/sığınaktan çıkarmak için kullanılır.
 - Karakterler birbirinin içinden geçemez: hareket eden öndekini iter, kalabalıkta itme yayılır. İtilen karakter kuleden/sığınaktan çıkarsa korumasını kaybeder, boşalan yere başkası girebilir. Hayaletler ve uçanlar (kanat) iç içe geçer (`charactersPushEachOther`).
-- Hayaletler: elenen oyuncu hayalet olur: yarı saydam görünür (yalnızca kendisi görür; başkalarının hayaleti ekranda görünmez), arenada gezip maçı izler; duvarlar, yaratıklar ve tehditler ona işlemez, hedef alınamaz, zarda seçilmez. Yeniden doğuş: yazan oyuncu "Yeniden canlanma" (revive) kelimesini yazarsa elenenlerden rastgele biri 1 canla hemen geri döner (tek kişilik ve ağ maçında aynı). Hayalet yoksa kelime boşa gider; kelime de bu maçta bir daha kullanılamaz. Yanarak (ateş, kömürleşme) ölenin cesedi simsiyah yere yatar ve maç boyunca kalır; diğer ölümlerde karakter kanlı parçalara ayrılır.
+- Hayaletler: elenen oyuncu hayalet olur: yarı saydam görünür (yalnızca kendisi görür; başkalarının hayaleti ekranda görünmez), arenada gezip maçı izler; duvarlar, yaratıklar ve tehditler ona işlemez, hedef alınamaz, zarda seçilmez. Yeniden doğuş: yazan oyuncu "Yeniden canlanma" (revive) kelimesini yazarsa elenenlerden rastgele biri 1 canla hemen geri döner (tek kişilik ve ağ maçında aynı). Hayalet yoksa kelime boşa gider; kelime de bu maçta bir daha kullanılamaz. Yanarak (ateş, kömürleşme) ölenin cesedi simsiyah yere yatar ve maç boyunca kalır; diğer ölümlerde karakter kanlı parçalara ayrılır. Elenen botların hayaleti hiç görünmez ve gezmez; geriye yalnızca yerdeki parçaları ya da kömür cesedi kalır (dirilirse yeniden görünür).
 
 ## Etiket listesi (v1)
 | Etiket | Anlamı |
@@ -79,8 +90,8 @@
 | `ignite` | Haritadaki tahtaları tutuşturur (yangın yayılır) |
 | `weapon` | Yazana silah verir: Boşluk itiş yerine ateş eder, mermi değdiği ilk rakibe vurur (kalkan korur, duvar durdurur) |
 | `melee` | `weapon` ile birlikte: silah ateş etmez, Boşluk ile önündeki yay içindekilere (menzil `stats.radius`) kelimenin hasarı kadar vurur (Kılıç, Sopa). Yakın silahlı bot en yakın rakibi kovalar |
-| `vehicle` | Yazan araca biner (Motor, Araba): süresi bitene kadar hiç durmaz, WASD yön verir, değdiğini ezer (kalkan korur). `explosive` ile birlikte binaya/duvara çarpınca patlar: sürücü ölür, çevredekiler hasar alıp savrulur, tahtalar tutuşur. Botlar en yakın rakibin üstüne sürer |
-| `boss` | Can barlı dev (Godzilla): en yakına saldırır; herkes Boşluk ile vurup canını eritir, son vuran +1 can (canı tamsa kalkan) alır. Canı en az 2 olan botlar da yakındaki boss'a gidip vurur (silahlı ya da canı az bot kaçar) |
+| `vehicle` | Yazan araca biner (Motor, Araba): süresi bitene kadar hiç durmaz, WASD yön verir, arena kenarından seker, değdiğini kelimenin hasarı kadar ezer (kalkan korur; aynı kişi bir sürüşte bir kez ezilir; uçanlar ezilmez). `stats.count` araçta "kaç kişiyi ezince durur" demektir (ör. araba 1): sınır dolunca araç durur, sürücü sağ salim iner; 0 = sınırsız. `explosive` ile birlikte binaya/duvara çarpınca patlar: sürücü ölür (kalkan kurtarmaz), 2 birim içindekiler 2 ateş hasarı alıp (tutuşur) savrulur, tahtalar tutuşur. `explosive` etiketi olmayan araç eve/duvara çarpınca yalnızca durur, sürücü iner. Botlar en yakın rakibin üstüne sürer |
+| `boss` | Can barlı dev (Godzilla): en yakına saldırır; herkes Boşluk ile vurup canını eritir, son vuran +1 can (canı tamsa kalkan) alır. Canı kalabalığa göre ölçeklenir: kelimenin canı + (canlı oyuncu − 1) × 3. Canı en az 2 olan botlar da yakındaki (14 birim) boss'a gidip vurur (silahlı ya da canı az bot kaçar); botlar 1,5 sn'de bir, oyuncular 0,5 sn'de bir vurur, böylece son vuruşu oyuncunun yapma şansı kalır |
 
 ## Harita ve arazi
 Harita 34 × 19 karelik bir ızgaradır (kare = 1 birim, 16×16 piksel). Her maçta tohumdan üretilir (`terrainSeed` 0 ise rastgele); ağ maçında host üretir, herkese durum gider.
@@ -100,6 +111,17 @@ Harita 34 × 19 karelik bir ızgaradır (kare = 1 birim, 16×16 piksel). Her ma�
 | `shadows` | Meteor yağmuru (çözüm = gölgeleri görmek) |
 | `houses` | Zombi sürüsü |
 
+## Görsel
+- **Tarz:** 3D piksel. Karakterler ve araçlar katmanlı piksel dilimlerinden (sprite stacking) çizilir ve gittikleri yöne döner (gözler öne bakar, yürürken hafifçe zıplar). Yaratıklar voxel modeldir ve hep kameraya bakar (yalnızca sağa-sola aynalanır), üstten bakan kamerada çarpık görünmesinler diye.
+- **Sıralama:** karakterler, yaratıklar, araçlar ve ev çatıları ekrandaki yüksekliğe göre sıralanır: aşağıda duran öndekidir.
+- **Derinlik:** uçurum yarığı ve lav havuzunun kenarındaki zemin aşağı inen bir yüz olarak çizilir; çukur gerçekten derin görünür.
+- **Saldırı animasyonu:** yaratık her vuruşta hedefe atılır ve büyür, sonra geri çekilir; vurduğu yerde toz halkası ve saçılan toprak çıkar, kamera sarsılır (devlerde sert). Devler (boss, King Kong...) yürürken her adımda yer sarsılır ve ayaklarından toz kalkar. Yalnızca görüntüdür.
+
+## Menü ve deneme araçları
+- **Ana menü:** "Host (oyunu kur)", "Katıl" ve "Tek kişilik oyna (botlarla)". Tek kişilik oyun build'de de açılır.
+- **Esc:** tek kişilik maçtan ana menüye döner.
+- **F1 deneme paneli:** yalnızca Unity Editor'da ve geliştirme (development) build'inde vardır; oyuncuya giden sürümde yoktur. Kelimeyi sırayı beklemeden "ben yazmış gibi" ya da "bot yazmış gibi" oynatır (kilitlemez); ölümsüzlük, zaman hızı, botları dondurma/yanına toplama, herkesi diriltme, yaratıkları ve kanı temizleme içerir.
+
 ## Ağ mimarisi (Aşama 3 kararı)
 - **Kütüphane:** Netcode for GameObjects (Unity'nin resmi çözümü). Bağlantı katmanı (transport) önce Unity Transport ile yerel ağda denenir; Steam lobisi/daveti en sona kalır (Steamworks entegrasyonu, test için App ID 480).
 - **Model:** Host yetkilidir (sunucu + oyuncu aynı kopyada). Zar, tur sırası, kelime doğrulaması, yaratık/tehdit sonuçları ve eleme sadece host'ta hesaplanır; istemci yalnızca girdi (hareket, yazılan kelime, hedef tıklaması) gönderir ve olayları alıp gösterir.
@@ -109,6 +131,6 @@ Harita 34 × 19 karelik bir ızgaradır (kare = 1 birim, 16×16 piksel). Her ma�
 
 ## Açık sorular
 - Oyunun adı
-- Grafik tarzı
+- ~~Grafik tarzı~~ — karar verildi: 3D piksel (bkz. "Görsel")
 - Hayaletler tam olarak ne yapacak?
 - Yazan kişi kendi tehdidinden etkilenecek mi?
