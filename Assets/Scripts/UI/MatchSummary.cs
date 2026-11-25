@@ -36,5 +36,5 @@ public static class MatchSummary
     }
 
     /// <summary>Yeniden başlama ipucu.</summary>
-    public static string GetHint() => "Yeniden başlamak için R'ye bas";
+    public static string GetHint() => "Yeniden başlamak için R'ye bas  (Esc: ana menü)";
 }

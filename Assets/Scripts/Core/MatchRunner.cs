@@ -113,8 +113,20 @@ public class MatchRunner : TurnViewSource
 #endif
     }
 
+    /// <summary>Ana menü (ağ/Steam lobisi) sahnesi; build'de varsa Esc ile oraya dönülür.</summary>
+    const string MenuScenePath = "Assets/Scenes/NetTest.unity";
+
     void Update()
     {
+        // Esc: ana menüye dön (tek kişilik oyundan lobiye).
+        var keyboard = UnityEngine.InputSystem.Keyboard.current;
+        if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame && SceneUtility.GetBuildIndexByScenePath(MenuScenePath) >= 0)
+        {
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(SceneUtility.GetBuildIndexByScenePath(MenuScenePath));
+            return;
+        }
+
         Turns.Tick(Time.deltaTime);
     }
 }

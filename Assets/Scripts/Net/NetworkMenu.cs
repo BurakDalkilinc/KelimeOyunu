@@ -1,6 +1,7 @@
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Yerel ağ deneme menüsü: "Host" (oyunu kur) ya da "Katıl" (host'un IP'sini yaz). Geçici geliştirici arayüzüdür;
@@ -17,7 +18,7 @@ public class NetworkMenu : MonoBehaviour
         if (manager == null) { GUILayout.Label("NetworkManager yok."); return; }
 
         // Sol alta: sol üst köşe Arena arayüzünün "Can" yazısına ait.
-        float height = manager.IsListening ? 80 : 220;
+        float height = manager.IsListening ? 80 : 255;
         GUILayout.BeginArea(new Rect(12, Screen.height - height - 12, 280, height), GUI.skin.box);
 
         if (manager.IsListening) DrawConnected(manager);
@@ -34,8 +35,25 @@ public class NetworkMenu : MonoBehaviour
 
         if (GUILayout.Button("Host (oyunu kur)")) Start(manager, true);
         if (GUILayout.Button("Katıl")) Start(manager, false);
+        if (GUILayout.Button("Tek kişilik oyna (botlarla)")) PlaySolo(manager);
 
         if (!string.IsNullOrEmpty(error)) GUILayout.Label(error);
+    }
+
+    /// <summary>
+    /// Tek kişilik maça (Arena) geçer. Ağ yöneticisi sahneler arası taşındığı için önce kapatılıp silinir; menüye dönülünce
+    /// sahnedeki yenisi kullanılır.
+    /// </summary>
+    public const string SoloScene = "Arena";
+
+    static void PlaySolo(NetworkManager manager)
+    {
+        if (manager != null)
+        {
+            if (manager.IsListening) manager.Shutdown();
+            Destroy(manager.gameObject);
+        }
+        SceneManager.LoadScene(SoloScene);
     }
 
     void DrawConnected(NetworkManager manager)
