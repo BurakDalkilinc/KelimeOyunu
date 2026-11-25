@@ -9,20 +9,22 @@ using UnityEngine;
 /// </summary>
 public class ExtrudedSpriteVisual : MonoBehaviour
 {
-    const float TurnDegreesPerSecond = 300f;
-
     /// <summary>
-    /// Voxel yaratık kameraya bakan yönden en fazla bu kadar döner ("dörtte üç" görünüş). Tam yana dönen uzun boylu bir model
-    /// üstten bakan kamerada omuz genişliği boy gibi uzayıp sütuna benzediği için tam dönüş yapılmaz.
+    /// Voxel yaratık hep kameraya bakar (-90°): çapraz ya da yandan bakan uzun boylu model üstten bakan kamerada çarpık görünür.
+    /// Sağa/sola gidişte ayna gibi döner, yürürken bu kadar derece sağa-sola sallanır.
     /// </summary>
-    const float MaxTurnFromCamera = 40f;
+    const float WalkSwayDegrees = 7f;
+    const float WalkSwaySpeed = 12f;
+    const float FacingAngle = -90f;
 
     SpriteRenderer source;
     SpriteStack stack;
     Vector3 lastPosition;
     bool facingLeft;
     bool voxel;
-    float angle = -90f; // Başta kameraya bakar
+    float angle = FacingAngle; // Hep kameraya bakar
+    float swayPhase;
+    float moving;
     string shownSprite;
     int layerCount = 4;
 
@@ -67,13 +69,14 @@ public class ExtrudedSpriteVisual : MonoBehaviour
                 shownSprite = source.sprite.name;
                 stack.SetSlices(StackLibrary.Get(shownSprite));
             }
-            if (FlipWithMovement && moved.sqrMagnitude > 0.000004f && Time.deltaTime > 0f)
-            {
-                // Sağa giderken biraz sağa, sola giderken biraz sola döner; yüzü hep kameraya dönük kalır.
-                float side = Mathf.Clamp(moved.x / moved.magnitude, -1f, 1f);
-                float target = -90f + side * MaxTurnFromCamera;
-                angle = Mathf.MoveTowardsAngle(angle, target, TurnDegreesPerSecond * Time.deltaTime);
-            }
+            bool isMoving = FlipWithMovement && moved.sqrMagnitude > 0.000004f && Time.deltaTime > 0f;
+            if (isMoving && Mathf.Abs(moved.x) > 0.002f) facingLeft = moved.x < 0f;
+            stack.SetFlipY(facingLeft);
+
+            // Yürürken hafifçe sallanır, dururken düzelir.
+            moving = Mathf.MoveTowards(moving, isMoving ? 1f : 0f, Time.deltaTime * 5f);
+            swayPhase += Time.deltaTime * WalkSwaySpeed * moving;
+            angle = FacingAngle + Mathf.Sin(swayPhase) * WalkSwayDegrees * moving;
             stack.Angle = angle;
             return;
         }

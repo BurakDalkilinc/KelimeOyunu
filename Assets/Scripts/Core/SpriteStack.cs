@@ -78,6 +78,15 @@ public class SpriteStack : MonoBehaviour
         foreach (SpriteRenderer layer in layers) layer.flipX = flip;
     }
 
+    /// <summary>
+    /// Bütün dilimleri resmin kendi y ekseninde aynalar. Kameraya bakan (-90°) voxel modelde bu, ekranda sağ-sol aynalamadır.
+    /// </summary>
+    public void SetFlipY(bool flip)
+    {
+        if (layers == null) return;
+        foreach (SpriteRenderer layer in layers) layer.flipY = flip;
+    }
+
     public int SortingOrder
     {
         get => group != null ? group.sortingOrder : 0;
