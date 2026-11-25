@@ -72,14 +72,43 @@ public class NetThreatRenderer : MonoBehaviour
             ThreatStatus status = channel.LatestThreat;
             ApplyWave(status);
 
-            if (status.ImpactCount > lastImpact) flashAlpha = 0.85f; // Etki anı: ekran parlar
+            if (status.ImpactCount > lastImpact)
+            {
+                flashAlpha = 0.85f; // Etki anı: ekran parlar (temanın renginde)
+                WordEntry impactWord = channel.FindWord(lastAlarmWordId);
+                ThreatAtmosphere atmosphere = ThreatAtmosphere.Instance;
+                if (atmosphere != null && impactWord != null && !string.IsNullOrEmpty(impactWord.fx))
+                {
+                    atmosphere.Impact(impactWord.fx);
+                    flashColor = atmosphere.FlashColor;
+                }
+                else flashColor = Color.white;
+            }
             lastImpact = status.ImpactCount;
+            if (!string.IsNullOrEmpty(status.AlarmWordId)) lastAlarmWordId = status.AlarmWordId;
         }
 
         if (flashAlpha > 0f) flashAlpha = Mathf.Max(0f, flashAlpha - Time.deltaTime * 1.5f);
 
-        if (flash != null) flash.color = new Color(1f, 1f, 1f, flashAlpha);
+        if (flash != null) flash.color = new Color(flashColor.r, flashColor.g, flashColor.b, flashAlpha);
+        ReportAtmosphere();
         if (banner != null) banner.text = AlarmText();
+    }
+
+    string lastAlarmWordId = "";
+    Color flashColor = Color.white;
+
+    /// <summary>Uyarıdaki/süren tehdidin havası (ekran tonu, parçacıklar) — tek kişilikteki gibi.</summary>
+    void ReportAtmosphere()
+    {
+        ThreatStatus status = channel.LatestThreat;
+        if (string.IsNullOrEmpty(status.AlarmWordId)) return;
+        WordEntry word = channel.FindWord(status.AlarmWordId);
+        if (word == null || string.IsNullOrEmpty(word.fx)) return;
+
+        float total = word.stats != null ? word.stats.warningSeconds : 0f;
+        float progress = total > 0f && status.AlarmSeconds > 0 ? 1f - status.AlarmSeconds / total : 1f;
+        ThreatAtmosphere.Instance?.Report(word.fx, progress);
     }
 
     string AlarmText()

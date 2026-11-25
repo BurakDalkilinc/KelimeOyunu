@@ -28,6 +28,12 @@ public class WordEntry
     /// <summary>Isteğe bağlı: Resources/Sprites içindeki sprite adı. Boşsa kelime kimliği (id) kullanılır.</summary>
     public string sprite;
 
+    /// <summary>
+    /// İsteğe bağlı görsel tema (büyük tehditlerde): "nuke", "solar", "ice", "toxic", "lava". Uyarı süresince ekranın rengi ve
+    /// parçacıklar, etki anındaki parlamanın rengi buna göre seçilir (bkz. <see cref="ThreatFxPreset"/>). Kural değiştirmez.
+    /// </summary>
+    public string fx;
+
     /// <summary>Büyük tehdit mi? (Tehdidin çözümü de haritada çıkar.)</summary>
     public bool IsThreat => category == CategoryThreat;
 

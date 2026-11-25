@@ -62,7 +62,7 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
         threat.Zones.Added += CreateZoneView;
         threat.Zones.Removed += DestroyZoneView;
         // Ekran parlaması yalnızca çözüm alanı olan (sığınılan) tehditlerde; meteor yağmuru yavaş yavaş başlar.
-        if (ThreatSpec.HasZones(word)) threat.Impacted += OnImpact;
+        if (ThreatSpec.HasZones(word)) threat.Impacted += () => OnImpact(word);
 
         // Alanlar kurucuda eklendi; abone olmadan önce eklenenlerin görüntüsü burada çıkar.
         foreach (SafeZone zone in threat.Zones.Zones) CreateZoneView(zone);
@@ -114,17 +114,49 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
         }
 
         banner.text = urgent != null ? ThreatText.GetAlarm(urgent.Word, Mathf.CeilToInt(urgent.WarningLeft)) : string.Empty;
+
+        ReportAtmosphere();
     }
 
-    void OnImpact()
+    /// <summary>
+    /// Tehdidin havası: teması olan tehditler arasından en ilerlemiş olanı (uyarı süresi en çok dolmuş ya da etkisi süren)
+    /// ekranı temanın rengine boyar, parçacık çıkarır. Temasız bir tehdit (sürü) aynı anda olsa da hava kaybolmaz.
+    /// </summary>
+    void ReportAtmosphere()
     {
+        GlobalThreat best = null;
+        float bestProgress = -1f;
+        foreach (GlobalThreat threat in threats)
+        {
+            if (string.IsNullOrEmpty(threat.Word.fx)) continue;
+            bool activeAndRunning = threat.Phase == ThreatPhase.Active && !threat.EffectsFinished;
+            if (threat.Phase != ThreatPhase.Warning && !activeAndRunning) continue;
+
+            float total = threat.Word.stats != null ? threat.Word.stats.warningSeconds : 0f;
+            float progress = threat.Phase == ThreatPhase.Warning && total > 0f ? 1f - threat.WarningLeft / total : 1f;
+            if (progress > bestProgress) { best = threat; bestProgress = progress; }
+        }
+        if (best != null) ThreatAtmosphere.Instance?.Report(best.Word.fx, bestProgress);
+    }
+
+    void OnImpact(WordEntry word)
+    {
+        ThreatAtmosphere atmosphere = ThreatAtmosphere.Instance;
+        if (atmosphere != null && !string.IsNullOrEmpty(word.fx))
+        {
+            atmosphere.Impact(word.fx);
+            flashColor = atmosphere.FlashColor;
+        }
+        else flashColor = Color.white;
         SetFlash(0.85f);
     }
+
+    Color flashColor = Color.white;
 
     void SetFlash(float alpha)
     {
         flashAlpha = alpha;
-        flash.color = new Color(1f, 1f, 1f, alpha);
+        flash.color = new Color(flashColor.r, flashColor.g, flashColor.b, alpha);
     }
 
     void CreateZoneView(SafeZone zone)
