@@ -37,7 +37,7 @@ public class NetWallRenderer : MonoBehaviour
 
             Color color = wallColor;
             color.a = Mathf.Clamp01(wall.LifeRatio / FadeBelowRatio); // Son çeyrekte solar
-            view.color = color;
+            WallPresenter.ApplyLayerColors(view, color); // Katmanlı (3D piksel) duvarın tüm katları
         }
 
         toRemove.Clear();
@@ -80,6 +80,7 @@ public class NetWallRenderer : MonoBehaviour
             sr.sprite = SpriteFactory.Square();
         }
 
+        WallPresenter.Extrude(go, sr); // Yükselen blok (3D piksel), tek kişilik sahnedeki gibi
         return sr;
     }
 }

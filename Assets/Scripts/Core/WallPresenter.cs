@@ -62,7 +62,7 @@ public class WallPresenter : MonoBehaviour
     const float Pixel = 1f / 16f;
 
     /// <summary>Duvarı yükselen bir blok yapar: aynı resim her katta 1 piksel yukarıda tekrar çizilir, alt katlar koyu.</summary>
-    static void Extrude(GameObject wall, SpriteRenderer baseRenderer)
+    public static void Extrude(GameObject wall, SpriteRenderer baseRenderer)
     {
         for (int i = 1; i < WallLayers; i++)
         {
@@ -81,7 +81,8 @@ public class WallPresenter : MonoBehaviour
         ApplyLayerColors(baseRenderer, baseRenderer.color);
     }
 
-    static void ApplyLayerColors(SpriteRenderer baseRenderer, Color color)
+    /// <summary>Katmanlı duvarın renklerini verir (alt katlar koyu); solma için saydamlık da buradan.</summary>
+    public static void ApplyLayerColors(SpriteRenderer baseRenderer, Color color)
     {
         Transform root = baseRenderer.transform;
         int count = root.childCount;

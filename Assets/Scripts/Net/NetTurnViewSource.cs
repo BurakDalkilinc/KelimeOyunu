@@ -43,7 +43,23 @@ public class NetTurnViewSource : TurnViewSource
         if (manager == null || manager.LocalClient == null || manager.LocalClient.PlayerObject == null) return string.Empty;
 
         NetworkPlayer mine = manager.LocalClient.PlayerObject.GetComponent<NetworkPlayer>();
-        return mine == null || mine.IsGhost ? string.Empty : StatusText.Describe(mine.Status);
+        if (mine == null || mine.IsGhost) return string.Empty;
+
+        string status = StatusText.Describe(mine.Status);
+        string chance = DescribeChance(mine.PlayerId);
+        if (string.IsNullOrEmpty(chance)) return status;
+        return string.IsNullOrEmpty(status) ? chance : status + "\n" + chance;
+    }
+
+    /// <summary>"Seçilme şansın: %12" — zarın ağırlığı (kaçırılan turlar) istemcide sayılır.</summary>
+    string DescribeChance(int playerId)
+    {
+        if (channel == null || channel.Client == null || channel.Config == null || !channel.MatchActive) return string.Empty;
+        if (!channel.Client.Players.TryGetValue(playerId, out PlayerState me) || !me.IsAlive) return string.Empty;
+
+        var dice = new Dice(new System.Random(0), channel.Config.diceBonusPerMissedTurn);
+        float chance = dice.ChanceOf(me, channel.Client.Players.Values);
+        return $"Seçilme şansın: %{Mathf.RoundToInt(chance * 100f)}";
     }
 
     public override string DescribeShove()

@@ -48,6 +48,24 @@ public class NetTurnTests
         host.MessageReady += m => { sent.Add(m); client.Apply(m); };
     }
 
+    // ---- Seçilme şansı (istemci) ----
+
+    [Test]
+    public void Client_CountsMissedTurns_LikeHost_ForSelectionChance()
+    {
+        Build(Roster((1, false), (2, false), (3, true)));
+        host.Start();
+        host.Tick(config.diceSeconds + config.typingSeconds); // Kimse yazmadı: tur yandı, ikinci zar atıldı
+
+        foreach (PlayerState hostPlayer in host.Match.Players)
+            Assert.AreEqual(hostPlayer.MissedTurns, client.Players[hostPlayer.Id].MissedTurns, "istemci host'la aynı sayar: " + hostPlayer.Name);
+
+        var dice = new Dice(new System.Random(0), config.diceBonusPerMissedTurn);
+        float total = 0f;
+        foreach (PlayerState p in client.Players.Values) total += dice.ChanceOf(p, client.Players.Values);
+        Assert.AreEqual(1f, total, 0.001f, "şanslar toplamı %100");
+    }
+
     // ---- RosterCodec ----
 
     [Test]

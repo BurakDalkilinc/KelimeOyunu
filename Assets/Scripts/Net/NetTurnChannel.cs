@@ -28,6 +28,9 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     readonly RpcRateLimiter targetLimiter = new RpcRateLimiter(8f, 4f);
 
     [SerializeField] GameConfig config;
+
+    /// <summary>Maç ayarları (istemci tarafı hesaplar için: seçilme şansı gibi).</summary>
+    public GameConfig Config => config;
     [SerializeField] NetworkObject avatarPrefab;
 
     /// <summary>Yaratık fotoğrafı yayın aralığı (sn). Saniyede ~12 kez; yeterince akıcı, ağı yormaz.</summary>

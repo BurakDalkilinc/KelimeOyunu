@@ -47,6 +47,15 @@ public class NetworkPlayer : NetworkBehaviour
     /// <summary>Her araç patlamasında artar; istemciler patlama görüntüsünü oynatır.</summary>
     readonly NetworkVariable<int> crashCount = new NetworkVariable<int>(0);
 
+    /// <summary>Kamuflaj kılığının resmi ("" ise kılık yok); her istemci karakteri o resme (çalı) büründürür.</summary>
+    readonly NetworkVariable<FixedString32Bytes> disguiseSprite = new NetworkVariable<FixedString32Bytes>(default);
+
+    /// <summary>Kılıç/sopa savuruşu: her vuruşta sayaç artar; silahın resmi ve savurma yönü istemcilerde görüntüyü çizer.</summary>
+    readonly NetworkVariable<int> swingCount = new NetworkVariable<int>(0);
+    readonly NetworkVariable<FixedString32Bytes> swingSprite = new NetworkVariable<FixedString32Bytes>(default);
+    readonly NetworkVariable<Vector2> swingDirection = new NetworkVariable<Vector2>(Vector2.up);
+    readonly NetworkVariable<float> swingReach = new NetworkVariable<float>(1.6f);
+
     /// <summary>Kömürleşme (0..1); her istemci karakteri o kadar karartır.</summary>
     readonly NetworkVariable<float> charLevel = new NetworkVariable<float>(0f);
 
@@ -183,6 +192,8 @@ public class NetworkPlayer : NetworkBehaviour
         shoveLeft.OnValueChanged += (_, __) => shoveLeftChangedAt = Time.unscaledTime;
         shoveCount.OnValueChanged += (_, __) => { if (config != null) ShoveEffect.Spawn(transform.position, config.shoveRange); };
         crashCount.OnValueChanged += (_, __) => { if (config != null) ExplosionEffect.Spawn(transform.position, config.vehicleCrashRadius); };
+        swingCount.OnValueChanged += (_, __) =>
+            MeleeSwingEffect.Spawn(transform.position, swingDirection.Value, swingReach.Value, SpriteLibrary.Get(swingSprite.Value.ToString()));
         shoveLeftChangedAt = Time.unscaledTime;
         Everyone.Add(this);
         GoreEmitter.Attach(gameObject, () => health.Value,
@@ -263,6 +274,8 @@ public class NetworkPlayer : NetworkBehaviour
         }
         FlightVisual.Attach(gameObject).Flying = !IsGhost && (Status & StatusFlags.Flight) != 0; // Uçarken gölge ve alev
         if (spriteRenderer != null) spriteRenderer.enabled = !IsGhost || (IsOwner && !isBot.Value); // Başkalarının hayaleti görünmez
+        string disguiseName = disguiseSprite.Value.ToString();
+        DisguiseVisual.Attach(gameObject).SpriteName = IsGhost || string.IsNullOrEmpty(disguiseName) ? null : disguiseName; // Kamuflaj: çalı
         bool burning = !IsGhost && (Status & StatusFlags.Burning) != 0;
         BurnVisual.Attach(gameObject).Burning = burning; // Ateş aldı: alevler
         if (spriteRenderer != null && !IsGhost && (burning || charLevel.Value > 0f))
@@ -368,6 +381,8 @@ public class NetworkPlayer : NetworkBehaviour
             if (state.Status.HasWeapon) flags |= (int)StatusFlags.Weapon;
             if (state.Status.IsDriving) flags |= (int)StatusFlags.Vehicle;
             if (state.Status.IsBurning) flags |= (int)StatusFlags.Burning;
+            string disguise = state.IsAlive ? state.Status.StealthDisguise ?? string.Empty : string.Empty;
+            if (disguiseSprite.Value.ToString() != disguise) disguiseSprite.Value = new FixedString32Bytes(disguise);
             if (Mathf.Abs(charLevel.Value - state.Status.CharLevel) > 0.05f) charLevel.Value = state.Status.CharLevel;
             string carSprite = state.IsAlive && state.Status.IsDriving ? SpriteLibrary.NameFor(state.Status.Vehicle) : string.Empty;
             if (vehicleSprite.Value.ToString() != carSprite) vehicleSprite.Value = new FixedString32Bytes(carSprite);
@@ -416,7 +431,20 @@ public class NetworkPlayer : NetworkBehaviour
         if (me != null && me.Status.IsDriving) return false; // Araç sürerken Boşluk bir şey yapmaz
 
         // Silahı olan Boşluk'la itmez, ateş eder.
-        if (me != null && me.IsAlive && me.Status.HasWeapon) return sim.TryFireWeapon(me, facing, onlyIfVictims);
+        if (me != null && me.IsAlive && me.Status.HasWeapon)
+        {
+            WordEntry weapon = me.Status.Weapon;
+            bool used = sim.TryFireWeapon(me, facing, onlyIfVictims);
+            if (used && MeleeRules.IsMelee(weapon))
+            {
+                // Kılıç/sopa savuruşunu herkes görsün.
+                swingSprite.Value = new FixedString32Bytes(SpriteLibrary.NameFor(weapon));
+                swingDirection.Value = facing;
+                swingReach.Value = MeleeRules.Reach(weapon, config);
+                swingCount.Value++;
+            }
+            return used;
+        }
 
         if (me == null || !me.IsAlive || me.Status.IsFlying || shoveCooldown == null || !shoveCooldown.IsReady) return false;
 

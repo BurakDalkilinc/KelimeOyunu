@@ -81,7 +81,12 @@ public class NetTurnClient : ITurnView
 
         switch (message.Kind)
         {
-            case TurnMessageKind.WriterSelected: WriterSelected?.Invoke(Writer); break;
+            case TurnMessageKind.WriterSelected:
+                // Zarın ağırlığı için kaçırılan turları host'taki gibi say (seçilen 0'lanır, diğer canlılar +1).
+                foreach (PlayerState player in players.Values)
+                    if (player.IsAlive) player.MissedTurns = player == Writer ? 0 : player.MissedTurns + 1;
+                WriterSelected?.Invoke(Writer);
+                break;
             case TurnMessageKind.WordPlayed:
                 if (CurrentWord != null) playedWords.Add(CurrentWord);
                 WordPlayed?.Invoke(Writer, CurrentWord);
