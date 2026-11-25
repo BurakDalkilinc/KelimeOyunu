@@ -72,7 +72,7 @@ public static class Gore
         for (int cy = 0; cy < rows; cy++)
         {
             var cell = new Rect(rect.x + cx * cellW, rect.y + cy * cellH, cellW, cellH);
-            Sprite piece = Sprite.Create(source.texture, cell, new Vector2(0.5f, 0.5f), pixelsPerUnit);
+            Sprite piece = Piece(source, cell, cx * rows + cy);
 
             // Parçanın karakter içindeki yeri (merkeze göre); oradan dışarı savrulur.
             Vector2 offset = new Vector2((cx + 0.5f) / columns - 0.5f, (cy + 0.5f) / rows - 0.5f) * worldSize;
@@ -139,6 +139,21 @@ public static class Gore
         foreach (GibPiece gib in Object.FindObjectsByType<GibPiece>(FindObjectsInactive.Include, FindObjectsSortMode.None)) { Object.Destroy(gib.gameObject); count++; }
         foreach (ExplosionEffect blast in Object.FindObjectsByType<ExplosionEffect>(FindObjectsInactive.Include, FindObjectsSortMode.None)) { Object.Destroy(blast.gameObject); count++; }
         return count;
+    }
+
+    static readonly Dictionary<Sprite, Sprite[]> pieceCache = new Dictionary<Sprite, Sprite[]>();
+
+    /// <summary>Kaynak resmin parçası; her resim için bir kez kesilir (önbellek).</summary>
+    static Sprite Piece(Sprite source, Rect cell, int index)
+    {
+        if (!pieceCache.TryGetValue(source, out Sprite[] pieces) || pieces == null)
+        {
+            pieces = new Sprite[6];
+            pieceCache[source] = pieces;
+        }
+        if (pieces[index] == null)
+            pieces[index] = Sprite.Create(source.texture, cell, new Vector2(0.5f, 0.5f), source.pixelsPerUnit);
+        return pieces[index];
     }
 
     /// <summary>Lekeyi kayda alır; çok birikirse en eskisini siler.</summary>

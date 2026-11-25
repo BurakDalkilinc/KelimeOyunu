@@ -64,6 +64,10 @@ public class WallPresenter : MonoBehaviour
     /// <summary>Duvarı yükselen bir blok yapar: aynı resim her katta 1 piksel yukarıda tekrar çizilir, alt katlar koyu.</summary>
     public static void Extrude(GameObject wall, SpriteRenderer baseRenderer)
     {
+        // Bütün katlar tek grup: dışarıyla duvarın kendi sırasında (karakterlerin altında) sıralanır, içte kat kat.
+        var group = wall.GetComponent<UnityEngine.Rendering.SortingGroup>();
+        if (group == null) group = wall.AddComponent<UnityEngine.Rendering.SortingGroup>();
+        group.sortingOrder = baseRenderer.sortingOrder;
         for (int i = 1; i < WallLayers; i++)
         {
             var layer = new GameObject("Kat " + i);

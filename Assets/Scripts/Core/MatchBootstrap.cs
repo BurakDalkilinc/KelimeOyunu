@@ -235,6 +235,8 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
     /// Sürücünün aracını bir kare sürer: yön verir, ilerletir, değdiğini ezer; binaya çarparsa patlatır (görüntüsüyle).
     /// Yeni konumu döner.
     /// </summary>
+    ThreatDirector threats;
+
     public Vector2 DriveVehicle(PlayerState driver, Vector2 from, ref Vector2 heading, Vector2 input, float dt, IObstacleField obstacles)
     {
         WordEntry vehicle = driver.Status.Vehicle;
@@ -248,7 +250,8 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
             return next;
         }
 
-        VehicleRules.Crush(driver, next, this, config);
+        if (threats == null) threats = FindAnyObjectByType<ThreatDirector>();
+        VehicleRules.Crush(driver, next, this, config, null, threats != null ? (Func<PlayerState, bool>)threats.IsSheltered : null);
         return next;
     }
     readonly List<bool> bodySolid = new List<bool>();

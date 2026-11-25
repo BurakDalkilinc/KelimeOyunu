@@ -150,6 +150,9 @@ public class NetworkPlayer : NetworkBehaviour
         shoveLeft.Value = 0f;
         health.Value = config.startingHealth;
         statusFlags.Value = 0;
+        charLevel.Value = 0f;
+        vehicleSprite.Value = default;
+        disguiseSprite.Value = default;
 
         Vector2 start = HumanStart();
         position.Value = start;
@@ -179,7 +182,7 @@ public class NetworkPlayer : NetworkBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         if (spriteRenderer == null) spriteRenderer = gameObject.AddComponent<SpriteRenderer>();
         spriteRenderer.sprite = SpriteLibrary.Get("char") ?? SpriteFactory.Circle();
-        spriteRenderer.sortingOrder = 10;
+        spriteRenderer.sortingOrder = CreatureSpriteScale.EntityOrder;
 
         var animator = gameObject.GetComponent<SpriteAnimator>();
         if (animator == null) animator = gameObject.AddComponent<SpriteAnimator>();
@@ -189,6 +192,7 @@ public class NetworkPlayer : NetworkBehaviour
         playerId.OnValueChanged += (_, __) => ApplyLook();
         health.OnValueChanged += (_, __) => ApplyLook();
         statusFlags.OnValueChanged += (_, __) => ApplyLook();
+        charLevel.OnValueChanged += (_, __) => ApplyLook();
         shoveLeft.OnValueChanged += (_, __) => shoveLeftChangedAt = Time.unscaledTime;
         shoveCount.OnValueChanged += (_, __) => { if (config != null) ShoveEffect.Spawn(transform.position, config.shoveRange); };
         crashCount.OnValueChanged += (_, __) => { if (config != null) ExplosionEffect.Spawn(transform.position, config.vehicleCrashRadius); };
@@ -344,7 +348,7 @@ public class NetworkPlayer : NetworkBehaviour
             {
                 // Araç: hiç durmaz, girdi yalnızca yön verir; bot en yakın rakibin üstüne sürer.
                 if (isBot.Value)
-                    input = MeleeRules.TryFindPrey(state, next, sim, 60f, out Vector2 prey) ? (prey - next).normalized : Vector2.zero;
+                    input = MeleeRules.TryFindPrey(state, next, sim, config.botVehiclePreyRange, out Vector2 prey) ? (prey - next).normalized : Vector2.zero;
                 Vector2 before = next;
                 next = sim.DriveVehicle(state, next, ref facing, input, dt, obstacles, out bool exploded);
                 if (exploded) crashCount.Value++;

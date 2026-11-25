@@ -8,10 +8,9 @@ public static class CreatureSpriteScale
 {
     public static float ForRadius(float radius) => IsGiant(radius) ? Mathf.Max(1f, Mathf.Round(radius * 2f)) : 1f;
 
-    /// <summary>Dev yaratık (boss) mı? Devler çatıların (15) da üstünde çizilir, evlerin arkasında kaybolmaz.</summary>
+    /// <summary>Dev yaratık (boss) mı? Devler büyütülür ve saldırıları daha sert görünür.</summary>
     public static bool IsGiant(float radius) => radius >= 1f;
 
-    /// <summary>Koşan yaratığın çizim sırası: normalde 8 (karakterlerin altında), dev ise 16 (çatıların üstünde).</summary>
     /// <summary>
     /// Karakterler, yaratıklar (devler dahil), araçlar ve çatılar aynı sıradadır; aralarındaki öne/arkaya kararını ekrandaki
     /// yükseklik verir (Renderer2D: Custom Axis 0,1,0 — aşağıdaki önde). Böylece evin önündeki çatının önünde, içindeki ve

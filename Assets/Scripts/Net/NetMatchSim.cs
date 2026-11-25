@@ -263,7 +263,7 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
             return next;
         }
 
-        VehicleRules.Crush(driver, next, this, config);
+        VehicleRules.Crush(driver, next, this, config, null, p => RefugeFinder.IsSheltered(threats, p)); // Sığınaktaki ezilmez
         return next;
     }
 

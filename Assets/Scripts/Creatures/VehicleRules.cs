@@ -91,7 +91,8 @@ public static class VehicleRules
     /// Aracın gövdesine değen (sürücü dışında, hayattaki, uçmayan) herkesi ezer. Bir sürüşte aynı kişi bir kez ezilir.
     /// Ezilenlerin sayısını döner.
     /// </summary>
-    public static int Crush(PlayerState driver, Vector2 position, IPlayerLocator world, GameConfig config, List<PlayerState> victims = null)
+    public static int Crush(PlayerState driver, Vector2 position, IPlayerLocator world, GameConfig config, List<PlayerState> victims = null,
+                            Func<PlayerState, bool> isSheltered = null)
     {
         victims?.Clear();
         if (driver == null || world == null || !driver.Status.IsDriving) return 0;
@@ -104,6 +105,7 @@ public static class VehicleRules
         foreach (PlayerState other in world.Players)
         {
             if (other == null || other == driver || !other.IsAlive || other.Status.IsFlying) continue;
+            if (isSheltered != null && isSheltered(other)) continue; // Sığınaktaki (tehdidin çözümü) ezilmez
             if (!world.TryGetPosition(other.Id, out Vector2 at) || (at - position).magnitude > reach) continue;
             if (!driver.Status.MarkVehicleHit(other.Id)) continue;
 

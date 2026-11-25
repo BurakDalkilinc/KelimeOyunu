@@ -64,7 +64,7 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
                 if (animator == null) animator = sr.gameObject.AddComponent<SpriteAnimator>();
                 animator.SetFrames(frames);
             }
-            sr.sortingOrder = 10;
+            sr.sortingOrder = CreatureSpriteScale.EntityOrder;
         }
         transform.localScale = Vector3.one * (config.playerRadius * 2f);
         CharacterStackVisual.Attach(gameObject); // 3D piksel (katmanlı) gövde

@@ -155,6 +155,9 @@ public class GameConfig : ScriptableObject
     [Tooltip("Araç kelimesi yarıçap yazmıyorsa aracın ezme yarıçapı (birim).")]
     [Min(0.1f)] public float vehicleDefaultRadius = 0.6f;
 
+    [Tooltip("Araç süren botun ezmek için rakip aradığı mesafe (birim).")]
+    [Min(0f)] public float botVehiclePreyRange = 60f;
+
     [Tooltip("Patlayan aracın patlama yarıçapı (birim): içindekiler hasar alır, tahtalar tutuşur.")]
     [Min(0.1f)] public float vehicleCrashRadius = 2f;
 

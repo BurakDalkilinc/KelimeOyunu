@@ -181,7 +181,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         {
             vehicleVisual.WorldSize = VehicleRules.BodyRadius(State.Status.Vehicle, config) * 2f;
             Vector2 here = transform.position;
-            Vector2 steer = MeleeRules.TryFindPrey(State, here, Bootstrap, 60f, out Vector2 victimAt) ? (victimAt - here).normalized : Vector2.zero;
+            Vector2 steer = MeleeRules.TryFindPrey(State, here, Bootstrap, config.botVehiclePreyRange, out Vector2 victimAt) ? (victimAt - here).normalized : Vector2.zero;
             Vector2 heading = FacingDirection;
             Vector2 moved = Bootstrap.DriveVehicle(State, here, ref heading, steer, Time.deltaTime, MovementRules.EffectiveObstacles(State, Obstacles));
             FacingDirection = heading;

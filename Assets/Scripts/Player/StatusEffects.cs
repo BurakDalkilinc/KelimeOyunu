@@ -151,8 +151,11 @@ public class StatusEffects
     public void ApplyStealth(float seconds, string disguise)
     {
         if (seconds <= 0f) return;
+        bool wasStealthed = IsStealthed;
         stealthTimeLeft = Mathf.Max(stealthTimeLeft, seconds);
-        stealthDisguise = string.IsNullOrEmpty(disguise) ? null : disguise;
+        // Yeni kılık varsa onu giy; yoksa süren kılığı koru (kamuflaj sürerken görünmezlik çalıyı silmesin).
+        if (!string.IsNullOrEmpty(disguise)) stealthDisguise = disguise;
+        else if (!wasStealthed) stealthDisguise = null;
     }
 
     /// <summary>Görünmezken büründüğü resmin adı (kamuflajda "cali"); kılık yoksa ya da görünmez değilse null.</summary>

@@ -423,7 +423,8 @@ public class CreatureModel
         bool touching = (targetPosition - Position).magnitude <= reach;
         bool hasEffect = Damage > 0 || KnockbackDistance > 0f || SlowSeconds > 0f; // Hasarsız ama fırlatan/yavaşlatan da etki eder.
         bool targetOutOfReach = (Target.Status.IsFlying && !IsFlying) // Uçan oyuncuya yerdeki yaratık vuramaz
-                                || IsProtectedFromThis(Target);       // Evdekine (çözüm alanı) vurulamaz
+                                || IsProtectedFromThis(Target)        // Evdekine (çözüm alanı) vurulamaz
+                                || Target.IsInvulnerable;             // Maçı kazanan artık vurulmaz
         if (!touching || !hasEffect || hitCooldownLeft > 0f || targetOutOfReach) return false;
 
         AttackCount++;

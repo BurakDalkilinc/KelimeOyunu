@@ -114,6 +114,10 @@ public class BrutalPackTests
         Assert.IsTrue(other.Status.IsStealthed);
         Assert.IsNull(other.Status.StealthDisguise);
 
+        // Kamuflaj sürerken düz görünmezlik çalı kılığını silmez.
+        writer.Status.ApplyStealth(3f);
+        Assert.AreEqual("cali", writer.Status.StealthDisguise);
+
         writer.Status.Clear();
         Assert.IsNull(writer.Status.StealthDisguise);
     }

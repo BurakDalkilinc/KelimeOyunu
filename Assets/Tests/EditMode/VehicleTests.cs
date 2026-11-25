@@ -153,6 +153,18 @@ public class VehicleTests
     }
 
     [Test]
+    public void Crush_SkipsShelteredPlayers()
+    {
+        var world = new FakeWorld();
+        PlayerState driver = MountedDriver(world, "araba", Vector2.zero);
+        PlayerState inShelter = world.Add(2, new Vector2(0.8f, 0f));
+
+        Assert.AreEqual(0, VehicleRules.Crush(driver, Vector2.zero, world, config, null, p => p == inShelter), "sığınaktaki ezilmez");
+        Assert.IsTrue(inShelter.IsAlive);
+        Assert.IsTrue(driver.Status.IsDriving);
+    }
+
+    [Test]
     public void Crash_ExplodingVehicle_KillsDriverEvenWithShield_HurtsAndPushesNearby()
     {
         var world = new FakeWorld();

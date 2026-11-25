@@ -130,9 +130,13 @@ public class SpriteStack : MonoBehaviour
 
     void LateUpdate() => Place();
 
+    float placedAngle = float.NaN;
+
     void Place()
     {
         if (layers == null) return;
+        if (placedAngle == Angle) return; // Değişen bir şey yok (ev duvarı, çatı): her karede yeniden yazma
+        placedAngle = Angle;
 
         // Dilimler yığının çocuğudur: kayma yerel birimde, resmin bir pikseli kadar (büyütülmüş boss'ta kendiliğinden büyür).
         float step = pixelsPerLayer * worldPixel;
