@@ -175,6 +175,7 @@ public class NetworkPlayer : NetworkBehaviour
         var animator = gameObject.GetComponent<SpriteAnimator>();
         if (animator == null) animator = gameObject.AddComponent<SpriteAnimator>();
         animator.SetFrames(SpriteLibrary.GetFrames("char"));
+        CharacterStackVisual.Attach(gameObject); // 3D piksel (katmanlı) gövde
 
         playerId.OnValueChanged += (_, __) => ApplyLook();
         health.OnValueChanged += (_, __) => ApplyLook();

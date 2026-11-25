@@ -1025,6 +1025,26 @@ def make_araba_stack():
     return out
 
 
+def make_char_stack():
+    """Yukarıdan karakter (beyaz: oyunda oyuncunun rengiyle boyanır), yüzü sağa bakar. 8 dilim:
+    ayaklar (kenar çizgili, gölge gibi), yuvarlak gövde, öne bakan iri gözler, kubbe tepe.
+    Kenar çizgisi yalnızca en alttadır: her dilimde olsa üst üste binince koyu şeritler oluşur."""
+    out = []
+    def blob(r, col=W):
+        c = Canvas(); c.ellipse(7.5, 7.5, r, r, col); return c
+
+    c = blob(5.0, w); c.ellipse(10.5, 5.0, 1.8, 1.4, w); c.ellipse(10.5, 10.0, 1.8, 1.4, w); c.outline(); out.append(c)  # 0: ayaklar + taban
+    c = blob(5.4, w); out.append(c)                                                         # 1: gövde altı
+    c = blob(5.8); out.append(c)                                                            # 2: gövde
+    for _ in range(2):                                                                      # 3-4: iri gözler (önde)
+        c = blob(5.8); c.rect(11, 4, 12, 6, W); c.rect(11, 9, 12, 11, W)
+        c.rect(12, 5, 13, 6, K); c.rect(12, 9, 13, 10, K); out.append(c)
+    c = blob(5.4); out.append(c)                                                            # 5: omuz
+    c = blob(4.6); out.append(c)                                                            # 6: kubbe
+    c = blob(3.2); c.rect(6, 6, 7, 7, W); out.append(c)                                     # 7: tepe
+    return out
+
+
 def make_motor_stack():
     """Yukarıdan motor (burnu sağda): uzun ve ince (x 1-14, y 6-9). 6 dilim."""
     out = []
@@ -1065,7 +1085,7 @@ def main():
         save_animated(fn(), name)
     for name, fn in static.items():
         fn().save(name)
-    stacks = {"araba": make_araba_stack, "motor": make_motor_stack}
+    stacks = {"araba": make_araba_stack, "motor": make_motor_stack, "char": make_char_stack}
     for name, fn in stacks.items():
         save_stack(fn(), name)
     print("Üretildi:", len(animated) * 2 + len(static), "PNG ->", OUT, "+", len(stacks), "katmanlı nesne ->", STACK_OUT)

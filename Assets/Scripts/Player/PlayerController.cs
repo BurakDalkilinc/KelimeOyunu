@@ -67,6 +67,7 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
             sr.sortingOrder = 10;
         }
         transform.localScale = Vector3.one * (config.playerRadius * 2f);
+        CharacterStackVisual.Attach(gameObject); // 3D piksel (katmanlı) gövde
     }
 
     void OnDestroy()

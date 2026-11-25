@@ -65,6 +65,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         spriteRenderer.color = color;
         spriteRenderer.sortingOrder = 5;
         transform.localScale = Vector3.one * (config.playerRadius * 2f);
+        CharacterStackVisual.Attach(gameObject); // 3D piksel (katmanlı) gövde
 
         State.Health.Died += OnDied;
         GoreEmitter.Attach(gameObject, () => State.Health.Current, () => State.Falling) // Kan ve parçalanma

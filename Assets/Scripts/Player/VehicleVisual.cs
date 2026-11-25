@@ -18,6 +18,9 @@ public class VehicleVisual : MonoBehaviour
     SpriteRenderer head;
     SpriteRenderer headOutline;
 
+    /// <summary>Katmanlı araç çiziliyor mu (sürücü aracın içinde)?</summary>
+    public bool Driving => stack != null;
+
     /// <summary>Aracın resminin adı; boşsa araç yok.</summary>
     public string SpriteName { get; set; }
 
@@ -65,7 +68,9 @@ public class VehicleVisual : MonoBehaviour
         lastPosition = transform.position;
 
         // Katmanlı araçta sürücü aracın içindedir: ayakta duran resmi çizme (başka kodların enabled/renk ayarına dokunmadan).
-        if (body != null) body.forceRenderingOff = stack != null;
+        // Katmanlı karakter varsa düz resmi o zaten gizler; yoksa burada gizle/göster.
+        var character = GetComponent<CharacterStackVisual>();
+        if (body != null && (character == null || !character.Active)) body.forceRenderingOff = stack != null;
         UpdateHead();
 
         float rumble = Mathf.Sin(Time.time * 60f) * 0.02f;
