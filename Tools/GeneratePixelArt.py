@@ -812,6 +812,235 @@ def make_kraken():
     return c
 
 
+# ---------------- Kelime paketi 4: yaratıklar (önden; voxel modelleri otomatik) ----------------
+def make_tavuk():
+    c = Canvas()
+    c.ellipse(7.5, 10, 4.0, 3.6, W)          # gövde
+    c.ellipse(8.5, 5.5, 2.4, 2.4, W)         # kafa
+    c.rect(8, 2, 9, 3, R); c.set(10, 3, R)   # ibik
+    c.poly([(11, 5), (13, 6), (11, 7)], O)   # gaga
+    c.set(10, 8, R)                          # sakal
+    c.set(9, 5, K)
+    c.rect(2, 8, 4, 11, w)                   # kuyruk
+    c.sym_set(6, 14, y); c.sym_set(6, 15, y) # ayaklar
+    c.outline()
+    return c
+
+
+def make_at():
+    c = Canvas()
+    c.ellipse(7.5, 10, 4.4, 3.4, n)          # gövde
+    c.rect(9, 3, 12, 9, n)                   # boyun
+    c.ellipse(11.5, 4, 2.6, 2.0, n)          # kafa
+    c.rect(8, 2, 9, 8, INK)                  # yele
+    c.set(12, 3, K); c.set(14, 5, K)         # göz, burun
+    c.rect(3, 12, 3, 15, n); c.rect(5, 12, 5, 15, n); c.rect(10, 12, 10, 15, n); c.rect(12, 12, 12, 15, n)
+    c.rect(1, 8, 2, 12, INK)                 # kuyruk
+    c.outline()
+    return c
+
+
+def make_inek():
+    c = Canvas()
+    c.ellipse(7.5, 10, 5.4, 3.8, W)          # gövde
+    c.ellipse(5, 9, 1.8, 1.4, INK); c.ellipse(10, 11, 1.6, 1.2, INK)   # benekler
+    c.ellipse(7.5, 4.8, 3.0, 2.6, W)         # kafa
+    c.ellipse(7.5, 6.5, 2.2, 1.4, PINK)      # burun
+    c.sym_set(6, 7, K)
+    c.sym_set(5, 4, K)
+    c.sym_set(3, 2, w); c.sym_set(4, 2, w)   # boynuzlar
+    c.sym_rect(4, 14, 4, 15, g); c.sym_rect(6, 14, 6, 15, g)
+    c.outline()
+    return c
+
+
+def make_domuz():
+    c = Canvas()
+    c.ellipse(7.5, 9.5, 5.4, 4.4, PINK)      # gövde
+    c.ellipse(7.5, 9, 2.0, 1.4, s)           # burun
+    c.sym_set(6, 9, n)
+    c.sym_set(5, 6, K)                       # gözler
+    c.poly([(3, 5), (3, 2), (6, 4)], PINK); c.poly([(12, 5), (12, 2), (9, 4)], PINK)   # kulaklar
+    c.sym_rect(4, 13, 5, 15, s)
+    c.outline()
+    return c
+
+
+def make_keci():
+    c = Canvas()
+    c.ellipse(7.5, 10.5, 4.2, 3.2, w)        # gövde
+    c.ellipse(7.5, 5.5, 2.6, 2.6, w)         # kafa
+    c.poly([(5, 4), (2, 0), (4, 0), (6, 3)], g); c.poly([(10, 4), (13, 0), (11, 0), (9, 3)], g)   # boynuzlar
+    c.sym_set(6, 5, K)
+    c.rect(7, 8, 8, 9, W)                    # sakal
+    c.sym_rect(4, 13, 4, 15, g); c.sym_rect(6, 13, 6, 15, g)
+    c.outline()
+    return c
+
+
+def make_tavsan():
+    c = Canvas()
+    c.ellipse(7.5, 11, 3.8, 3.2, W)          # gövde
+    c.ellipse(7.5, 7, 3.0, 2.6, W)           # kafa
+    c.sym_rect(5, 0, 6, 5, W); c.sym_set(6, 2, PINK); c.sym_set(6, 3, PINK)   # uzun kulaklar
+    c.sym_set(6, 7, R)                       # kırmızı gözler
+    c.set(7, 8, PINK); c.set(8, 8, PINK)
+    c.set(7, 9, W); c.set(8, 9, W)           # dişler
+    c.sym_rect(5, 14, 6, 15, w)
+    c.outline()
+    return c
+
+
+def make_kurbaga():
+    c = Canvas()
+    c.ellipse(7.5, 10, 5.6, 3.8, L)          # gövde
+    c.ellipse(4.5, 5, 1.8, 1.8, L); c.ellipse(10.5, 5, 1.8, 1.8, L)   # göz tümsekleri
+    c.set(4, 5, K); c.set(10, 5, K); c.set(5, 4, W); c.set(11, 4, W)
+    c.rect(4, 10, 11, 10, l)                 # ağız
+    c.rect(6, 11, 9, 11, PINK)               # dil
+    c.sym_rect(1, 12, 3, 14, l)              # ayaklar
+    c.outline()
+    return c
+
+
+def make_kertenkele():
+    c = Canvas()
+    c.rect(3, 8, 12, 10, L)                  # gövde
+    c.ellipse(13, 7, 2.2, 1.6, L)            # kafa
+    c.set(13, 6, K); c.set(15, 7, R)         # göz, dil
+    for x in range(1, 4):                    # kuyruk
+        c.set(x, 11 - (x // 2), l)
+    c.set(0, 12, l)
+    for x in (4, 10):                        # bacaklar
+        c.set(x, 11, l); c.set(x - 1, 12, l); c.set(x, 7, l); c.set(x - 1, 6, l)
+    for x in (5, 7, 9):                      # sırt benekleri
+        c.set(x, 8, Y)
+    c.outline()
+    return c
+
+
+def make_kopekbaligi():
+    c = Canvas()
+    c.ellipse(7.5, 9, 6.4, 3.6, g)           # gövde
+    c.ellipse(7.5, 10.5, 5.4, 1.8, w)        # açık karın
+    c.poly([(6, 6), (8, 1), (10, 6)], g)     # sırt yüzgeci
+    c.poly([(13, 9), (16, 5), (16, 13)], g)  # kuyruk
+    c.rect(1, 10, 6, 10, K)                  # ağız
+    for x in (1, 3, 5):
+        c.set(x, 9, W); c.set(x + 1, 11, W)  # dişler
+    c.set(3, 7, K)
+    c.outline()
+    return c
+
+
+def make_karga():
+    c = Canvas()
+    c.poly([(0, 7), (6, 8), (6, 12), (1, 11)], INK)   # kanatlar
+    c.poly([(15, 7), (9, 8), (9, 12), (14, 11)], INK)
+    c.ellipse(7.5, 9.5, 2.6, 3.4, INK)       # gövde
+    c.ellipse(7.5, 5, 2.2, 2.0, INK)         # kafa
+    c.sym_set(6, 4, W)                       # gözler
+    c.poly([(7, 6), (9, 6), (8, 8)], G)      # gaga
+    c.outline(K)
+    return c
+
+
+def make_guvercin():
+    c = Canvas()
+    c.ellipse(7.5, 9.5, 4.0, 3.4, g)         # gövde
+    c.ellipse(7.5, 5, 2.4, 2.2, G)           # kafa
+    c.rect(5, 7, 10, 7, l); c.rect(6, 8, 9, 8, P)    # yanardöner boyun
+    c.sym_set(6, 4, O)
+    c.set(7, 6, PINK); c.set(8, 6, PINK)     # gaga
+    c.sym_rect(1, 8, 3, 11, w)               # kanatlar
+    c.sym_set(6, 13, PINK)
+    c.outline()
+    return c
+
+
+def make_palyaco():
+    c = Canvas()
+    c.ellipse(4, 4, 2.2, 2.2, R); c.ellipse(11, 4, 2.2, 2.2, R)   # kırmızı saç
+    c.ellipse(7.5, 6, 3.2, 3.0, W)           # beyaz yüz
+    c.sym_set(6, 5, K)
+    c.ellipse(7.5, 7, 1.0, 1.0, R)           # kırmızı burun
+    c.rect(5, 8, 10, 8, R)                   # gülümseme
+    c.rect(4, 10, 11, 15, Y)                 # kostüm
+    c.set(6, 11, R); c.set(9, 12, B); c.set(6, 14, L)   # benekler
+    c.sym_rect(3, 9, 4, 10, W)               # yaka
+    c.outline()
+    return c
+
+
+def make_asker():
+    c = Canvas()
+    c.ellipse(7.5, 3.5, 3.4, 2.4, D)         # kask
+    c.rect(4, 4, 11, 4, l)
+    c.ellipse(7.5, 6.5, 2.6, 2.2, S)         # yüz
+    c.sym_set(6, 6, K)
+    c.rect(4, 9, 11, 13, D)                  # üniforma
+    c.rect(6, 10, 7, 11, l); c.rect(9, 11, 10, 12, l)   # kamuflaj
+    c.rect(12, 8, 13, 13, INK)               # tüfek
+    c.sym_rect(5, 14, 6, 15, INK)            # botlar
+    c.outline()
+    return c
+
+
+def make_polis():
+    c = Canvas()
+    c.rect(4, 1, 11, 3, b)                   # şapka
+    c.set(7, 2, Y); c.set(8, 2, Y)           # rozet
+    c.rect(3, 4, 12, 4, INK)                 # siperlik
+    c.ellipse(7.5, 6.5, 2.6, 2.0, S)
+    c.sym_set(6, 6, K)
+    c.rect(4, 9, 11, 13, b)                  # üniforma
+    c.set(9, 10, Y)                          # rozet
+    c.rect(4, 12, 11, 12, INK)               # kemer
+    c.sym_rect(5, 14, 6, 15, INK)
+    c.outline()
+    return c
+
+
+def make_uzayli():
+    c = Canvas()
+    c.ellipse(7.5, 5.5, 4.4, 3.8, L)         # büyük kafa
+    c.ellipse(5, 6, 1.6, 1.0, K); c.ellipse(10, 6, 1.6, 1.0, K)   # iri kara gözler
+    c.set(5, 5, W); c.set(10, 5, W)
+    c.rect(7, 8, 8, 8, l)
+    c.rect(6, 10, 9, 13, L)                  # ince gövde
+    c.sym_set(4, 11, L); c.sym_set(3, 12, L) # kollar
+    c.sym_rect(6, 14, 6, 15, l)
+    c.set(7, 0, Y); c.set(7, 1, L); c.set(8, 1, L)   # anten
+    c.outline()
+    return c
+
+
+def make_goblin():
+    c = Canvas()
+    c.ellipse(7.5, 6.5, 3.4, 3.0, l)         # kafa
+    c.poly([(4, 6), (0, 3), (4, 8)], l); c.poly([(11, 6), (15, 3), (11, 8)], l)   # sivri kulaklar
+    c.sym_set(6, 6, Y); c.sym_set(6, 7, K)   # sarı gözler
+    c.rect(6, 9, 9, 9, K); c.set(7, 9, W)    # sırıtış
+    c.rect(5, 10, 10, 14, n)                 # paçavra
+    c.rect(11, 9, 11, 14, g)                 # bıçak
+    c.sym_rect(5, 15, 6, 15, l)
+    c.outline()
+    return c
+
+
+def make_balina():
+    c = Canvas()
+    c.ellipse(7.5, 9, 7.0, 4.6, B)           # gövde
+    c.ellipse(7.5, 11.5, 6.0, 2.0, C)        # açık karın
+    for x in range(3, 13, 2):
+        c.set(x, 11, w)                      # karın çizgileri
+    c.set(4, 7, K); c.set(4, 6, W)           # göz
+    c.rect(1, 10, 5, 10, b)                  # ağız
+    c.rect(9, 1, 9, 3, C); c.set(8, 1, C); c.set(10, 1, C)   # su fışkırtma
+    c.outline()
+    return c
+
+
 def make_mermi():
     c = Canvas()
     c.ellipse(7.5, 7.5, 3.6, 3.6, O)        # parlayan mermi
@@ -1276,6 +1505,68 @@ def make_kaykay_stack():
     return out
 
 
+
+def make_otobus_stack():
+    """Yukarıdan otobüs (burnu sağda): uzun sarı gövde, cam sıraları. 9 dilim."""
+    out = []
+    def wheels(c):
+        for x0 in (2, 11):
+            c.rect(x0, 2, x0 + 1, 2, INK); c.rect(x0, 13, x0 + 1, 13, INK)
+    c = Canvas(); wheels(c); c.rect(0, 3, 15, 12, K); out.append(c)
+    for i in range(3):
+        c = Canvas(); wheels(c) if i == 0 else None; c.rect(0, 3, 15, 12, Y); c.rect(0, 3, 15, 3, y); c.rect(0, 12, 15, 12, y)
+        if i == 1: c.set(15, 4, W); c.set(15, 11, W); c.set(0, 4, R); c.set(0, 11, R)
+        out.append(c)
+    for _ in range(3):                                   # cam sırası
+        c = Canvas(); c.rect(0, 3, 15, 12, Y); c.rect(1, 3, 14, 3, C); c.rect(1, 12, 14, 12, C)
+        for x in range(2, 15, 3): c.set(x, 3, y); c.set(x, 12, y)
+        c.rect(15, 4, 15, 11, C); out.append(c)
+    c = Canvas(); c.rect(0, 3, 15, 12, y); c.rect(1, 4, 14, 11, Y); out.append(c)        # tavan
+    c = Canvas(); c.rect(3, 6, 6, 9, w); c.rect(9, 6, 12, 9, w); out.append(c)            # tavan pencereleri
+    return out
+
+
+def make_traktor_stack():
+    """Yukarıdan traktör (burnu sağda): büyük arka tekerler, küçük ön tekerler, kabin. 7 dilim."""
+    out = []
+    def wheels(c):
+        c.rect(1, 1, 5, 3, INK); c.rect(1, 12, 5, 14, INK); c.rect(11, 3, 13, 4, INK); c.rect(11, 11, 13, 12, INK)
+    c = Canvas(); wheels(c); out.append(c)
+    c = Canvas(); wheels(c); c.rect(2, 4, 14, 11, l); out.append(c)
+    c = Canvas(); wheels(c); c.rect(2, 4, 14, 11, L); c.rect(9, 5, 14, 10, L); c.set(14, 6, Y); c.set(14, 9, Y); out.append(c)
+    c = Canvas(); c.rect(2, 4, 8, 11, L); c.rect(9, 6, 14, 9, l); c.rect(12, 6, 12, 6, g); out.append(c)     # motor kaputu
+    for _ in range(2):
+        c = Canvas(); c.rect(2, 4, 7, 11, C); c.rect(2, 4, 2, 11, l); c.rect(7, 4, 7, 11, l); c.rect(12, 6, 12, 6, INK); out.append(c)   # kabin camı, egzoz
+    c = Canvas(); c.rect(2, 4, 7, 11, l); c.rect(3, 5, 6, 10, L); out.append(c)
+    return out
+
+
+def make_buldozer_stack():
+    """Yukarıdan buldozer (bıçağı sağda): paletler, sarı gövde, önde geniş bıçak. 7 dilim."""
+    out = []
+    def tracks(c):
+        c.rect(1, 2, 11, 4, INK); c.rect(1, 11, 11, 13, INK)
+        for x in range(1, 12, 2): c.set(x, 3, G); c.set(x, 12, G)
+    c = Canvas(); tracks(c); c.rect(13, 1, 14, 14, g); out.append(c)
+    c = Canvas(); tracks(c); c.rect(2, 4, 11, 11, y); c.rect(13, 1, 14, 14, w); c.rect(12, 7, 12, 8, G); out.append(c)
+    c = Canvas(); tracks(c); c.rect(2, 4, 11, 11, Y); c.rect(13, 1, 14, 14, g); c.rect(12, 5, 12, 10, G); out.append(c)
+    c = Canvas(); c.rect(2, 5, 11, 10, Y); c.rect(9, 7, 9, 8, INK); out.append(c)
+    for _ in range(2):
+        c = Canvas(); c.rect(2, 5, 6, 10, C); c.rect(2, 5, 2, 10, y); c.rect(6, 5, 6, 10, y); out.append(c)
+    c = Canvas(); c.rect(2, 5, 6, 10, y); c.rect(3, 6, 5, 9, Y); out.append(c)
+    return out
+
+
+def make_go_kart_stack():
+    """Yukarıdan go-kart (burnu sağda): alçak, dört teker, açık koltuk. 4 dilim."""
+    out = []
+    c = Canvas(); c.rect(3, 3, 5, 4, INK); c.rect(3, 11, 5, 12, INK); c.rect(11, 4, 12, 5, INK); c.rect(11, 10, 12, 11, INK); out.append(c)
+    c = Canvas(); c.rect(3, 3, 5, 4, INK); c.rect(3, 11, 5, 12, INK); c.rect(11, 4, 12, 5, INK); c.rect(11, 10, 12, 11, INK); c.rect(2, 5, 13, 10, G); out.append(c)
+    c = Canvas(); c.rect(2, 5, 13, 10, L); c.rect(12, 6, 14, 9, R); c.rect(5, 6, 8, 9, INK); out.append(c)   # gövde, burun, koltuk
+    c = Canvas(); c.rect(9, 6, 9, 9, g); c.rect(1, 6, 2, 9, R); out.append(c)                                # direksiyon, spoiler
+    return out
+
+
 def voxelize(cv, max_half_depth=5):
     """Önden çizilmiş bir resmi katmanlı (voxel) modele çevirir: resmin her satırı bir kat olur (en alt satır = dilim 0).
     Satırdaki her piksel, yukarıdan bakınca yanal eksende (dilimin y'si) yerini korur; derinlik ekseninde (dilimin x'i)
@@ -1335,6 +1626,10 @@ def main():
         "kopek": make_kopek, "kedi": make_kedi, "timsah": make_timsah, "ayi": make_ayi, "iskelet": make_iskelet,
         "cadi": make_cadi, "korsan": make_korsan, "kartal": make_kartal, "akrep": make_akrep,
         "hamamboecegi": make_hamamboecegi, "piranha": make_piranha, "kraken": make_kraken,
+        "tavuk": make_tavuk, "at": make_at, "inek": make_inek, "domuz": make_domuz, "keci": make_keci,
+        "tavsan": make_tavsan, "kurbaga": make_kurbaga, "kertenkele": make_kertenkele, "kopekbaligi": make_kopekbaligi,
+        "karga": make_karga, "guvercin": make_guvercin, "palyaco": make_palyaco, "asker": make_asker,
+        "polis": make_polis, "uzayli": make_uzayli, "goblin": make_goblin, "balina": make_balina,
     }
     static = {
         "yumruk": make_yumruk, "muz_kabugu": make_muz, "miknatis": make_miknatis, "bomba": make_bomba, "mermi": make_mermi, "motor": make_motor, "araba": make_araba, "cali": make_cali, "kilic": make_kilic, "sopa": make_sopa,
@@ -1356,7 +1651,8 @@ def main():
     for name, fn in static.items():
         fn().save(name)
     stacks = {"araba": make_araba_stack, "motor": make_motor_stack, "char": make_char_stack,
-              "tank": make_tank_stack, "kamyon": make_kamyon_stack, "bisiklet": make_bisiklet_stack, "kaykay": make_kaykay_stack}
+              "tank": make_tank_stack, "kamyon": make_kamyon_stack, "bisiklet": make_bisiklet_stack, "kaykay": make_kaykay_stack,
+              "otobus": make_otobus_stack, "traktor": make_traktor_stack, "buldozer": make_buldozer_stack, "go_kart": make_go_kart_stack}
     for name, fn in stacks.items():
         slices = fn()
         save_stack(slices, name)
