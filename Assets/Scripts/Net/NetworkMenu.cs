@@ -33,8 +33,8 @@ public class NetworkMenu : MonoBehaviour
         GUILayout.Label("Host'un IP adresi (aynı bilgisayarda boş bırak):");
         addressText = GUILayout.TextField(addressText);
 
-        if (GUILayout.Button("Host (oyunu kur)")) Start(manager, true);
-        if (GUILayout.Button("Katıl")) Start(manager, false);
+        if (GUILayout.Button("Host (oyunu kur)")) StartNetwork(manager, true);
+        if (GUILayout.Button("Katıl")) StartNetwork(manager, false);
         if (GUILayout.Button("Tek kişilik oyna (botlarla)")) PlaySolo(manager);
 
         if (!string.IsNullOrEmpty(error)) GUILayout.Label(error);
@@ -65,7 +65,7 @@ public class NetworkMenu : MonoBehaviour
         if (GUILayout.Button("Bağlantıyı kes")) manager.Shutdown();
     }
 
-    void Start(NetworkManager manager, bool host)
+    void StartNetwork(NetworkManager manager, bool host)
     {
         if (!ConnectionSettings.TryParse(addressText, out string address, out ushort port, out error)) return;
 
