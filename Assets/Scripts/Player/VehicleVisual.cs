@@ -12,6 +12,8 @@ public class VehicleVisual : MonoBehaviour
     Vector3 lastPosition;
     float smokeTimer;
     bool facingLeft;
+    SpriteStack stack;
+    float heading;
 
     /// <summary>Aracın resminin adı; boşsa araç yok.</summary>
     public string SpriteName { get; set; }
@@ -39,26 +41,46 @@ public class VehicleVisual : MonoBehaviour
             lastPosition = transform.position;
         }
 
+        float parentScale = Mathf.Max(0.01f, transform.lossyScale.x);
         if (shownName != SpriteName)
         {
             shownName = SpriteName;
-            car.sprite = string.IsNullOrEmpty(shownName) ? null : SpriteLibrary.Get(shownName);
+            if (stack != null) { Destroy(stack.gameObject); stack = null; }
+
+            // Katmanlı (3D piksel) çizimi varsa onu kullan, yoksa düz yan görünüş resmi.
+            Sprite[] slices = string.IsNullOrEmpty(shownName) ? null : StackLibrary.Get(shownName);
+            if (slices != null)
+            {
+                stack = SpriteStack.Create(transform, "Araç (katmanlı)", slices, (body != null ? body.sortingOrder : 5) - 1,
+                                           WorldSize * 1.1f / parentScale);
+                car.sprite = null;
+            }
+            else car.sprite = string.IsNullOrEmpty(shownName) ? null : SpriteLibrary.Get(shownName);
         }
 
         Vector3 moved = transform.position - lastPosition;
         lastPosition = transform.position;
 
-        car.enabled = car.sprite != null;
-        if (!car.enabled) return;
-
-        if (Mathf.Abs(moved.x) > 0.001f) facingLeft = moved.x < 0f;
-        car.flipX = facingLeft;
-
-        float parentScale = Mathf.Max(0.01f, transform.lossyScale.x);
-        float size = WorldSize / parentScale;
         float rumble = Mathf.Sin(Time.time * 60f) * 0.02f;
-        car.transform.localScale = Vector3.one * size;
-        car.transform.localPosition = new Vector3(0f, -0.3f + rumble, 0f);
+        if (stack != null)
+        {
+            // Gittiği yöne döner (yumuşak dönüş), motor titrer.
+            if (moved.sqrMagnitude > 0.000001f)
+                heading = Mathf.MoveTowardsAngle(heading, Mathf.Atan2(moved.y, moved.x) * Mathf.Rad2Deg, 900f * Time.deltaTime);
+            stack.Angle = heading;
+            stack.transform.localPosition = new Vector3(0f, -0.35f + rumble, 0f);
+            car.enabled = false;
+        }
+        else
+        {
+            car.enabled = car.sprite != null;
+            if (!car.enabled) return;
+
+            if (Mathf.Abs(moved.x) > 0.001f) facingLeft = moved.x < 0f;
+            car.flipX = facingLeft;
+            car.transform.localScale = Vector3.one * (WorldSize / parentScale);
+            car.transform.localPosition = new Vector3(0f, -0.3f + rumble, 0f);
+        }
 
         // Egzoz dumanı: arkadan gri damlalar.
         smokeTimer -= Time.deltaTime;

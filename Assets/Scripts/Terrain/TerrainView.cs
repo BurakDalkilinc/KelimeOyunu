@@ -12,6 +12,14 @@ public class TerrainView : MonoBehaviour
     const int TerrainOrder = -9;
     const int FireOrder = -7;
 
+    /// <summary>Ev duvarı bloklarının sırası: zeminin üstü, alevlerin altı.</summary>
+    const int WallStackOrder = -8;
+
+    /// <summary>Katmanlı (3D piksel) ev duvarının yüksekliği (dilim = 1 piksel) ve çatının kalınlığı.</summary>
+    const int WallLayers = 8;
+    const int RoofLayers = 3;
+    const float Pixel = 1f / 16f;
+
     /// <summary>Çatı karakterlerin (10) ve yaratıkların (8) üstünde çizilir: altındakiler görünmez.</summary>
     const int RoofOrder = 15;
 
@@ -24,8 +32,9 @@ public class TerrainView : MonoBehaviour
     Func<int, int, bool> isBurning;
     SpriteRenderer[] tiles;
     GameObject[] flames;
+    SpriteStack[] wallStacks;
     readonly List<GameObject> roofObjects = new List<GameObject>();
-    readonly List<SpriteRenderer[]> roofTiles = new List<SpriteRenderer[]>();
+    readonly List<SpriteStack[]> roofTiles = new List<SpriteStack[]>();
     readonly List<float> roofAlpha = new List<float>();
 
     /// <summary>
@@ -62,6 +71,7 @@ public class TerrainView : MonoBehaviour
         isBurning = burning;
         tiles = new SpriteRenderer[map.Width * map.Height];
         flames = new GameObject[tiles.Length];
+        wallStacks = new SpriteStack[tiles.Length];
 
         for (int y = 0; y < map.Height; y++)
         {
@@ -118,7 +128,9 @@ public class TerrainView : MonoBehaviour
             var root = new GameObject($"Çatı {house.X},{house.Y}");
             root.transform.SetParent(transform, false);
 
-            var renderers = new SpriteRenderer[house.W * house.H];
+            // Çatı duvarların üstüne oturur: duvar yüksekliği kadar yukarıda, kendisi de birkaç katman kalın.
+            root.transform.position = new Vector3(0f, WallLayers * Pixel, 0f);
+            var renderers = new SpriteStack[house.W * house.H];
             for (int cy = 0; cy < house.H; cy++)
             {
                 int fromTop = house.H - 1 - cy;
@@ -129,13 +141,11 @@ public class TerrainView : MonoBehaviour
 
                 for (int cx = 0; cx < house.W; cx++)
                 {
-                    var go = new GameObject("kiremit");
-                    go.transform.SetParent(root.transform, false);
-                    go.transform.position = map.CellCenter(house.X + cx, house.Y + cy);
-                    var sr = go.AddComponent<SpriteRenderer>();
-                    sr.sprite = SpriteLibrary.Get(spriteName);
-                    sr.sortingOrder = RoofOrder;
-                    renderers[cy * house.W + cx] = sr;
+                    var anchor = new GameObject("kiremit");
+                    anchor.transform.SetParent(root.transform, false);
+                    anchor.transform.localPosition = map.CellCenter(house.X + cx, house.Y + cy);
+                    renderers[cy * house.W + cx] = SpriteStack.Create(anchor.transform, "kiremit katmanları",
+                        StackLibrary.Extrude(SpriteLibrary.Get(spriteName), RoofLayers), RoofOrder, 1f, 1f, 0.7f);
                 }
             }
 
@@ -161,7 +171,7 @@ public class TerrainView : MonoBehaviour
 
             roofAlpha[i] = alpha;
             roofObjects[i].SetActive(alpha > 0.01f);
-            foreach (SpriteRenderer sr in roofTiles[i]) sr.color = new Color(1f, 1f, 1f, alpha);
+            foreach (SpriteStack tile in roofTiles[i]) tile.SetAlpha(alpha);
         }
     }
 
@@ -192,6 +202,26 @@ public class TerrainView : MonoBehaviour
         }
     }
 
+    /// <summary>Ev duvarı karesi yükselen bir blok olarak çizilir (katmanlı); duvar yanıp çökünce blok kalkar.</summary>
+    void RefreshWallStack(int x, int y, TileType type)
+    {
+        int index = map.Index(x, y);
+        bool wall = type == TileType.WoodWall;
+        if (wall && wallStacks[index] == null)
+        {
+            var anchor = new GameObject($"Duvar bloğu {x},{y}");
+            anchor.transform.SetParent(transform, false);
+            anchor.transform.position = map.CellCenter(x, y);
+            wallStacks[index] = SpriteStack.Create(anchor.transform, "katmanlar",
+                StackLibrary.Extrude(SpriteLibrary.Get("t_woodwall"), WallLayers), WallStackOrder, 1f);
+        }
+        else if (!wall && wallStacks[index] != null)
+        {
+            Destroy(wallStacks[index].transform.parent.gameObject);
+            wallStacks[index] = null;
+        }
+    }
+
     GameObject CreateFlame(int x, int y)
     {
         var go = new GameObject($"Alev {x},{y}");
@@ -208,6 +238,7 @@ public class TerrainView : MonoBehaviour
     {
         SpriteRenderer sr = tiles[map.Index(x, y)];
         TileType type = map.At(x, y);
+        RefreshWallStack(x, y, type);
 
         // Eski animasyonu temizle (lav → kömür gibi bir değişim olursa).
         var old = sr.GetComponent<SpriteAnimator>();

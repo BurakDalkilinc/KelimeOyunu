@@ -9,11 +9,14 @@ using UnityEngine;
 public class PixelArtImporter : AssetPostprocessor
 {
     const string Folder = "Assets/Resources/Sprites/";
+
+    /// <summary>Katmanlı (sprite stacking) nesnelerin dilim şeritleri; aynı piksel ayarlarıyla alınır, dilimler kodda kesilir.</summary>
+    const string StackFolder = "Assets/Resources/Stacks/";
     const float PixelsPerUnit = 16f;
 
     void OnPreprocessTexture()
     {
-        if (!assetPath.StartsWith(Folder)) return;
+        if (!assetPath.StartsWith(Folder) && !assetPath.StartsWith(StackFolder)) return;
 
         var importer = (TextureImporter)assetImporter;
         importer.textureType = TextureImporterType.Sprite;

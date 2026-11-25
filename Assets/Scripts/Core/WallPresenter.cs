@@ -52,8 +52,49 @@ public class WallPresenter : MonoBehaviour
             sr.sprite = SpriteFactory.Square();
         }
         sr.color = wallColor;
+        Extrude(go, sr);
 
         views.Add(new KeyValuePair<WallSegment, SpriteRenderer>(wall, sr));
+    }
+
+    /// <summary>Katmanlı (3D piksel) duvar yüksekliği (dilim = 1 piksel).</summary>
+    const int WallLayers = 8;
+    const float Pixel = 1f / 16f;
+
+    /// <summary>Duvarı yükselen bir blok yapar: aynı resim her katta 1 piksel yukarıda tekrar çizilir, alt katlar koyu.</summary>
+    static void Extrude(GameObject wall, SpriteRenderer baseRenderer)
+    {
+        for (int i = 1; i < WallLayers; i++)
+        {
+            var layer = new GameObject("Kat " + i);
+            layer.transform.SetParent(wall.transform, false);
+            // Duvar döndürülmüş olsa da katlar ekranda hep yukarı yükselir.
+            layer.transform.position = wall.transform.position + Vector3.up * (Pixel * i);
+            layer.transform.rotation = wall.transform.rotation;
+            layer.transform.localScale = Vector3.one;
+            var sr = layer.AddComponent<SpriteRenderer>();
+            sr.sprite = baseRenderer.sprite;
+            sr.drawMode = baseRenderer.drawMode;
+            if (sr.drawMode == SpriteDrawMode.Tiled) sr.size = baseRenderer.size;
+            sr.sortingOrder = baseRenderer.sortingOrder + i;
+        }
+        ApplyLayerColors(baseRenderer, baseRenderer.color);
+    }
+
+    static void ApplyLayerColors(SpriteRenderer baseRenderer, Color color)
+    {
+        Transform root = baseRenderer.transform;
+        int count = root.childCount;
+        Color bottom = color * 0.55f; bottom.a = color.a;
+        baseRenderer.color = bottom;
+        for (int i = 0; i < count; i++)
+        {
+            var sr = root.GetChild(i).GetComponent<SpriteRenderer>();
+            if (sr == null) continue;
+            Color c = color * Mathf.Lerp(0.55f, 1f, (float)(i + 1) / Mathf.Max(1, count));
+            c.a = color.a;
+            sr.color = c;
+        }
     }
 
     void Update()
@@ -73,6 +114,7 @@ public class WallPresenter : MonoBehaviour
             Color color = wallColor;
             color.a = Mathf.Clamp01(wall.LifeLeft / fadeSeconds); // Son saniyelerde solar
             sr.color = color;
+            ApplyLayerColors(sr, color);
         }
     }
 }

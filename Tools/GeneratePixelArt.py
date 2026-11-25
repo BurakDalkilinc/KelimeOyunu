@@ -973,6 +973,61 @@ def make_t_fire(frame):
     return c
 
 
+# ================= Sprite stacking (katmanlı 3D piksel) =================
+# Her nesne yukarıdan görünen yatay dilimlerdir (0 = en alt). Hepsi aynı tuval boyunda, ortak merkezli.
+# Araçlar 0 derecede +x yönüne (sağa) bakar; oyunda gittiği yöne döndürülür.
+STACK_OUT = os.path.join(ROOT, "Assets", "Resources", "Stacks")
+
+
+def save_stack(slices, name):
+    """Dilimleri yatay şerit olarak kaydeder: genişlik = dilim boyu x dilim sayısı."""
+    os.makedirs(STACK_OUT, exist_ok=True)
+    w_, h_ = slices[0].w, slices[0].h
+    img = Image.new("RGBA", (w_ * len(slices), h_), (0, 0, 0, 0))
+    for i, cv in enumerate(slices):
+        for yy in range(h_):
+            for xx in range(w_):
+                c = cv.px[yy][xx]
+                if c is not None:
+                    img.putpixel((i * w_ + xx, yy), (c[0], c[1], c[2], 255))
+    img.save(os.path.join(STACK_OUT, name + ".png"))
+
+
+def make_araba_stack():
+    """Yukarıdan araba: 12 uzun (x 2-13), 8 geniş (y 4-11). Burnu sağda."""
+    out = []
+    def wheels(c):
+        for x0 in (3, 10):
+            c.rect(x0, 3, x0 + 2, 4, INK); c.rect(x0, 11, x0 + 2, 12, INK)
+    # 0-1: tekerler ve alt şasi
+    c = Canvas(); wheels(c); c.rect(3, 5, 12, 10, K); out.append(c)
+    c = Canvas(); wheels(c); c.rect(2, 4, 13, 11, b); out.append(c)
+    # 2-4: gövde (kenar koyu), farlar ve stoplar
+    for i in range(3):
+        c = Canvas(); c.rect(2, 4, 13, 11, B); c.rect(2, 4, 13, 4, b); c.rect(2, 11, 13, 11, b)
+        if i >= 1:
+            c.set(13, 5, Y); c.set(13, 10, Y)          # farlar
+            c.set(2, 5, R); c.set(2, 10, R)            # stoplar
+        out.append(c)
+    # 5: kaput üstü ve kabin camları
+    c = Canvas(); c.rect(2, 4, 13, 11, B); c.rect(5, 5, 10, 10, C); c.rect(6, 6, 9, 9, b); out.append(c)
+    # 6-7: kabin (cam kenarlı tavan)
+    c = Canvas(); c.rect(5, 5, 10, 10, C); c.rect(6, 6, 9, 9, B); out.append(c)
+    c = Canvas(); c.rect(6, 6, 9, 9, B); c.rect(7, 6, 8, 9, W); out.append(c)
+    return out
+
+
+def make_motor_stack():
+    """Yukarıdan motor: uzun ve ince (x 2-13, y 6-9). Burnu sağda."""
+    out = []
+    c = Canvas(); c.rect(2, 7, 4, 8, INK); c.rect(11, 7, 13, 8, INK); out.append(c)          # 0: tekerler
+    c = Canvas(); c.rect(2, 7, 4, 8, INK); c.rect(11, 7, 13, 8, INK); c.rect(4, 7, 11, 8, g); out.append(c)  # 1: şasi
+    c = Canvas(); c.rect(4, 6, 11, 9, R); c.rect(3, 9, 6, 9, w); out.append(c)               # 2: gövde + egzoz
+    c = Canvas(); c.rect(5, 7, 7, 8, r); c.rect(8, 6, 10, 9, R); c.set(13, 7, Y); c.set(13, 8, Y); out.append(c)  # 3: sele, depo, far
+    c = Canvas(); c.rect(11, 4, 11, 11, g); c.set(11, 4, INK); c.set(11, 11, INK); c.rect(8, 7, 9, 8, W); out.append(c)  # 4: gidon
+    return out
+
+
 def main():
     animated = {
         "char": make_char, "zombi": make_zombi, "ari": make_ari, "fare": make_fare, "kurt": make_kurt,
@@ -1000,7 +1055,10 @@ def main():
         save_animated(fn(), name)
     for name, fn in static.items():
         fn().save(name)
-    print("Üretildi:", len(animated) * 2 + len(static), "PNG ->", OUT)
+    stacks = {"araba": make_araba_stack, "motor": make_motor_stack}
+    for name, fn in stacks.items():
+        save_stack(fn(), name)
+    print("Üretildi:", len(animated) * 2 + len(static), "PNG ->", OUT, "+", len(stacks), "katmanlı nesne ->", STACK_OUT)
 
 
 if __name__ == "__main__":
