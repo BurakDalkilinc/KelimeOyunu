@@ -131,6 +131,7 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
     void Create(CreatureModel model, Color color, string label)
     {
         model.Locator = bootstrap; // Hedefi ölünce ya da başkası yaklaşınca yeniden seçebilsin (boss, ejderha)
+        BossRules.ScaleForPlayers(model, bootstrap.Match.AliveCount, config); // Kalabalıkta boss'un canı artar
         model.Obstacles = bootstrap.Obstacles; // Uçmayan yaratıklar duvardan (oyuncu duvarları ve ev duvarları) geçemez
 
         var go = new GameObject("Yaratık: " + label);

@@ -206,6 +206,7 @@ public class TurnManager : ITurnView
     void EndMatch()
     {
         Winner = match.Winner;
+        Winner?.MakeInvulnerable(); // Maç bitti: kazanan artık ölemez
         SetPhase(TurnPhase.MatchOver, 0f);
         MatchEnded?.Invoke(Winner);
     }

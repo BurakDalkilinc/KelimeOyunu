@@ -57,6 +57,25 @@ public class TurnManagerTests
 
     static void Kill(PlayerState player) => player.Health.TakeDamage(999);
 
+    // ---- Maç sonu ----
+
+    [Test]
+    public void Winner_BecomesInvulnerable_AfterMatchEnds()
+    {
+        GoToTyping();
+        for (int i = 1; i < match.Players.Count; i++) Kill(match.Players[i]);
+        turns.Tick(0.01f);
+
+        Assert.AreEqual(TurnPhase.MatchOver, turns.Phase);
+        PlayerState winner = match.Players[0];
+        Assert.AreEqual(winner, turns.Winner);
+
+        winner.TakeDamage(99);
+        winner.Eliminate();
+        Assert.IsTrue(winner.IsAlive, "maç bitince kazanan ölmez");
+        Assert.AreEqual(winner, turns.Winner);
+    }
+
     // ---- Deneme paneli ----
 
     [Test]

@@ -161,6 +161,12 @@ public class GameConfig : ScriptableObject
     [Tooltip("Patlamanın çevredekilere verdiği hasar (sürücü her durumda ölür).")]
     [Min(0)] public int vehicleCrashDamage = 2;
 
+    [Tooltip("Boss'un canına, sahadaki her ek canlı oyuncu için eklenen can (kalabalık maçta boss hemen ölmesin).")]
+    [Min(0)] public int bossHealthPerExtraPlayer = 3;
+
+    [Tooltip("Botların boss'a iki vuruşu arasındaki bekleme (sn). Oyuncununkinden uzun: son vuruşu oyuncu da yapabilsin.")]
+    [Min(0.1f)] public float botBossHitCooldownSeconds = 1.5f;
+
     [Tooltip("Bot en az bu kadar canı varsa boss'a saldırır; daha azsa ondan kaçar.")]
     [Min(1)] public int botBossAttackMinHealth = 2;
 

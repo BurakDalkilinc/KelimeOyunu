@@ -61,6 +61,21 @@ public static class BossRules
         return best;
     }
 
+    /// <summary>
+    /// Boss doğarken canını kalabalığa göre ayarlar: kelimenin canı + her ek canlı oyuncu için
+    /// <see cref="GameConfig.bossHealthPerExtraPlayer"/>. Boss değilse bir şey yapmaz.
+    /// </summary>
+    public static void ScaleForPlayers(CreatureModel boss, int alivePlayers, GameConfig config)
+    {
+        if (boss == null || !boss.IsBoss || config == null) return;
+        int extra = Mathf.Max(0, alivePlayers - 1) * config.bossHealthPerExtraPlayer;
+        boss.MakeBoss(boss.BossMaxHealth + extra);
+    }
+
+    /// <summary>Boss'a vuruş sonrası bekleme: botlar daha seyrek vurur.</summary>
+    public static float HitCooldown(PlayerState hitter, GameConfig config)
+        => hitter != null && hitter.IsBot ? config.botBossHitCooldownSeconds : config.bossHitCooldownSeconds;
+
     /// <summary>Boss'u bitirenin ödülü: canı eksikse can, tamsa kalkan.</summary>
     public static void Reward(PlayerState killer, GameConfig config)
     {

@@ -20,9 +20,22 @@ public class PlayerState
     /// Hasar alır. Kalkan varsa hasarı engeller (hakkı bir azalır, can düşmez). Gerçekten düşen canı döndürür.
     /// Oyundaki bütün hasar bu yoldan geçer ki kalkan her yerde işlesin.
     /// </summary>
+    /// <summary>
+    /// Dokunulmaz: hiçbir hasar, düşme ya da eleme işlemez. Maç bitince kazanana verilir (maç bittikten sonra hâlâ dolaşan
+    /// yaratıklar, ateş ya da lav kazananı öldürüp "Kazanan: Sen" yazarken "Elendin" gösterilmesin).
+    /// </summary>
+    public bool IsInvulnerable { get; private set; }
+
+    /// <summary>Oyuncuyu dokunulmaz yapar (bkz. <see cref="IsInvulnerable"/>).</summary>
+    public void MakeInvulnerable()
+    {
+        IsInvulnerable = true;
+        Falling = FallKind.None;
+    }
+
     public int TakeDamage(int amount)
     {
-        if (amount <= 0 || !IsAlive) return 0;
+        if (amount <= 0 || !IsAlive || IsInvulnerable) return 0;
         if (Status.TryAbsorbHit()) return 0;
         return Health.TakeDamage(amount);
     }
@@ -42,6 +55,7 @@ public class PlayerState
     public void Eliminate()
     {
         Falling = FallKind.None;
+        if (IsInvulnerable) return;
         if (IsAlive) Health.TakeDamage(Health.Current);
     }
 

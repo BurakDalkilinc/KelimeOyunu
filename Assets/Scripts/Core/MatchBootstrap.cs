@@ -172,7 +172,7 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
 
         if (bosses > 0)
         {
-            cooldown.TryUse(config.bossHitCooldownSeconds);
+            cooldown.TryUse(BossRules.HitCooldown(shover, config));
             BossRules.HitBosses(creatures, shover, shovePositions[shoverIndex], facing, config, apply: true);
         }
         else cooldown.TryUse();

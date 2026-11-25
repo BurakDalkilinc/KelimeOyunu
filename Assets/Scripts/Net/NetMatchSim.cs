@@ -301,6 +301,7 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
     void Add(CreatureModel model, string label, bool wanders)
     {
         model.Locator = this; // Hedefi ölünce ya da başkası yaklaşınca yeniden seçebilsin
+        BossRules.ScaleForPlayers(model, match.AliveCount, config); // Kalabalıkta boss'un canı artar
         model.Obstacles = Obstacles; // Uçmayan yaratıklar duvardan (oyuncu duvarları ve ev duvarları) geçemez
 
         creatures.Add(new SimCreature

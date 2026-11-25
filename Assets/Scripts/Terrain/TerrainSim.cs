@@ -81,7 +81,7 @@ public class TerrainSim
     /// </summary>
     public bool TryStartFall(PlayerState victim, Vector2 landedAt)
     {
-        if (victim == null || !victim.IsAlive || victim.Status.IsFlying || victim.Falling != FallKind.None) return false;
+        if (victim == null || !victim.IsAlive || victim.IsInvulnerable || victim.Status.IsFlying || victim.Falling != FallKind.None) return false;
 
         TileType type = Map.At(landedAt);
         FallKind kind = type == TileType.Chasm ? FallKind.Chasm : type == TileType.Lava ? FallKind.Lava : FallKind.None;

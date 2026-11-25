@@ -104,7 +104,7 @@ public class TerrainHazards
     /// </summary>
     public void StartFall(PlayerState player, FallKind kind)
     {
-        if (player == null || !player.IsAlive || player.Falling != FallKind.None || kind == FallKind.None) return;
+        if (player == null || !player.IsAlive || player.IsInvulnerable || player.Falling != FallKind.None || kind == FallKind.None) return;
 
         player.Falling = kind;
         TimersOf(player.Id).DoomLeft = config.fallSeconds;

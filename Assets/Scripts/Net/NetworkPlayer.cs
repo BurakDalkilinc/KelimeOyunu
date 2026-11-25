@@ -443,7 +443,7 @@ public class NetworkPlayer : NetworkBehaviour
 
         if (bosses > 0)
         {
-            shoveCooldown.TryUse(config.bossHitCooldownSeconds);
+            shoveCooldown.TryUse(BossRules.HitCooldown(me, config));
             BossRules.HitBosses(sim.CreatureModels, me, shovePositions[myIndex], facing, config, apply: true);
         }
         else shoveCooldown.TryUse();

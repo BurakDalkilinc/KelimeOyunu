@@ -163,6 +163,23 @@ public class BossTests
     }
 
     [Test]
+    public void BossHealth_GrowsWithAlivePlayers_BotsHitSlower()
+    {
+        var target = new PlayerState(1, "a", 3);
+        CreatureModel boss = Boss(12, Vector2.zero, target);
+        BossRules.ScaleForPlayers(boss, 20, config);
+        Assert.AreEqual(12 + 19 * config.bossHealthPerExtraPlayer, boss.BossMaxHealth);
+        Assert.AreEqual(boss.BossMaxHealth, boss.BossHealth);
+
+        CreatureModel solo = Boss(12, Vector2.zero, target);
+        BossRules.ScaleForPlayers(solo, 1, config);
+        Assert.AreEqual(12, solo.BossMaxHealth, "tek kişide değişmez");
+
+        var bot = new PlayerState(2, "bot", 3, isBot: true);
+        Assert.Greater(BossRules.HitCooldown(bot, config), BossRules.HitCooldown(target, config), "bot daha seyrek vurur");
+    }
+
+    [Test]
     public void GodzillaWord_IsABoss()
     {
         WordEntry word = WordDatabase.LoadFromResources(50).Lookup("gojira").Entry;
