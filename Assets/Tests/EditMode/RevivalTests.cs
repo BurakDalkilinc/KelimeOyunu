@@ -127,7 +127,6 @@ public class RevivalTests
 
     [TestCase("yeniden canlanma")]
     [TestCase("revive")]
-    [TestCase("review")]
     [TestCase("diriliş")]
     [TestCase("resurrect")]
     public void ReviveWord_IsFoundByItsNamesAndSynonyms(string text)

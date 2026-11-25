@@ -219,9 +219,9 @@ public class DefenseTagTests
         ApplyWord("gorunmezlik", writer);
 
         Assert.IsTrue(writer.Status.IsStealthed);
-        Assert.AreEqual(6f, writer.Status.StealthTimeLeft, 0.001f); // words.json: duration 6
+        Assert.AreEqual(8f, writer.Status.StealthTimeLeft, 0.001f); // words.json: duration 8
 
-        writer.Status.Tick(6.1f);
+        writer.Status.Tick(8.1f);
         Assert.IsFalse(writer.Status.IsStealthed);
     }
 

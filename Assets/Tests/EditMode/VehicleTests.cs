@@ -134,12 +134,22 @@ public class VehicleTests
         Assert.IsFalse(driver.Status.IsDriving, "araba durdu");
         Assert.IsTrue(driver.IsAlive, "sürücü sağ iner");
 
+        // Motor 2 kişiyi ezince durur.
         var world2 = new FakeWorld();
         PlayerState biker = MountedDriver(world2, "motor", Vector2.zero);
         world2.Add(2, new Vector2(0.8f, 0f));
         world2.Add(3, new Vector2(-0.8f, 0f));
-        Assert.AreEqual(2, VehicleRules.Crush(biker, Vector2.zero, world2, config), "motor sınırsız");
-        Assert.IsTrue(biker.Status.IsDriving);
+        Assert.AreEqual(2, VehicleRules.Crush(biker, Vector2.zero, world2, config));
+        Assert.IsFalse(biker.Status.IsDriving, "motor 2 kişide durur");
+
+        // Sınır yazmayan (count 0) araç sınırsız ezer.
+        var world3 = new FakeWorld();
+        PlayerState rider = world3.Add(1, Vector2.zero);
+        rider.Status.Mount(new WordEntry { id = "sinirsiz", display = "Sınırsız", tags = new[] { "vehicle" }, stats = new WordStats { speed = 8f, damage = 99f } }, 10f);
+        world3.Add(2, new Vector2(0.8f, 0f));
+        world3.Add(3, new Vector2(-0.8f, 0f));
+        Assert.AreEqual(2, VehicleRules.Crush(rider, Vector2.zero, world3, config), "count yoksa sınırsız");
+        Assert.IsTrue(rider.Status.IsDriving);
     }
 
     [Test]
