@@ -80,6 +80,7 @@ public class CreatureView : MonoBehaviour
                 bodyRenderer.sortingOrder = CreatureSpriteScale.SortingOrder(radius);
                 body.AddComponent<SpriteAnimator>().SetFrames(frames);
                 bodyRenderer.color = Color.white;
+                ExtrudedSpriteVisual.Attach(body, CreatureSpriteScale.IsGiant(radius) ? 3 : 4); // 3D piksel kalınlık (boss zaten 3 kat büyük)
                 return;
             }
 
@@ -88,6 +89,7 @@ public class CreatureView : MonoBehaviour
             var iconRenderer = icon.AddComponent<SpriteRenderer>();
             iconRenderer.sortingOrder = 11;
             icon.AddComponent<SpriteAnimator>().SetFrames(frames);
+            ExtrudedSpriteVisual.Attach(icon, 3, flipWithMovement: false); // Simge de kalın
         }
 
         if (Model.IsPull)

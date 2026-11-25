@@ -56,6 +56,20 @@ public class SpriteStack : MonoBehaviour
         ApplyColors();
     }
 
+    /// <summary>Bütün dilimlere aynı resmi verir (kalınlaştırılmış animasyonlu yaratık: her karede güncel kare).</summary>
+    public void SetSprite(Sprite sprite)
+    {
+        if (layers == null) return;
+        foreach (SpriteRenderer layer in layers) if (layer.sprite != sprite) layer.sprite = sprite;
+    }
+
+    /// <summary>Bütün dilimleri yatay aynalar (önden çizilmiş yaratık sola giderken).</summary>
+    public void SetFlipX(bool flip)
+    {
+        if (layers == null) return;
+        foreach (SpriteRenderer layer in layers) layer.flipX = flip;
+    }
+
     public int SortingOrder
     {
         get => group != null ? group.sortingOrder : 0;
@@ -103,9 +117,8 @@ public class SpriteStack : MonoBehaviour
     {
         if (layers == null) return;
 
-        // Ebeveyn büyütülmüş olabilir (karakter ölçeği): kaymayı dünya pikseline göre ayarla.
-        float parentScale = transform.parent != null ? Mathf.Max(0.001f, transform.parent.lossyScale.y) : 1f;
-        float step = pixelsPerLayer * worldPixel / parentScale; // Bir dilim = resmin bir pikseli kadar yukarı
+        // Dilimler yığının çocuğudur: kayma yerel birimde, resmin bir pikseli kadar (büyütülmüş boss'ta kendiliğinden büyür).
+        float step = pixelsPerLayer * worldPixel;
         Quaternion rotation = Quaternion.Euler(0f, 0f, Angle);
 
         for (int i = 0; i < layers.Length; i++)

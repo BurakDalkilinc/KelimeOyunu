@@ -105,6 +105,7 @@ public class NetCreatureRenderer : MonoBehaviour
             view.Body.sortingOrder = CreatureSpriteScale.SortingOrder(s.Radius);
             body.AddComponent<SpriteAnimator>().SetFrames(frames);
             view.Body.color = Color.white;
+            ExtrudedSpriteVisual.Attach(body, CreatureSpriteScale.IsGiant(s.Radius) ? 3 : 4); // 3D piksel kalınlık (boss zaten 3 kat büyük)
         }
         else
         {
@@ -120,6 +121,7 @@ public class NetCreatureRenderer : MonoBehaviour
                 var iconRenderer = icon.AddComponent<SpriteRenderer>();
                 iconRenderer.sortingOrder = 11;
                 icon.AddComponent<SpriteAnimator>().SetFrames(frames);
+                ExtrudedSpriteVisual.Attach(icon, 3, flipWithMovement: false); // Simge de kalın
             }
         }
 
