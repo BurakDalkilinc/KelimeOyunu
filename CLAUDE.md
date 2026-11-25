@@ -57,3 +57,4 @@ Docs/
 | `unity-gelistirici` | C# kodu, sahne, prefab, UI |
 | `ag-uzmani` | Çok oyunculu, lobi, Steam, senkronizasyon |
 | `test-kontrol` | Kod incelemesi, test, hata ayıklama |
+| `piksel-sanatci` | Yaratık/araç/simge resmi (Tools/GeneratePixelArt.py; voxel modeli otomatik) |
