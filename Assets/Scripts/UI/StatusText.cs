@@ -16,7 +16,7 @@ public static class StatusText
         if (status.IsPulled) parts.Add("Çekiliyorsun!");
         if (status.HasShield) parts.Add("Kalkan var");
         if (status.IsBurning) parts.Add("YANIYORSUN!");
-        if (status.IsDriving) parts.Add($"{status.Vehicle.display} sürüyorsun ({Mathf.CeilToInt(status.VehicleTimeLeft)} sn) — eve çarparsan patlarsın!");
+        if (status.IsDriving) parts.Add($"{status.Vehicle.display} sürüyorsun ({Mathf.CeilToInt(status.VehicleTimeLeft)} sn)" + (VehicleRules.Explodes(status.Vehicle) ? " — eve çarparsan patlarsın!" : ""));
         if (status.IsStealthed) parts.Add(status.StealthDisguise != null
             ? $"Kamufle oldun ({Mathf.CeilToInt(status.StealthTimeLeft)} sn)"
             : $"Görünmezsin ({Mathf.CeilToInt(status.StealthTimeLeft)} sn)");
