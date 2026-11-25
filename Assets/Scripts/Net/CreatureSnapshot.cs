@@ -51,6 +51,9 @@ public struct CreatureSnapshot
 
     /// <summary>Yaratığın üstündeki yazı; boşsa yazı yok.</summary>
     public string Label;
+
+    /// <summary>Yaratığın şimdiye kadarki vuruş sayısı; istemci artışı görünce saldırı animasyonunu oynatır.</summary>
+    public int Attacks;
 }
 
 /// <summary>
@@ -61,7 +64,7 @@ public static class CreatureSnapshotCodec
 {
     const char EntrySeparator = ';';
     const char FieldSeparator = '|';
-    const int FieldCount = 10;
+    const int FieldCount = 11;
 
     public static string Encode(IReadOnlyList<CreatureSnapshot> snapshots)
     {
@@ -80,7 +83,8 @@ public static class CreatureSnapshotCodec
                    .Append(Num(s.Progress)).Append(FieldSeparator)
                    .Append(s.HasStruck ? '1' : '0').Append(FieldSeparator)
                    .Append(s.Countdown).Append(FieldSeparator)
-                   .Append(Clean(s.Label));
+                   .Append(Clean(s.Label)).Append(FieldSeparator)
+                   .Append(s.Attacks);
         }
         return builder.ToString();
     }
@@ -100,7 +104,8 @@ public static class CreatureSnapshotCodec
                 || !int.TryParse(f[5], out int kind) || !System.Enum.IsDefined(typeof(CreatureKind), kind)
                 || !TryNum(f[6], out float progress)
                 || (f[7] != "0" && f[7] != "1")
-                || !int.TryParse(f[8], out int countdown))
+                || !int.TryParse(f[8], out int countdown)
+                || !int.TryParse(f[10], out int attacks))
             {
                 snapshots.Clear();
                 return false;
@@ -109,7 +114,7 @@ public static class CreatureSnapshotCodec
             snapshots.Add(new CreatureSnapshot
             {
                 Id = id, WordId = f[1], X = x, Y = y, Radius = radius, Kind = (CreatureKind)kind,
-                Progress = progress, HasStruck = f[7] == "1", Countdown = countdown, Label = f[9],
+                Progress = progress, HasStruck = f[7] == "1", Countdown = countdown, Label = f[9], Attacks = attacks,
             });
         }
         return true;

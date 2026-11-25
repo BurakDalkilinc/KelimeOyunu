@@ -119,6 +119,9 @@ public class CreatureModel
     /// </summary>
     public bool IgnitesTerrain { get; set; }
 
+    /// <summary>Bu yaratığın şimdiye kadar yaptığı vuruş sayısı (saldırı animasyonu için; ağda da gönderilir).</summary>
+    public int AttackCount { get; private set; }
+
     /// <summary>Ateşli yaratığın (ejderha, ateş) vurduğunu tutuşturma süresi ve kömürleştirme miktarı (fabrika ayardan doldurur).</summary>
     public float BurnSecondsOnHit { get; set; } = 2.5f;
     public float CharPerHit { get; set; } = 0.35f;
@@ -423,6 +426,7 @@ public class CreatureModel
                                 || IsProtectedFromThis(Target);       // Evdekine (çözüm alanı) vurulamaz
         if (!touching || !hasEffect || hitCooldownLeft > 0f || targetOutOfReach) return false;
 
+        AttackCount++;
         if (Damage > 0) Target.TakeDamage(Damage);
         if (SlowSeconds > 0f) Target.Status.ApplySlow(SlowMultiplier, SlowSeconds);
 

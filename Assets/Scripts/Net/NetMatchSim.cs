@@ -403,6 +403,7 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
                 HasStruck = m.HasStruck,
                 Countdown = m.ShowsCountdown && !m.IsSky && m.IsStrike && !m.HasStruck ? Mathf.CeilToInt(m.StrikeWarningLeft) : 0,
                 Label = m.IsBoss ? BossRules.Label(m) : creature.Label,
+                Attacks = m.AttackCount,
             });
         }
     }

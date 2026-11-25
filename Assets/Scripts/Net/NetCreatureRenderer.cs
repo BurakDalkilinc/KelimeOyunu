@@ -106,6 +106,7 @@ public class NetCreatureRenderer : MonoBehaviour
             body.AddComponent<SpriteAnimator>().SetFrames(frames);
             view.Body.color = Color.white;
             ExtrudedSpriteVisual.Attach(body, CreatureSpriteScale.IsGiant(s.Radius) ? 3 : 4); // 3D piksel kalınlık (boss zaten 3 kat büyük)
+            CreatureAttackAnimator.Attach(body, () => view.Last.Attacks, CreatureSpriteScale.IsGiant(s.Radius)); // Saldırı animasyonu
         }
         else
         {

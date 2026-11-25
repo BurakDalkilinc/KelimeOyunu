@@ -53,13 +53,15 @@ public class ExtrudedSpriteVisual : MonoBehaviour
         source.forceRenderingOff = true;
         bool visible = source.enabled;
         if (stack.gameObject.activeSelf != visible) stack.gameObject.SetActive(visible);
-        if (!visible) { lastPosition = transform.position; return; }
+        if (!visible) { lastPosition = transform.parent != null ? transform.parent.position : transform.position; return; }
 
         stack.SortingOrder = source.sortingOrder;
         stack.SetTint(source.color);
 
-        Vector3 moved = transform.position - lastPosition;
-        lastPosition = transform.position;
+        // Yön, yaratığın kendi hareketinden (kök): saldırıda ileri-geri atılma aynalamayı titretmesin.
+        Vector3 here = transform.parent != null ? transform.parent.position : transform.position;
+        Vector3 moved = here - lastPosition;
+        lastPosition = here;
 
         if (voxel)
         {
@@ -94,7 +96,7 @@ public class ExtrudedSpriteVisual : MonoBehaviour
     {
         Sprite sprite = source.sprite;
         float width = sprite.rect.width / sprite.pixelsPerUnit;
-        lastPosition = transform.position;
+        lastPosition = transform.parent != null ? transform.parent.position : transform.position;
 
         Sprite[] model = StackLibrary.Get(sprite.name);
         voxel = model != null;

@@ -54,6 +54,13 @@ public class CreatureView : MonoBehaviour
         }
     }
 
+    /// <summary>Saldırdığı oyuncunun konumu (saldırı animasyonunun yönü için).</summary>
+    Vector2? TargetPosition()
+    {
+        if (Model?.Target == null || bootstrap == null) return null;
+        return bootstrap.TryGetPosition(Model.Target.Id, out Vector2 at) ? at : (Vector2?)null;
+    }
+
     void Advance(float dt)
     {
         CreatureDriver.Advance(Model, dt, bootstrap, config, hits, wanderBrain);
@@ -81,6 +88,7 @@ public class CreatureView : MonoBehaviour
                 body.AddComponent<SpriteAnimator>().SetFrames(frames);
                 bodyRenderer.color = Color.white;
                 ExtrudedSpriteVisual.Attach(body, CreatureSpriteScale.IsGiant(radius) ? 3 : 4); // 3D piksel kalınlık (boss zaten 3 kat büyük)
+                CreatureAttackAnimator.Attach(body, () => Model.AttackCount, CreatureSpriteScale.IsGiant(radius), TargetPosition); // Saldırı animasyonu
                 return;
             }
 
