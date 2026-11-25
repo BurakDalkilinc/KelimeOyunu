@@ -63,7 +63,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
             animator.SetFrames(frames);
         }
         spriteRenderer.color = color;
-        spriteRenderer.sortingOrder = 5;
+        spriteRenderer.sortingOrder = CreatureSpriteScale.EntityOrder; // Ekrandaki yüksekliğe göre sıralanır
         transform.localScale = Vector3.one * (config.playerRadius * 2f);
         CharacterStackVisual.Attach(gameObject); // 3D piksel (katmanlı) gövde
 

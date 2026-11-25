@@ -20,8 +20,11 @@ public class TerrainView : MonoBehaviour
     const int RoofLayers = 3;
     const float Pixel = 1f / 16f;
 
-    /// <summary>Çatı karakterlerin (10) ve yaratıkların (8) üstünde çizilir: altındakiler görünmez.</summary>
-    const int RoofOrder = 15;
+    /// <summary>
+    /// Çatı karakterlerle aynı sıradadır; her evin çatısı evin güney kenarında duran tek bir grup olarak ekrandaki yüksekliğe göre
+    /// sıralanır: evin önündekiler çatının önünde, içindekiler ve arkasındakiler çatının arkasında (görünmez) kalır.
+    /// </summary>
+    const int RoofOrder = CreatureSpriteScale.EntityOrder;
 
     /// <summary>Çatının saydamlaşıp belirme hızı (saniyede alfa).</summary>
     const float RoofFadePerSecond = 6f;
@@ -128,8 +131,12 @@ public class TerrainView : MonoBehaviour
             var root = new GameObject($"Çatı {house.X},{house.Y}");
             root.transform.SetParent(transform, false);
 
-            // Çatı duvarların üstüne oturur: duvar yüksekliği kadar yukarıda, kendisi de birkaç katman kalın.
-            root.transform.position = new Vector3(0f, WallLayers * Pixel, 0f);
+            // Grubun noktası evin güney kenarı (sıralama buna göre); çatı duvarların üstüne oturur: duvar yüksekliği kadar yukarıda.
+            Vector2 southWest = map.CellCenter(house.X, house.Y) - new Vector2(0.5f, 0.5f);
+            root.transform.position = new Vector3(southWest.x + house.W * 0.5f, southWest.y, 0f);
+            var group = root.AddComponent<UnityEngine.Rendering.SortingGroup>();
+            group.sortingOrder = RoofOrder;
+            Vector3 lift = new Vector3(0f, WallLayers * Pixel, 0f);
             var renderers = new SpriteStack[house.W * house.H];
             for (int cy = 0; cy < house.H; cy++)
             {
@@ -143,7 +150,7 @@ public class TerrainView : MonoBehaviour
                 {
                     var anchor = new GameObject("kiremit");
                     anchor.transform.SetParent(root.transform, false);
-                    anchor.transform.localPosition = map.CellCenter(house.X + cx, house.Y + cy);
+                    anchor.transform.position = (Vector3)map.CellCenter(house.X + cx, house.Y + cy) + lift;
                     renderers[cy * house.W + cx] = SpriteStack.Create(anchor.transform, "kiremit katmanları",
                         StackLibrary.Extrude(SpriteLibrary.Get(spriteName), RoofLayers), RoofOrder, 1f, 1f, 0.7f);
                 }

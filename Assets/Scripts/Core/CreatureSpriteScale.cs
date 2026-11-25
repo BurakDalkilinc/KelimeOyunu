@@ -12,5 +12,12 @@ public static class CreatureSpriteScale
     public static bool IsGiant(float radius) => radius >= 1f;
 
     /// <summary>Koşan yaratığın çizim sırası: normalde 8 (karakterlerin altında), dev ise 16 (çatıların üstünde).</summary>
-    public static int SortingOrder(float radius) => IsGiant(radius) ? 16 : 8;
+    /// <summary>
+    /// Karakterler, yaratıklar (devler dahil), araçlar ve çatılar aynı sıradadır; aralarındaki öne/arkaya kararını ekrandaki
+    /// yükseklik verir (Renderer2D: Custom Axis 0,1,0 — aşağıdaki önde). Böylece evin önündeki çatının önünde, içindeki ve
+    /// arkasındaki çatının arkasında kalır.
+    /// </summary>
+    public const int EntityOrder = 10;
+
+    public static int SortingOrder(float radius) => EntityOrder;
 }

@@ -57,7 +57,7 @@ public class VehicleVisual : MonoBehaviour
             Sprite[] slices = string.IsNullOrEmpty(shownName) ? null : StackLibrary.Get(shownName);
             if (slices != null)
             {
-                stack = SpriteStack.Create(transform, "Araç (katmanlı)", slices, (body != null ? body.sortingOrder : 5) - 1,
+                stack = SpriteStack.Create(transform, "Araç (katmanlı)", slices, body != null ? body.sortingOrder : CreatureSpriteScale.EntityOrder,
                                            WorldSize * 1.1f / parentScale);
                 car.sprite = null;
             }
@@ -112,9 +112,14 @@ public class VehicleVisual : MonoBehaviour
         headOutline.enabled = show;
         if (!show) return;
 
-        int order = body != null ? body.sortingOrder : 5;
-        head.sortingOrder = order + 1;
-        headOutline.sortingOrder = order;
+        // Kafa aracın grubunun içinde, en üst dilimin de üstünde: araçla birlikte ekrandaki yüksekliğe göre sıralanır.
+        if (head.transform.parent != stack.transform)
+        {
+            head.transform.SetParent(stack.transform, true);
+            headOutline.transform.SetParent(stack.transform, true);
+        }
+        head.sortingOrder = 1001;
+        headOutline.sortingOrder = 1000;
 
         float parentScale = Mathf.Max(0.01f, transform.lossyScale.x);
         Vector2 forward = new Vector2(Mathf.Cos(heading * Mathf.Deg2Rad), Mathf.Sin(heading * Mathf.Deg2Rad));

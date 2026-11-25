@@ -30,7 +30,7 @@ public class DisguiseVisual : MonoBehaviour
             var go = new GameObject("Kılık");
             go.transform.SetParent(transform, false);
             cover = go.AddComponent<SpriteRenderer>();
-            cover.sortingOrder = (body != null ? body.sortingOrder : 5) + 1;
+            cover.sortingOrder = body != null ? body.sortingOrder : CreatureSpriteScale.EntityOrder; // Gövde gizli; çalı onun yerinde
             cover.enabled = false;
             lastPosition = transform.position;
         }
