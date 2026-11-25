@@ -1,8 +1,9 @@
 using UnityEngine;
 
 /// <summary>
-/// Araç görüntüsü: sürücünün altında aracın resmi (motor, araba) belirir, gittiği yöne göre sağa/sola döner ve hafifçe titrer;
-/// arkasından egzoz dumanı çıkar. Hangi aracın görüneceğini sahibi <see cref="SpriteName"/> ve <see cref="WorldSize"/> ile söyler.
+/// Araç görüntüsü: aracın resmi (motor, araba) belirir, gittiği yöne döner ve hafifçe titrer; arkasından egzoz dumanı çıkar.
+/// Katmanlı (3D piksel) araçta karakterin ayakta duran resmi gizlenir, yerine kabinde/selede yukarıdan görünen küçük bir kafa
+/// (karakterin renginde) çizilir: sürücü aracın içinde görünür. Hangi aracın görüneceğini sahibi <see cref="SpriteName"/> ve <see cref="WorldSize"/> ile söyler.
 /// </summary>
 public class VehicleVisual : MonoBehaviour
 {
@@ -14,6 +15,8 @@ public class VehicleVisual : MonoBehaviour
     bool facingLeft;
     SpriteStack stack;
     float heading;
+    SpriteRenderer head;
+    SpriteRenderer headOutline;
 
     /// <summary>Aracın resminin adı; boşsa araç yok.</summary>
     public string SpriteName { get; set; }
@@ -61,6 +64,10 @@ public class VehicleVisual : MonoBehaviour
         Vector3 moved = transform.position - lastPosition;
         lastPosition = transform.position;
 
+        // Katmanlı araçta sürücü aracın içindedir: ayakta duran resmi çizme (başka kodların enabled/renk ayarına dokunmadan).
+        if (body != null) body.forceRenderingOff = stack != null;
+        UpdateHead();
+
         float rumble = Mathf.Sin(Time.time * 60f) * 0.02f;
         if (stack != null)
         {
@@ -68,7 +75,7 @@ public class VehicleVisual : MonoBehaviour
             if (moved.sqrMagnitude > 0.000001f)
                 heading = Mathf.MoveTowardsAngle(heading, Mathf.Atan2(moved.y, moved.x) * Mathf.Rad2Deg, 900f * Time.deltaTime);
             stack.Angle = heading;
-            stack.transform.localPosition = new Vector3(0f, -0.35f + rumble, 0f);
+            stack.transform.localPosition = new Vector3(0f, rumble, 0f);
             car.enabled = false;
         }
         else
@@ -83,12 +90,61 @@ public class VehicleVisual : MonoBehaviour
         }
 
         // Egzoz dumanı: arkadan gri damlalar.
+        EmitSmoke(moved);
+    }
+
+    /// <summary>Kabindeki/seledeki sürücünün kafası: aracın tepesinde, koltuğun yerinde, karakterin renginde.</summary>
+    void UpdateHead()
+    {
+        if (head == null)
+        {
+            headOutline = CreateHeadPart("Sürücü kafası çizgisi");
+            head = CreateHeadPart("Sürücü kafası");
+        }
+
+        bool show = stack != null;
+        head.enabled = show;
+        headOutline.enabled = show;
+        if (!show) return;
+
+        int order = body != null ? body.sortingOrder : 5;
+        head.sortingOrder = order + 1;
+        headOutline.sortingOrder = order;
+
+        float parentScale = Mathf.Max(0.01f, transform.lossyScale.x);
+        Vector2 forward = new Vector2(Mathf.Cos(heading * Mathf.Deg2Rad), Mathf.Sin(heading * Mathf.Deg2Rad));
+        Vector3 seat = (Vector3)(-forward * (WorldSize * 0.12f)) + Vector3.up * (stack.Height + 0.04f) + stack.transform.localPosition * parentScale;
+        float size = Mathf.Clamp(WorldSize * 0.3f, 0.3f, 0.5f);
+
+        head.transform.position = transform.position + seat;
+        headOutline.transform.position = head.transform.position;
+        head.transform.localScale = Vector3.one * (size / parentScale);
+        headOutline.transform.localScale = Vector3.one * (size * 1.3f / parentScale);
+
+        Color c = body != null ? body.color : Color.white;
+        c.a = 1f;
+        head.color = c;
+        headOutline.color = new Color(0.1f, 0.11f, 0.17f, 1f);
+    }
+
+    SpriteRenderer CreateHeadPart(string name)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(transform, false);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = SpriteFactory.Circle();
+        sr.enabled = false;
+        return sr;
+    }
+
+    void EmitSmoke(Vector3 moved)
+    {
         smokeTimer -= Time.deltaTime;
         if (smokeTimer <= 0f && moved.sqrMagnitude > 0.00001f)
         {
             smokeTimer = 0.06f;
             Vector2 back = -((Vector2)moved).normalized;
-            Vector2 at = (Vector2)transform.position + back * (WorldSize * 0.5f) + Vector2.down * 0.3f;
+            Vector2 at = (Vector2)transform.position + back * (WorldSize * 0.5f) + (stack != null ? Vector2.zero : Vector2.down * 0.3f);
             BloodDrop.Spawn(at, back * 1.5f + Random.insideUnitCircle * 0.5f, 0.3f, 2f, 0.12f, new Color(0.55f, 0.55f, 0.6f, 0.7f), false);
         }
     }

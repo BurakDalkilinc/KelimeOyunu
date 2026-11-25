@@ -994,38 +994,48 @@ def save_stack(slices, name):
 
 
 def make_araba_stack():
-    """Yukarıdan araba: 12 uzun (x 2-13), 8 geniş (y 4-11). Burnu sağda."""
+    """Yukarıdan araba (burnu sağda): gövde x 1-14, y 4-11; tekerler gövdenin iki yanından taşar.
+    10 dilim: tekerler, şasi, gövde (yuvarlak köşe, kenar çizgisi, tamponlar), kaput + farlar, kabin camları, tavan."""
     out = []
+
+    def body_shape(c, col, edge):
+        c.rect(1, 4, 14, 11, col)
+        for x, y_ in ((1, 4), (14, 4), (1, 11), (14, 11)):       # yuvarlak köşeler
+            c.set(x, y_, None)
+        c.rect(2, 4, 13, 4, edge); c.rect(2, 11, 13, 11, edge)   # yan kenar çizgileri
+        c.rect(1, 5, 1, 10, edge); c.rect(14, 5, 14, 10, edge)
+
     def wheels(c):
         for x0 in (3, 10):
-            c.rect(x0, 3, x0 + 2, 4, INK); c.rect(x0, 11, x0 + 2, 12, INK)
-    # 0-1: tekerler ve alt şasi
-    c = Canvas(); wheels(c); c.rect(3, 5, 12, 10, K); out.append(c)
-    c = Canvas(); wheels(c); c.rect(2, 4, 13, 11, b); out.append(c)
-    # 2-4: gövde (kenar koyu), farlar ve stoplar
-    for i in range(3):
-        c = Canvas(); c.rect(2, 4, 13, 11, B); c.rect(2, 4, 13, 4, b); c.rect(2, 11, 13, 11, b)
-        if i >= 1:
-            c.set(13, 5, Y); c.set(13, 10, Y)          # farlar
-            c.set(2, 5, R); c.set(2, 10, R)            # stoplar
-        out.append(c)
-    # 5: kaput üstü ve kabin camları
-    c = Canvas(); c.rect(2, 4, 13, 11, B); c.rect(5, 5, 10, 10, C); c.rect(6, 6, 9, 9, b); out.append(c)
-    # 6-7: kabin (cam kenarlı tavan)
-    c = Canvas(); c.rect(5, 5, 10, 10, C); c.rect(6, 6, 9, 9, B); out.append(c)
-    c = Canvas(); c.rect(6, 6, 9, 9, B); c.rect(7, 6, 8, 9, W); out.append(c)
+            c.rect(x0, 3, x0 + 2, 3, INK); c.rect(x0, 12, x0 + 2, 12, INK)
+
+    c = Canvas(); wheels(c); c.rect(3, 4, 12, 11, K); out.append(c)                       # 0: teker altı + şasi gölgesi
+    c = Canvas(); wheels(c); c.rect(2, 4, 13, 11, K); out.append(c)                       # 1: şasi
+    c = Canvas(); wheels(c); body_shape(c, b, K); c.rect(15, 6, 15, 9, g); c.rect(0, 6, 0, 9, g); out.append(c)  # 2: alt gövde + tamponlar
+    c = Canvas(); wheels(c); body_shape(c, B, b); c.rect(15, 6, 15, 9, w); c.rect(0, 6, 0, 9, g); out.append(c)  # 3: gövde
+    c = Canvas(); body_shape(c, B, b); out.append(c)                                      # 4: gövde
+    c = Canvas(); body_shape(c, B, b)                                                     # 5: kaput üstü, farlar, stoplar
+    c.set(14, 5, Y); c.set(14, 10, Y); c.set(1, 5, R); c.set(1, 10, R)
+    c.rect(12, 7, 13, 8, C); out.append(c)                                                # kaput parlaması
+    for _ in range(2):                                                                    # 6-7: kabin camları
+        c = Canvas(); c.rect(4, 5, 10, 10, C); c.rect(4, 5, 4, 10, b); c.rect(10, 5, 10, 10, INK)
+        c.rect(5, 5, 9, 5, b); c.rect(5, 10, 9, 10, b); out.append(c)
+    c = Canvas(); c.rect(4, 5, 9, 10, B); c.rect(4, 5, 9, 5, b); c.rect(4, 10, 9, 10, b); c.rect(5, 7, 8, 8, W); out.append(c)  # 8: tavan
+    c = Canvas(); c.rect(5, 6, 8, 9, B); c.rect(6, 7, 7, 8, W); out.append(c)               # 9: tavan tepesi
     return out
 
 
 def make_motor_stack():
-    """Yukarıdan motor: uzun ve ince (x 2-13, y 6-9). Burnu sağda."""
+    """Yukarıdan motor (burnu sağda): uzun ve ince (x 1-14, y 6-9). 6 dilim."""
     out = []
-    c = Canvas(); c.rect(2, 7, 4, 8, INK); c.rect(11, 7, 13, 8, INK); out.append(c)          # 0: tekerler
-    c = Canvas(); c.rect(2, 7, 4, 8, INK); c.rect(11, 7, 13, 8, INK); c.rect(4, 7, 11, 8, g); out.append(c)  # 1: şasi
-    c = Canvas(); c.rect(4, 6, 11, 9, R); c.rect(3, 9, 6, 9, w); out.append(c)               # 2: gövde + egzoz
-    c = Canvas(); c.rect(5, 7, 7, 8, r); c.rect(8, 6, 10, 9, R); c.set(13, 7, Y); c.set(13, 8, Y); out.append(c)  # 3: sele, depo, far
-    c = Canvas(); c.rect(11, 4, 11, 11, g); c.set(11, 4, INK); c.set(11, 11, INK); c.rect(8, 7, 9, 8, W); out.append(c)  # 4: gidon
+    c = Canvas(); c.rect(1, 7, 4, 8, INK); c.rect(11, 7, 14, 8, INK); out.append(c)                          # 0: tekerler
+    c = Canvas(); c.rect(1, 7, 4, 8, INK); c.rect(11, 7, 14, 8, INK); c.rect(4, 7, 11, 8, G); out.append(c)  # 1: şasi
+    c = Canvas(); c.rect(2, 7, 3, 8, INK); c.rect(12, 7, 13, 8, INK); c.rect(4, 6, 11, 9, r); c.rect(2, 9, 6, 9, w); out.append(c)  # 2: alt gövde, egzoz
+    c = Canvas(); c.rect(4, 6, 11, 9, R); c.rect(4, 6, 11, 6, r); c.rect(4, 9, 11, 9, r); c.set(14, 7, Y); c.set(14, 8, Y); c.rect(12, 7, 13, 8, g); out.append(c)  # 3: gövde, far
+    c = Canvas(); c.rect(4, 7, 7, 8, INK); c.rect(8, 6, 10, 9, R); c.rect(9, 7, 9, 8, W); out.append(c)      # 4: sele, depo parlaması
+    c = Canvas(); c.rect(11, 3, 11, 12, g); c.set(11, 3, INK); c.set(11, 12, INK); c.set(12, 7, C); c.set(12, 8, C); out.append(c)  # 5: gidon, cam
     return out
+
 
 
 def main():
