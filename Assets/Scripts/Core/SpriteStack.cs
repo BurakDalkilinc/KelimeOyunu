@@ -63,6 +63,14 @@ public class SpriteStack : MonoBehaviour
         foreach (SpriteRenderer layer in layers) if (layer.sprite != sprite) layer.sprite = sprite;
     }
 
+    /// <summary>Dilimleri değiştirir (aynı sayıda; animasyonlu voxel model: her karenin kendi dilimleri).</summary>
+    public void SetSlices(Sprite[] slices)
+    {
+        if (layers == null || slices == null) return;
+        int count = Mathf.Min(layers.Length, slices.Length);
+        for (int i = 0; i < count; i++) if (layers[i].sprite != slices[i]) layers[i].sprite = slices[i];
+    }
+
     /// <summary>Bütün dilimleri yatay aynalar (önden çizilmiş yaratık sola giderken).</summary>
     public void SetFlipX(bool flip)
     {

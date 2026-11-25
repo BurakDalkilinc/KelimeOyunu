@@ -1045,6 +1045,42 @@ def make_char_stack():
     return out
 
 
+def voxelize(cv, max_half_depth=5):
+    """Önden çizilmiş bir resmi katmanlı (voxel) modele çevirir: resmin her satırı bir kat olur (en alt satır = dilim 0).
+    Satırdaki her piksel, yukarıdan bakınca yanal eksende (dilimin y'si) yerini korur; derinlik ekseninde (dilimin x'i)
+    gövdenin kenarına uzaklığa göre kalınlaşır (kenarlar ince, orta kalın: yuvarlak gövde). Ön yüz (+x, yani gittiği yön)
+    resmin asıl rengini taşır, yanlar ve arka biraz koyudur. Böylece yaratık dönebilir ve kameraya dönünce yüzü görünür."""
+    def shade(c, f):
+        return (int(c[0] * f), int(c[1] * f), int(c[2] * f))
+
+    slices = []
+    for row in range(cv.h - 1, -1, -1):
+        sl = Canvas(cv.w, cv.h)
+        filled = [x for x in range(cv.w) if cv.px[row][x] is not None]
+        if filled:
+            for ix in filled:
+                # Bu pikselin satırdaki dolu bölümün kenarına uzaklığı -> yarı derinlik.
+                left = ix
+                while left - 1 >= 0 and cv.px[row][left - 1] is not None:
+                    left -= 1
+                right = ix
+                while right + 1 < cv.w and cv.px[row][right + 1] is not None:
+                    right += 1
+                edge = min(ix - left, right - ix)
+                half = max(1 if right > left else 0, min(max_half_depth, int(edge * 1.5 + 0.5)))
+                c = cv.px[row][ix]
+                y_ = cv.w - 1 - ix              # yanal eksen (kameraya dönünce resim aynalanmasın)
+                for d in range(-half, half + 1):
+                    x_ = 8 + d                  # derinlik ekseni (ortada)
+                    if d == half:
+                        sl.set(x_, y_, c)       # ön yüz: asıl renk
+                    else:
+                        sl.set(x_, y_, shade(c, 0.78 if d > -half else 0.62))
+        slices.append(sl)
+    # Katman sayısı hep resmin yüksekliği: animasyon kareleri aynı sayıda dilimle değiştirilebilsin.
+    return slices
+
+
 def make_motor_stack():
     """Yukarıdan motor (burnu sağda): uzun ve ince (x 1-14, y 6-9). 6 dilim."""
     out = []
@@ -1088,7 +1124,16 @@ def main():
     stacks = {"araba": make_araba_stack, "motor": make_motor_stack, "char": make_char_stack}
     for name, fn in stacks.items():
         save_stack(fn(), name)
-    print("Üretildi:", len(animated) * 2 + len(static), "PNG ->", OUT, "+", len(stacks), "katmanlı nesne ->", STACK_OUT)
+    # Yaratıklar: önden çizimleri otomatik voxel modele çevrilir (her animasyon karesi ayrı).
+    voxels = 0
+    for name, fn in animated.items():
+        if name == "char":
+            continue                    # Karakterin elle çizilmiş katmanlı modeli var
+        cv = fn()
+        save_stack(voxelize(cv), name)
+        save_stack(voxelize(cv.shifted(1)), name + "_b")
+        voxels += 2
+    print("Üretildi:", len(animated) * 2 + len(static), "PNG ->", OUT, "+", len(stacks) + voxels, "katmanlı nesne ->", STACK_OUT)
 
 
 if __name__ == "__main__":
