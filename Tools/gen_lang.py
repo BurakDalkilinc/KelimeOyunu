@@ -28,7 +28,7 @@ ROWS = [
     ("collection.menu_button", "Defter (koleksiyon)", "Book (collection)"),
     ("collection.seen_only", "Kendin yazınca açılır", "Unlocks when you write it yourself"),
     ("collection.kind_and_length", "{0} · {1} harf", "{0} · {1} letters"),
-    ("collection.counts", "{0} kez yazdın, {1} kez gördün", "Written {0} times, seen {1} times"),
+    ("collection.counts", "{0} kez yazdın, {1} kez gördün", "Written: {0}, seen: {1}"),
     ("collection.progress", "{0} / {1} keşfedildi", "{0} / {1} discovered"),
     ("collection.new_words", "Deftere {0} yeni kelime eklendi!", "{0} new words added to the book!"),
     ("collection.page", "Sayfa {0} / {1}", "Page {0} / {1}"),

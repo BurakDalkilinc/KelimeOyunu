@@ -61,7 +61,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [x] Hile kontrolleri (sunucu doğrulama listesi: `Docs/HILE_KONTROLLERI.md`, hız sınırı, boyut sınırı)
 
 ## Aşama 5 — Steam sayfası ve demo
-- [ ] Oyun adı, logo, kapsül görselleri
+- [x] Oyun adı, logo, kapsül görselleri (ad: WordRoyale; görseller `Steam/Store/`, üretici `Tools/GenerateStoreArt.py`)
 - [ ] 30 sn fragman
 - [ ] Steam sayfası yayında, wishlist toplanıyor
 - [ ] Next Fest demosu

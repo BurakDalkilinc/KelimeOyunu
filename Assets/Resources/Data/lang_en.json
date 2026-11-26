@@ -24,7 +24,7 @@
     {"key": "collection.menu_button", "value": "Book (collection)"},
     {"key": "collection.seen_only", "value": "Unlocks when you write it yourself"},
     {"key": "collection.kind_and_length", "value": "{0} · {1} letters"},
-    {"key": "collection.counts", "value": "Written {0} times, seen {1} times"},
+    {"key": "collection.counts", "value": "Written: {0}, seen: {1}"},
     {"key": "collection.progress", "value": "{0} / {1} discovered"},
     {"key": "collection.new_words", "value": "{0} new words added to the book!"},
     {"key": "collection.page", "value": "Page {0} / {1}"},
