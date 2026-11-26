@@ -26,6 +26,10 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     // Gönderen başına hız sınırları: normal oyun bunlara asla takılmaz, mesaj seli engellenir.
     readonly RpcRateLimiter submitLimiter = new RpcRateLimiter(5f, 2f);
     readonly RpcRateLimiter targetLimiter = new RpcRateLimiter(8f, 4f);
+    readonly RpcRateLimiter nameLimiter = new RpcRateLimiter(3f, 0.2f);
+
+    /// <summary>Host'ta: bağlantı numarası -> oyuncunun bildirdiği ad (ham; kadro kurulurken temizlenir).</summary>
+    readonly Dictionary<ulong, string> reportedNames = new Dictionary<ulong, string>();
 
     [SerializeField] GameConfig config;
 
@@ -62,6 +66,11 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
 
     /// <summary>Bağlı insan oyuncu sayısı (yalnızca host'ta anlamlı).</summary>
     public int ConnectedHumans => NetworkManager != null ? NetworkManager.ConnectedClientsIds.Count : 0;
+
+    /// <summary>Lobideki insanlar ve adları (maç öncesi host her bilgisayara yollar). Lobi ekranındaki isim listesi bunu okur.</summary>
+    public IReadOnlyList<RosterEntry> LobbyPlayers => lobbyPlayers;
+
+    List<RosterEntry> lobbyPlayers = new List<RosterEntry>();
 
     /// <summary>Maç başladı mı (istemci tur mesajı aldı)?</summary>
     public bool MatchActive => Client != null && Client.Phase != TurnPhase.NotStarted;
@@ -148,7 +157,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         if (!IsServer || host != null) return false;
 
         var humans = new List<ulong>(NetworkManager.ConnectedClientsIds);
-        List<RosterEntry> roster = RosterBuilder.Build(humans, TargetPlayers);
+        List<RosterEntry> roster = RosterBuilder.Build(humans, TargetPlayers, reportedNames, config.playerNameMaxLength);
 
         host = new NetTurnHost(config, words, config.CreateRandom(), roster);
 
@@ -227,6 +236,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         }
 
         ResetMatchRpc();
+        BroadcastLobbyNames(); // Lobi ekranı yeniden isimleri göstersin
         return true;
     }
 
@@ -350,6 +360,9 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
 
     public override void OnNetworkSpawn()
     {
+        // Herkes (host dahil) kendi görünen adını host'a bildirir; host temizler ve lobi listesini yayar.
+        ReportNameRpc(LocalPlayerName.Get());
+
         if (!IsServer) return;
 
         NetworkManager.OnClientDisconnectCallback += OnClientDisconnected;
@@ -360,6 +373,15 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     {
         submitLimiter.Forget(clientId);
         targetLimiter.Forget(clientId);
+        nameLimiter.Forget(clientId);
+    }
+
+    /// <summary>Maç öncesi lobideki insanları (temizlenmiş adlarla) herkese yollar (yalnızca host).</summary>
+    void BroadcastLobbyNames()
+    {
+        if (!IsServer || host != null) return;
+        var humans = new List<ulong>(NetworkManager.ConnectedClientsIds);
+        LobbyNamesRpc(RosterCodec.Encode(RosterBuilder.BuildHumans(humans, reportedNames, config.playerNameMaxLength)));
     }
 
     /// <summary>
@@ -372,6 +394,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
 
         if (host != null) NetworkManager.DisconnectClient(clientId, "Maç başladı, bir sonraki maçı bekle.");
         else if (NetworkManager.ConnectedClientsIds.Count > MaxPlayers) NetworkManager.DisconnectClient(clientId, "Oda dolu (en çok " + MaxPlayers + " oyuncu).");
+        else BroadcastLobbyNames(); // Yeni gelen listeyi alsın (adı gelince liste yeniden yayılır)
     }
 
     /// <summary>
@@ -390,6 +413,8 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         if (host == null)
         {
             if (avatarFound && avatar.NetworkObject.IsSpawned) avatar.NetworkObject.Despawn();
+            reportedNames.Remove(clientId);
+            BroadcastLobbyNames();
             return;
         }
 
@@ -409,6 +434,8 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         }
         host = null;
         Sim = null;
+        reportedNames.Clear();
+        lobbyPlayers = new List<RosterEntry>();
         Client?.Reset();
         latestCreatures = new List<CreatureSnapshot>();
         CreaturesVersion++;
@@ -478,6 +505,28 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         Client.SetRoster(roster, config.startingHealth);
         Feedback = "";
         Gore.ClearAll(); // Yeni maç: önceki maçın kanı, parçaları, cesetleri silinir
+    }
+
+    [Rpc(SendTo.ClientsAndHost)]
+    void LobbyNamesRpc(string packedPlayers)
+    {
+        if (RosterCodec.TryDecode(packedPlayers, out List<RosterEntry> players)) lobbyPlayers = players;
+    }
+
+    /// <summary>
+    /// Oyuncu görünen adını bildirdi. Kim olduğu bağlantıdan bulunur; dev metin kesilir, hız sınırı var, ad kadroya
+    /// girerken <see cref="PlayerNameSanitizer"/> ile temizlenir. Maç başladıysa ad değişmez (kadro sabit).
+    /// </summary>
+    [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
+    void ReportNameRpc(string displayName, RpcParams rpcParams = default)
+    {
+        ulong sender = rpcParams.Receive.SenderClientId;
+        if (host != null || !nameLimiter.Allow(sender, Time.unscaledTime)) return;
+
+        string raw = displayName ?? "";
+        if (raw.Length > MaxIncomingTextLength) raw = raw.Substring(0, MaxIncomingTextLength);
+        reportedNames[sender] = PlayerNameSanitizer.Clean(raw, config.playerNameMaxLength);
+        BroadcastLobbyNames();
     }
 
     [Rpc(SendTo.ClientsAndHost)]

@@ -26,21 +26,46 @@ public static class RosterBuilder
 
     /// <summary>
     /// İnsanlar önce, ardından eksikleri tamamlayan botlar. Toplam <c>max(hedef, insan sayısı)</c> olur
-    /// (en çok <see cref="MaxPlayers"/>; fazla insan kadroya alınmaz).
+    /// (en çok <see cref="MaxPlayers"/>; fazla insan kadroya alınmaz). İnsanın adı <paramref name="names"/>'ten
+    /// (istemcinin bildirdiği ad) gelir ve burada yeniden temizlenir; adı yoksa "Oyuncu N". Kadroda aynı ad iki kez olmaz.
     /// </summary>
-    public static List<RosterEntry> Build(IReadOnlyList<ulong> humanClientIds, int targetPlayers)
+    public static List<RosterEntry> Build(IReadOnlyList<ulong> humanClientIds, int targetPlayers,
+        IReadOnlyDictionary<ulong, string> names = null, int maxNameLength = PlayerNameSanitizer.DefaultMaxLength)
+    {
+        List<RosterEntry> roster = BuildHumans(humanClientIds, names, maxNameLength);
+        var taken = new List<string>();
+        foreach (RosterEntry entry in roster) taken.Add(entry.Name);
+
+        int total = System.Math.Max(ClampTarget(targetPlayers), roster.Count);
+        for (int bot = 0; roster.Count < total; bot++)
+        {
+            string name = PlayerNameSanitizer.MakeUnique("Bot " + (bot + 1), taken, maxNameLength);
+            taken.Add(name);
+            roster.Add(new RosterEntry(FirstBotId + bot, name, true));
+        }
+
+        return roster;
+    }
+
+    /// <summary>
+    /// Yalnızca insanlar (lobi ekranındaki isim listesi ve kadronun ilk kısmı): temizlenmiş, birbirinden farklı adlar.
+    /// Önce bağlanan adını korur; sonra gelen aynı adlı oyuncu " (2)" alır.
+    /// </summary>
+    public static List<RosterEntry> BuildHumans(IReadOnlyList<ulong> humanClientIds,
+        IReadOnlyDictionary<ulong, string> names = null, int maxNameLength = PlayerNameSanitizer.DefaultMaxLength)
     {
         var roster = new List<RosterEntry>();
+        var taken = new List<string>();
 
         foreach (ulong clientId in humanClientIds)
         {
             if (roster.Count >= MaxPlayers) break;
-            roster.Add(new RosterEntry((int)clientId, "Oyuncu " + clientId, false));
-        }
 
-        int total = System.Math.Max(ClampTarget(targetPlayers), roster.Count);
-        for (int bot = 0; roster.Count < total; bot++)
-            roster.Add(new RosterEntry(FirstBotId + bot, "Bot " + (bot + 1), true));
+            string raw = names != null && names.TryGetValue(clientId, out string given) ? given : null;
+            string name = PlayerNameSanitizer.MakeUnique(PlayerNameSanitizer.Sanitize(raw, (int)clientId, maxNameLength), taken, maxNameLength);
+            taken.Add(name);
+            roster.Add(new RosterEntry((int)clientId, name, false));
+        }
 
         return roster;
     }

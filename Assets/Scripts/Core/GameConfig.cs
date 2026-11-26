@@ -333,6 +333,8 @@ public class GameConfig : ScriptableObject
     [Min(0.005f)] public float nameTagPixelSize = 0.0625f;
     [Tooltip("En uzun isim (harf). Daha uzunu kısaltılıp sonuna nokta konur.")]
     [Min(1)] public int nameTagMaxLength = 14;
+    [Tooltip("Ağ maçında oyuncunun bildirdiği adın en uzun hali (harf). Host daha uzununu keser; etiket ayrıca nameTagMaxLength ile kısaltır.")]
+    [Min(1)] public int playerNameMaxLength = PlayerNameSanitizer.DefaultMaxLength;
     [Tooltip("Kendi karakterinin adının rengi.")]
     public Color nameTagOwnColor = new Color(1f, 0.87f, 0.25f, 1f);
     [Tooltip("Diğer karakterlerin adının rengi.")]

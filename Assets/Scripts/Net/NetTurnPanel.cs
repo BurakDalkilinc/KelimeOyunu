@@ -13,6 +13,9 @@ public class NetTurnPanel : MonoBehaviour
     /// <summary>Açıksa yalnızca maç öncesi lobi düğmesi çizilir; maç arayüzünü Canvas (Arena arayüzü) gösterir.</summary>
     [SerializeField] bool lobbyOnly;
 
+    /// <summary>Lobi isim listesinde bir satırın yüksekliği (piksel).</summary>
+    const float LobbyNameRowHeight = 22f;
+
     string wordText = "";
     GUIStyle bigStyle;
     GUIStyle smallStyle;
@@ -42,8 +45,12 @@ public class NetTurnPanel : MonoBehaviour
 
     void DrawBeforeMatch(NetworkManager manager)
     {
-        GUILayout.BeginArea(new Rect(Screen.width - 312, 12, 300, 190), GUI.skin.box);
+        var players = channel.LobbyPlayers;
+        GUILayout.BeginArea(new Rect(Screen.width - 312, 12, 300, 190 + LobbyNameRowHeight * players.Count), GUI.skin.box);
         GUILayout.Label("Maç henüz başlamadı.");
+        if (players.Count > 0) GUILayout.Label("Lobidekiler:");
+        foreach (RosterEntry player in players)
+            GUILayout.Label("- " + player.Name + (player.Id == channel.LocalPlayerId ? " (SEN)" : ""));
         if (manager.IsHost)
         {
             int humans = channel.ConnectedHumans;
