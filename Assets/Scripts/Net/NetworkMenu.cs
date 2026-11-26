@@ -17,7 +17,7 @@ public class NetworkMenu : MonoBehaviour
         if (CollectionBookScreen.IsOpen || SettingsScreen.IsOpen) return; // Defter/ayarlar açıkken ekranı onlar kaplar
 
         var manager = NetworkManager.Singleton;
-        if (manager == null) { GUILayout.Label("NetworkManager yok."); return; }
+        if (manager == null) { GUILayout.Label(Loc.T("netmenu.no_manager")); return; }
 
         // Sol alta: sol üst köşe Arena arayüzünün "Can" yazısına ait.
         float height = manager.IsListening ? 108 : 313;
@@ -31,14 +31,14 @@ public class NetworkMenu : MonoBehaviour
 
     void DrawStart(NetworkManager manager)
     {
-        GUILayout.Label("Çok oyunculu deneme");
-        GUILayout.Label("Host'un IP adresi (aynı bilgisayarda boş bırak):");
+        GUILayout.Label(Loc.T("netmenu.title"));
+        GUILayout.Label(Loc.T("netmenu.address"));
         addressText = GUILayout.TextField(addressText);
 
-        if (Button("Host (oyunu kur)")) StartNetwork(manager, true);
-        if (Button("Katıl")) StartNetwork(manager, false);
-        if (Button("Tek kişilik oyna (botlarla)")) PlaySolo(manager);
-        if (GUILayout.Button("Defter (koleksiyon)")) CollectionBookScreen.Open(); // Defter kendi sayfa sesini çalar
+        if (Button(Loc.T("netmenu.host"))) StartNetwork(manager, true);
+        if (Button(Loc.T("netmenu.join"))) StartNetwork(manager, false);
+        if (Button(Loc.T("netmenu.solo"))) PlaySolo(manager);
+        if (GUILayout.Button(Loc.T("collection.menu_button"))) CollectionBookScreen.Open(); // Defter kendi sayfa sesini çalar
         if (Button(SettingsText.MenuButton)) SettingsScreen.Open();
 
         if (!string.IsNullOrEmpty(error)) GUILayout.Label(error);
@@ -62,11 +62,11 @@ public class NetworkMenu : MonoBehaviour
 
     void DrawConnected(NetworkManager manager)
     {
-        if (manager.IsHost) GUILayout.Label($"Host: {manager.ConnectedClientsIds.Count} oyuncu bağlı");
-        else if (manager.IsConnectedClient) GUILayout.Label("Host'a bağlandın.");
-        else GUILayout.Label("Bağlanılıyor...");
+        if (manager.IsHost) GUILayout.Label(Loc.F("netmenu.host_count", manager.ConnectedClientsIds.Count));
+        else if (manager.IsConnectedClient) GUILayout.Label(Loc.T("netmenu.connected"));
+        else GUILayout.Label(Loc.T("netmenu.connecting"));
 
-        if (Button("Bağlantıyı kes")) manager.Shutdown();
+        if (Button(Loc.T("netmenu.disconnect"))) manager.Shutdown();
         if (Button(SettingsText.MenuButton)) SettingsScreen.Open();
     }
 
@@ -83,7 +83,7 @@ public class NetworkMenu : MonoBehaviour
         if (!ConnectionSettings.TryParse(addressText, out string address, out ushort port, out error)) return;
 
         var transport = manager.GetComponent<UnityTransport>();
-        if (transport == null) { error = "UnityTransport bulunamadı."; return; }
+        if (transport == null) { error = Loc.T("netmenu.no_transport"); return; }
 
         // Steam lobisi aktarım katmanını değiştirmiş olabilir; yerel ağ için yeniden UnityTransport'a dön.
         manager.NetworkConfig.NetworkTransport = transport;
@@ -92,12 +92,12 @@ public class NetworkMenu : MonoBehaviour
         {
             // Host herkesten (0.0.0.0) bağlantı kabul eder.
             transport.SetConnectionData(ConnectionSettings.DefaultAddress, port, "0.0.0.0");
-            if (!manager.StartHost()) error = "Host başlatılamadı (port dolu olabilir).";
+            if (!manager.StartHost()) error = Loc.T("netmenu.host_failed");
         }
         else
         {
             transport.SetConnectionData(address, port);
-            if (!manager.StartClient()) error = "Bağlantı başlatılamadı.";
+            if (!manager.StartClient()) error = Loc.T("netmenu.client_failed");
         }
     }
 }

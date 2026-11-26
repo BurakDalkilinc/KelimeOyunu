@@ -9,7 +9,7 @@ using UnityEngine;
 public class GameSettings
 {
     public const int CurrentVersion = 1;
-    public const string DefaultLanguage = "tr";
+    public const string DefaultLanguage = Language.Turkish;
 
     /// <summary>
     /// Kayıt biçiminin sürümü. Yeni nesnede 0'dır, kaydederken <see cref="Clamp"/> yazar; böylece sürümsüz bir JSON
@@ -30,17 +30,17 @@ public class GameSettings
     public bool vSync = true;
     public bool showNameTags = true;
 
-    /// <summary>Dil kodu. Şimdilik yalnızca "tr" (dil desteği sonraki aşamada).</summary>
+    /// <summary>Dil kodu: "tr" ya da "en" (bkz. <see cref="Language"/>). İlk açılışta sistem dilinden seçilir.</summary>
     public string language = DefaultLanguage;
 
-    /// <summary>Değerleri geçerli aralığa çeker: ses düzeyleri 0..1, çözünürlük negatif olamaz, dil boşsa Türkçe.</summary>
+    /// <summary>Değerleri geçerli aralığa çeker: ses düzeyleri 0..1, çözünürlük negatif olamaz, dil boş ya da tanınmıyorsa Türkçe.</summary>
     public void Clamp()
     {
         masterVolume = ClampVolume(masterVolume);
         musicVolume = ClampVolume(musicVolume);
         sfxVolume = ClampVolume(sfxVolume);
         if (resolutionWidth <= 0 || resolutionHeight <= 0) { resolutionWidth = 0; resolutionHeight = 0; }
-        if (string.IsNullOrWhiteSpace(language)) language = DefaultLanguage;
+        language = Language.Normalize(language) ?? DefaultLanguage;
         version = CurrentVersion;
     }
 

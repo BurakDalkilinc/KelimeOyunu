@@ -60,7 +60,7 @@ public class MatchRunner : TurnViewSource
         PlayerState local = LocalPlayer;
         if (dice == null || local == null || !local.IsAlive) return string.Empty;
         float chance = dice.ChanceOf(local, bootstrap.Match.Players);
-        return $"Seçilme şansın: %{Mathf.RoundToInt(chance * 100f)}";
+        return Loc.F("turn.chance", Mathf.RoundToInt(chance * 100f));
     }
 
     Dice dice;
@@ -110,7 +110,7 @@ public class MatchRunner : TurnViewSource
         Turns.Start();
 
         // Esc ayarları açar (bkz. SettingsHotkey); ana menüye dönüş düğmesi ayarlar ekranında durur.
-        if (SceneUtility.GetBuildIndexByScenePath(MenuScenePath) >= 0) SettingsScreen.SetLeaveAction(SettingsText.BackToMenu, GoToMenu);
+        if (SceneUtility.GetBuildIndexByScenePath(MenuScenePath) >= 0) SettingsScreen.SetLeaveAction(() => SettingsText.BackToMenu, GoToMenu);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         DebugPanel.EnsureExists(); // F1 deneme paneli (oyuncuya giden sürümde yok)
 #endif

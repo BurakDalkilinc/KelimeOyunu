@@ -49,7 +49,8 @@ public class HordeEffect : IThreatEffect
             member.TargetsNearest = true;
             member.RetargetsWhenTargetDies = true;
 
-            context.Creatures.Spawn(member, count == 1 ? context.Word.display : string.Empty); // Tek yaratıkta (ejderha) adı yazılır
+            // Tek yaratıkta (ejderha) adı yazılır; ad, ekrana basan tarafta seçili dilde doldurulur.
+            context.Creatures.Spawn(member, count == 1 ? CreatureLabel.NameToken : string.Empty);
             Spawned++;
         }
 

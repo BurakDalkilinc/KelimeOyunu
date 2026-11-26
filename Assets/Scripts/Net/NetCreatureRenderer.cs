@@ -21,6 +21,7 @@ public class NetCreatureRenderer : MonoBehaviour
         public SpriteRenderer Body;
         public SpriteRenderer Fill;
         public TextMesh Label;
+        public WordEntry Word;
         public CreatureSnapshot Last;
         public Vector2 Target;
     }
@@ -94,6 +95,7 @@ public class NetCreatureRenderer : MonoBehaviour
         view.Body.sortingOrder = 8;
 
         WordEntry word = channel.FindWord(s.WordId);
+        view.Word = word;
         Sprite[] frames = SpriteLibrary.GetFrames(SpriteLibrary.NameFor(word));
         bool isZone = s.Kind == CreatureKind.Strike || s.Kind == CreatureKind.Area
                       || s.Kind == CreatureKind.FireArea || s.Kind == CreatureKind.Trap;
@@ -137,7 +139,7 @@ public class NetCreatureRenderer : MonoBehaviour
             view.Fill.sortingOrder = 9;
         }
 
-        if (!string.IsNullOrEmpty(s.Label)) view.Label = BuildLabel(view.Root.transform, s.Label, s.Radius);
+        if (!string.IsNullOrEmpty(s.Label)) view.Label = BuildLabel(view.Root.transform, CreatureLabel.Resolve(s.Label, word), s.Radius);
         return view;
     }
 
@@ -145,7 +147,8 @@ public class NetCreatureRenderer : MonoBehaviour
     {
         if (view.Label == null) return;
         CreatureSnapshot s = view.Last;
-        view.Label.text = s.Countdown > 0 ? s.Label + " " + s.Countdown : s.Label;
+        string text = CreatureLabel.Resolve(s.Label, view.Word); // Host "{w}" gönderir; ad bu oyuncunun dilinde
+        view.Label.text = s.Countdown > 0 ? text + " " + s.Countdown : text;
     }
 
     void Refresh(View view)

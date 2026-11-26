@@ -153,7 +153,7 @@ public class CreatureView : MonoBehaviour
 
         // Patlayıcıda fitilin kalan saniyesi kelimenin yanında yazılır (3, 2, 1).
         if (Model.ShowsCountdown && !Model.IsSky && labelMesh != null && Model.Word != null)
-            labelMesh.text = Model.Word.display + " " + Mathf.CeilToInt(Model.StrikeWarningLeft);
+            labelMesh.text = Model.Word.LocalizedDisplay + " " + Mathf.CeilToInt(Model.StrikeWarningLeft);
     }
 
     void BuildLabel(string text, float radius)

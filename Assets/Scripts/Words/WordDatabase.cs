@@ -4,7 +4,8 @@ using UnityEngine;
 
 /// <summary>
 /// words.json içindeki kelimeleri yükler ve yazılan metni bir kelime kaydıyla eşleştirir.
-/// id, görünen ad ve eş anlamlılar aksansız/büyük-küçük harf fark etmeden eşleşir.
+/// id, görünen ad, İngilizce ad (displayEn) ve eş anlamlılar aksansız/büyük-küçük harf fark etmeden eşleşir;
+/// oyuncunun seçtiği dil eşleştirmeyi etkilemez (sunucu dilden bağımsızdır).
 /// Hiçbir kelimeye özel kod yoktur; davranış etiketlerden gelir.
 /// Bu sınıf değişmezdir: kelime kilitleme maç başına <see cref="MatchWordTracker"/> içindedir.
 /// </summary>
@@ -15,10 +16,26 @@ public class WordDatabase
     readonly List<WordEntry> words = new List<WordEntry>();
     readonly Dictionary<string, WordEntry> byKey = new Dictionary<string, WordEntry>();
     readonly HashSet<string> blockedKeys = new HashSet<string>();
+    readonly List<string> englishConflicts = new List<string>();
     readonly int maxLength;
 
     /// <summary>Yüklenen tüm kelimeler (dosyadaki sırayla).</summary>
     public IReadOnlyList<WordEntry> Words => words;
+
+    /// <summary>
+    /// Başka bir kelimenin anahtarıyla çakıştığı için eşleştirmeye eklenemeyen İngilizce adlar (boş olmalı; test korur).
+    /// Çakışan İngilizce ad yazılırsa diğer kelime bulunur.
+    /// </summary>
+    public IReadOnlyList<string> EnglishNameConflicts => englishConflicts;
+
+    /// <summary>Kimliğiyle kelimeyi bulur; yoksa null.</summary>
+    public WordEntry FindById(string id)
+    {
+        if (string.IsNullOrEmpty(id)) return null;
+        foreach (WordEntry entry in words)
+            if (entry.id == id) return entry;
+        return null;
+    }
 
     /// <summary>
     /// Dosya verisinden veritabanı kurar. Dosyada hata varsa (aynı eş anlamlı iki kelimede,
@@ -37,6 +54,11 @@ public class WordDatabase
             foreach (WordEntry entry in file.words)
                 AddEntry(entry, ids, errors);
         }
+
+        // İngilizce adlar en son eklenir: oyuncu hangi dilde oynarsa oynasın kelimeyi İngilizce de yazabilsin.
+        // Başka bir kelimenin id/ad/eş anlamlısıyla çakışan İngilizce ad yüklemeyi bozmaz, yalnızca listelenir (test yakalar).
+        foreach (WordEntry entry in words)
+            RegisterEnglishName(entry);
 
         if (file.blocked != null)
         {
@@ -114,6 +136,21 @@ public class WordDatabase
         if (entry.aliases == null) return;
         foreach (string alias in entry.aliases)
             RegisterKey(alias, entry, errors);
+    }
+
+    void RegisterEnglishName(WordEntry entry)
+    {
+        string key = WordNormalizer.ToMatchKey(entry.displayEn);
+        if (key.Length == 0) return;
+
+        if (byKey.TryGetValue(key, out WordEntry existing))
+        {
+            if (!ReferenceEquals(existing, entry))
+                englishConflicts.Add($"'{entry.displayEn}' ({entry.id}) zaten '{existing.id}' kelimesinin anahtarı");
+            return;
+        }
+
+        byKey.Add(key, entry);
     }
 
     void RegisterKey(string text, WordEntry entry, List<string> errors)

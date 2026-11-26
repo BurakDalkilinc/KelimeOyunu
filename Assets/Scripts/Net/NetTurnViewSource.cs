@@ -59,7 +59,7 @@ public class NetTurnViewSource : TurnViewSource
 
         var dice = new Dice(new System.Random(0), channel.Config.diceBonusPerMissedTurn);
         float chance = dice.ChanceOf(me, channel.Client.Players.Values);
-        return $"Seçilme şansın: %{Mathf.RoundToInt(chance * 100f)}";
+        return Loc.F("turn.chance", Mathf.RoundToInt(chance * 100f));
     }
 
     public override string DescribeShove()
@@ -90,7 +90,7 @@ public class NetTurnViewSource : TurnViewSource
         get
         {
             if (channel == null) return string.Empty;
-            return channel.IsServer ? "Yeni maç için R'ye bas" : "Host'un yeni maçı hazırlaması bekleniyor...";
+            return channel.IsServer ? Loc.T("match.restart_hint_host") : Loc.T("match.wait_host_restart");
         }
     }
 }

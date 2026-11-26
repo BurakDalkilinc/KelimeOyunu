@@ -44,6 +44,6 @@ public class ShoveCooldown
     /// <summary>Arayüz yazısı: "İtiş (Boşluk): hazır" ya da "İtiş: 2 sn".</summary>
     public static string Describe(float remainingSeconds)
     {
-        return remainingSeconds <= 0f ? "İtiş (Boşluk): hazır" : $"İtiş: {Mathf.CeilToInt(remainingSeconds)} sn";
+        return remainingSeconds <= 0f ? Loc.T("shove.ready") : Loc.F("shove.wait", Mathf.CeilToInt(remainingSeconds));
     }
 }

@@ -14,7 +14,6 @@ public class CollectionBookScreen : MonoBehaviour
     const string FrameLockedSprite = "ui_card_frame_locked_plain";
     const string LockIconSprite = "ui_icon_lock";
     const string BookIconSprite = "ui_icon_book";
-    const string ScreenTitle = "Koleksiyon Defteri";
 
     static CollectionBookScreen instance;
 
@@ -139,7 +138,7 @@ public class CollectionBookScreen : MonoBehaviour
         }
 
         float lineHeight = area.height * 0.5f;
-        GUI.Label(new Rect(x, area.y, area.width * 0.5f, lineHeight), ScreenTitle, titleStyle);
+        GUI.Label(new Rect(x, area.y, area.width * 0.5f, lineHeight), Loc.T("collection.title"), titleStyle);
 
         GUI.Label(new Rect(area.x, area.y, area.width, lineHeight), CollectionText.Progress(book), rightStyle);
 
@@ -176,7 +175,7 @@ public class CollectionBookScreen : MonoBehaviour
             DrawCard(new Rect(cx, cy, cardWidth, cardHeight), cards[i]);
         }
 
-        if (cards.Count == 0) GUI.Label(area, "Bu sekmede kelime yok.", centerStyle);
+        if (cards.Count == 0) GUI.Label(area, Loc.T("collection.empty_tab"), centerStyle);
     }
 
     void DrawCard(Rect rect, WordEntry word)
@@ -214,7 +213,7 @@ public class CollectionBookScreen : MonoBehaviour
             float alpha = status == CollectionStatus.Seen ? config.collectionSeenAlpha : 1f;
             Sprite art = SpriteLibrary.Get(SpriteLibrary.NameFor(word));
             if (art != null) UiDraw.DrawSprite(imageRect, art, alpha);
-            GUI.Label(textRect, word.display, smallCenterStyle);
+            GUI.Label(textRect, word.LocalizedDisplay, smallCenterStyle);
         }
 
         if (GUI.Button(rect, GUIContent.none, GUIStyle.none)) { selected = word; GameAudio.Click(); }
@@ -227,16 +226,16 @@ public class CollectionBookScreen : MonoBehaviour
         float buttonWidth = (area.width - 3 * gap) / 4f;
 
         GUI.enabled = page > 0;
-        if (GUI.Button(new Rect(area.x, area.y, buttonWidth, area.height), "< Önceki", buttonStyle)) ChangePage(-1);
+        if (GUI.Button(new Rect(area.x, area.y, buttonWidth, area.height), Loc.T("collection.previous"), buttonStyle)) ChangePage(-1);
         GUI.enabled = true;
 
         GUI.Label(new Rect(area.x + buttonWidth + gap, area.y, buttonWidth, area.height), CollectionText.PageLabel(page, pageCount), centerStyle);
 
         GUI.enabled = page < pageCount - 1;
-        if (GUI.Button(new Rect(area.x + 2 * (buttonWidth + gap), area.y, buttonWidth, area.height), "Sonraki >", buttonStyle)) ChangePage(1);
+        if (GUI.Button(new Rect(area.x + 2 * (buttonWidth + gap), area.y, buttonWidth, area.height), Loc.T("collection.next"), buttonStyle)) ChangePage(1);
         GUI.enabled = true;
 
-        if (GUI.Button(new Rect(area.x + 3 * (buttonWidth + gap), area.y, buttonWidth, area.height), "Kapat (Esc)", buttonStyle)) { GameAudio.Click(); Close(); }
+        if (GUI.Button(new Rect(area.x + 3 * (buttonWidth + gap), area.y, buttonWidth, area.height), Loc.T("collection.close"), buttonStyle)) { GameAudio.Click(); Close(); }
     }
 
     void DrawDetail(Rect area)
@@ -247,7 +246,7 @@ public class CollectionBookScreen : MonoBehaviour
 
         if (selected == null)
         {
-            GUI.Label(inner, "Ayrıntı için bir karta tıkla.", centerStyle);
+            GUI.Label(inner, Loc.T("collection.pick_card"), centerStyle);
             return;
         }
 
@@ -275,17 +274,17 @@ public class CollectionBookScreen : MonoBehaviour
             GUILayout.Label(CollectionText.LockedName, titleStyle);
             GUILayout.Label(CollectionText.LetterHint(selected), textStyle);
             GUILayout.Label(CollectionText.KindAndLength(selected), textStyle);
-            GUILayout.Label("Bir maçta bu kelimeyi yaz ya da yazılırken gör.", smallStyle);
+            GUILayout.Label(Loc.T("collection.locked_hint"), smallStyle);
         }
         else
         {
-            GUILayout.Label(selected.display, titleStyle);
+            GUILayout.Label(selected.LocalizedDisplay, titleStyle);
             GUILayout.Label(CollectionTabs.KindName(selected), smallStyle);
             if (discovered)
             {
-                GUILayout.Label(selected.description, textStyle);
-                string tagText = tags.Describe(selected);
-                if (tagText.Length > 0) GUILayout.Label("Özellikler: " + tagText, smallStyle);
+                GUILayout.Label(selected.LocalizedDescription, textStyle);
+                string tagText = tags.Describe(selected, Loc.Current);
+                if (tagText.Length > 0) GUILayout.Label(Loc.F("collection.traits", tagText), smallStyle);
             }
             else
             {

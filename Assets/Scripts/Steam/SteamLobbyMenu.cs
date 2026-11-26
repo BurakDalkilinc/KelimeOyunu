@@ -23,7 +23,9 @@ public class SteamLobbyMenu : MonoBehaviour
 
     readonly List<Lobby> found = new List<Lobby>();
     Lobby? current;
-    string status = "Steam'e bağlanılmadı.";
+    // Durum yazısı anahtar + değerler olarak tutulur; ekrana her çizimde seçili dilde basılır.
+    string statusKey = "steam.not_connected";
+    object[] statusArgs = System.Array.Empty<object>();
     bool busy;
     bool friendsOnly = true;
     bool subscribed;
@@ -52,13 +54,13 @@ public class SteamLobbyMenu : MonoBehaviour
 
         float height = manager.IsListening ? 130f : (SteamClient.IsValid ? 270f : 120f);
         GUILayout.BeginArea(new Rect(304, Screen.height - height - 12, 320, height), GUI.skin.box);
-        GUILayout.Label("Steam ile oyna");
+        GUILayout.Label(Loc.T("steam.title"));
 
         if (!SteamClient.IsValid) DrawConnect();
         else if (manager.IsListening) DrawInLobby(manager);
         else DrawLobbyChoices(manager);
 
-        GUILayout.Label(status);
+        GUILayout.Label(Loc.F(statusKey, statusArgs));
         GUILayout.EndArea();
     }
 
@@ -67,22 +69,22 @@ public class SteamLobbyMenu : MonoBehaviour
     void DrawConnect()
     {
         GUI.enabled = !busy;
-        if (Button("Steam'e bağlan")) Connect();
+        if (Button(Loc.T("steam.connect"))) Connect();
         GUI.enabled = true;
-        GUILayout.Label("Steam istemcisi açık ve giriş yapılmış olmalı.");
+        GUILayout.Label(Loc.T("steam.client_hint"));
     }
 
     void DrawLobbyChoices(NetworkManager manager)
     {
         GUI.enabled = !busy;
-        friendsOnly = GUILayout.Toggle(friendsOnly, "Yalnızca arkadaşlar (davet ile katılır, aramada görünmez)");
-        if (Button("Lobi kur (host ol)")) CreateLobbyAndHost(manager);
-        if (Button("Lobileri bul")) RefreshList();
+        friendsOnly = GUILayout.Toggle(friendsOnly, Loc.T("steam.friends_only"));
+        if (Button(Loc.T("steam.create_lobby"))) CreateLobbyAndHost(manager);
+        if (Button(Loc.T("steam.find_lobbies"))) RefreshList();
 
         foreach (Lobby lobby in found)
         {
             string owner = new Friend(lobby.Owner.Id).Name;
-            if (Button($"Katıl: {owner} ({lobby.MemberCount}/{lobby.MaxMembers})")) JoinLobby(manager, lobby);
+            if (Button(Loc.F("steam.join_lobby", owner, lobby.MemberCount, lobby.MaxMembers))) JoinLobby(manager, lobby);
         }
         GUI.enabled = true;
     }
@@ -91,10 +93,10 @@ public class SteamLobbyMenu : MonoBehaviour
     {
         if (current.HasValue)
         {
-            GUILayout.Label($"Lobi: {current.Value.MemberCount}/{current.Value.MaxMembers} kişi");
-            if (manager.IsHost && Button("Arkadaş davet et (Steam)")) SteamFriends.OpenGameInviteOverlay(current.Value.Id);
+            GUILayout.Label(Loc.F("steam.lobby_members", current.Value.MemberCount, current.Value.MaxMembers));
+            if (manager.IsHost && Button(Loc.T("steam.invite"))) SteamFriends.OpenGameInviteOverlay(current.Value.Id);
         }
-        if (Button("Lobiden ayrıl")) Leave(manager);
+        if (Button(Loc.T("steam.leave"))) Leave(manager);
     }
 
     /// <summary>Tık sesli düğme. ("Ayarlar" düğmesi yandaki NetworkMenu kutusunda; burada ikincisi olmasın.)</summary>
@@ -103,6 +105,13 @@ public class SteamLobbyMenu : MonoBehaviour
         if (!GUILayout.Button(text)) return false;
         GameAudio.Click();
         return true;
+    }
+
+    /// <summary>Durum satırını değiştirir (anahtar ve yer tutucu değerleri).</summary>
+    void SetStatus(string key, params object[] args)
+    {
+        statusKey = key;
+        statusArgs = args ?? System.Array.Empty<object>();
     }
 
     // ---- İşlemler ----
@@ -119,22 +128,22 @@ public class SteamLobbyMenu : MonoBehaviour
                 subscribed = true;
             }
 
-            status = "Steam'e bağlandı: " + SteamClient.Name;
+            SetStatus("steam.connected", SteamClient.Name);
         }
         catch (System.Exception e)
         {
-            status = "Steam'e bağlanılamadı. Steam açık mı? (" + e.Message + ")";
+            SetStatus("steam.connect_failed", e.Message);
         }
     }
 
     async void CreateLobbyAndHost(NetworkManager manager)
     {
         busy = true;
-        status = "Lobi kuruluyor...";
+        SetStatus("steam.creating");
         try
         {
             Lobby? created = await SteamMatchmaking.CreateLobbyAsync(MaxMembers);
-            if (!created.HasValue) { status = "Lobi kurulamadı."; return; }
+            if (!created.HasValue) { SetStatus("steam.create_failed"); return; }
 
             Lobby lobby = created.Value;
             lobby.SetData(GameKey, GameValue);
@@ -143,12 +152,12 @@ public class SteamLobbyMenu : MonoBehaviour
             current = lobby;
 
             manager.NetworkConfig.NetworkTransport = steamTransport;
-            if (manager.StartHost()) status = "Lobi hazır. Arkadaşını davet et, sonra Maçı başlat.";
-            else status = "Host başlatılamadı.";
+            if (manager.StartHost()) SetStatus("steam.lobby_ready");
+            else SetStatus("steam.host_failed");
         }
         catch (System.Exception e)
         {
-            status = "Lobi hatası: " + e.Message;
+            SetStatus("steam.lobby_error", e.Message);
         }
         finally
         {
@@ -159,7 +168,7 @@ public class SteamLobbyMenu : MonoBehaviour
     async void RefreshList()
     {
         busy = true;
-        status = "Lobiler aranıyor...";
+        SetStatus("steam.searching");
         try
         {
             Lobby[] result = await SteamMatchmaking.LobbyList
@@ -170,11 +179,12 @@ public class SteamLobbyMenu : MonoBehaviour
 
             found.Clear();
             if (result != null) found.AddRange(result);
-            status = found.Count == 0 ? "Lobi bulunamadı." : found.Count + " lobi bulundu.";
+            if (found.Count == 0) SetStatus("steam.none_found");
+            else SetStatus("steam.found", found.Count);
         }
         catch (System.Exception e)
         {
-            status = "Arama hatası: " + e.Message;
+            SetStatus("steam.search_error", e.Message);
         }
         finally
         {
@@ -191,21 +201,21 @@ public class SteamLobbyMenu : MonoBehaviour
     async void JoinLobby(NetworkManager manager, Lobby lobby)
     {
         busy = true;
-        status = "Lobiye katılınıyor...";
+        SetStatus("steam.joining");
         try
         {
             RoomEnter result = await lobby.Join();
-            if (result != RoomEnter.Success) { status = "Lobiye girilemedi: " + result; return; }
+            if (result != RoomEnter.Success) { SetStatus("steam.join_failed", result); return; }
 
             current = lobby;
             steamTransport.targetSteamId = lobby.Owner.Id;
             manager.NetworkConfig.NetworkTransport = steamTransport;
 
-            status = manager.StartClient() ? "Host'a bağlanılıyor..." : "Bağlantı başlatılamadı.";
+            SetStatus(manager.StartClient() ? "steam.connecting_host" : "steam.client_failed");
         }
         catch (System.Exception e)
         {
-            status = "Katılma hatası: " + e.Message;
+            SetStatus("steam.join_error", e.Message);
         }
         finally
         {
@@ -219,6 +229,6 @@ public class SteamLobbyMenu : MonoBehaviour
         current = null;
         found.Clear();
         manager.Shutdown(); // Aktarım katmanı Steam'i de kapatır; yeniden bağlanmak için "Steam'e bağlan".
-        status = "Lobiden ayrıldın.";
+        SetStatus("steam.left");
     }
 }

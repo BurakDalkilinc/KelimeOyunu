@@ -228,7 +228,7 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
 
         List<CreatureModel> models = CreatureBuilder.BuildAttack(word, target, targetPosition, config, arena, random);
         for (int i = 0; i < models.Count; i++)
-            Add(models[i], models.Count == 1 || i == 0 ? word.display : "", false);
+            Add(models[i], models.Count == 1 || i == 0 ? CreatureLabel.NameToken : "", false); // Ad istemcide, kendi dilinde yazılır
     }
 
     /// <summary>Koruma kelimeleri yazana uygulanır: can, kalkan, görünmezlik, uçma, duvar...</summary>
@@ -402,7 +402,7 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
                 Progress = m.IsStrike ? m.StrikeProgress : 0f,
                 HasStruck = m.HasStruck,
                 Countdown = m.ShowsCountdown && !m.IsSky && m.IsStrike && !m.HasStruck ? Mathf.CeilToInt(m.StrikeWarningLeft) : 0,
-                Label = m.IsBoss ? BossRules.Label(m) : creature.Label,
+                Label = m.IsBoss ? BossRules.Label(m, m.Word != null ? CreatureLabel.NameToken : "Boss") : creature.Label,
                 Attacks = m.AttackCount,
             });
         }

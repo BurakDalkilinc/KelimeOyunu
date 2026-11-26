@@ -92,7 +92,7 @@ public class TargetSelector : MonoBehaviour
             return;
         }
 
-        prompt.text = $"Hedef seç! Bir oyuncuya tıkla ({Mathf.CeilToInt(selection.TimeLeft)} sn)";
+        prompt.text = Loc.F("target.choose", Mathf.CeilToInt(selection.TimeLeft));
     }
 
     /// <summary>Seçimi bitirir: seçilen (ya da süre dolduysa rastgele bir) hedefle geri çağrıyı yapar.</summary>

@@ -25,6 +25,12 @@ public class WordEntry
     public WordCounter counter;
     public string description;
 
+    /// <summary>İngilizce görünen ad (İngilizce oynayan görür; her dilde yazılınca da kelimeyi bulur).</summary>
+    public string displayEn;
+
+    /// <summary>İngilizce açıklama (defterde).</summary>
+    public string descriptionEn;
+
     /// <summary>Isteğe bağlı: Resources/Sprites içindeki sprite adı. Boşsa kelime kimliği (id) kullanılır.</summary>
     public string sprite;
 
@@ -39,6 +45,26 @@ public class WordEntry
 
     /// <summary>Çözüm (counter) tanımlı mı? JSON'da "counter": null ise false.</summary>
     public bool HasCounter => counter != null && !string.IsNullOrEmpty(counter.type);
+
+    /// <summary>Verilen dildeki görünen ad: İngilizce'de <see cref="displayEn"/>, yoksa Türkçe ad, o da yoksa id.</summary>
+    public string DisplayFor(string language)
+    {
+        if (Language.Normalize(language) == Language.English && !string.IsNullOrWhiteSpace(displayEn)) return displayEn;
+        return string.IsNullOrWhiteSpace(display) ? id : display;
+    }
+
+    /// <summary>Verilen dildeki açıklama: İngilizce'de <see cref="descriptionEn"/>, yoksa Türkçe açıklama.</summary>
+    public string DescriptionFor(string language)
+    {
+        if (Language.Normalize(language) == Language.English && !string.IsNullOrWhiteSpace(descriptionEn)) return descriptionEn;
+        return description ?? string.Empty;
+    }
+
+    /// <summary>Seçili dildeki görünen ad (bkz. <see cref="Loc.Current"/>).</summary>
+    public string LocalizedDisplay => DisplayFor(Loc.Current);
+
+    /// <summary>Seçili dildeki açıklama.</summary>
+    public string LocalizedDescription => DescriptionFor(Loc.Current);
 
     /// <summary>Kelime bu etikete sahip mi?</summary>
     public bool HasTag(string tag)

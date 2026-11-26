@@ -1,5 +1,5 @@
 /// <summary>
-/// Reddedilen kelimeye oyuncuya gösterilecek kısa Türkçe mesaj.
+/// Reddedilen kelimeye oyuncuya gösterilecek kısa mesaj (seçili dilde).
 /// Kabul edilen ya da ilgisiz durumlar için boş metin döner (mesaj gösterilmez).
 /// </summary>
 public static class SubmitFeedback
@@ -8,11 +8,11 @@ public static class SubmitFeedback
     {
         switch (status)
         {
-            case SubmitStatus.Empty: return "Bir kelime yazmalısın.";
-            case SubmitStatus.TooLong: return $"Çok uzun! En fazla {maxWordLength} karakter.";
-            case SubmitStatus.Blocked: return "Bu kelime yasak.";
-            case SubmitStatus.AlreadyUsed: return "Bu kelime bu maçta zaten kullanıldı!";
-            case SubmitStatus.NotWriter: return "Şu an sıra sende değil.";
+            case SubmitStatus.Empty: return Loc.T("feedback.empty");
+            case SubmitStatus.TooLong: return Loc.F("feedback.too_long", maxWordLength);
+            case SubmitStatus.Blocked: return Loc.T("feedback.blocked");
+            case SubmitStatus.AlreadyUsed: return Loc.T("feedback.already_used");
+            case SubmitStatus.NotWriter: return Loc.T("feedback.not_writer");
             default: return string.Empty; // Accepted, AcceptedUnknown, WrongPhase
         }
     }

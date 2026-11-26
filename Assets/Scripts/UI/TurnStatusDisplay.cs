@@ -37,20 +37,20 @@ public class TurnStatusDisplay : MonoBehaviour
         switch (turns.Phase)
         {
             case TurnPhase.Dice:
-                return "Zar atılıyor...";
+                return Loc.T("turn.rolling");
 
             case TurnPhase.Typing:
                 if (writer == null) return string.Empty;
                 return runner.IsLocal(writer)
-                    ? $"Sıra sende! Bir kelime yaz ({secondsLeft} sn)"
-                    : $"{writer.Name} bir kelime yazıyor... ({secondsLeft} sn)";
+                    ? Loc.F("turn.your_turn", secondsLeft)
+                    : Loc.F("turn.other_typing", writer.Name, secondsLeft);
 
             case TurnPhase.Result:
-                string word = turns.CurrentWord != null ? turns.CurrentWord.display : "???";
-                return writer == null ? string.Empty : $"{writer.Name} yazdı: {word}  ({secondsLeft} sn)";
+                string word = turns.CurrentWord != null ? turns.CurrentWord.LocalizedDisplay : "???";
+                return writer == null ? string.Empty : Loc.F("turn.wrote", writer.Name, word, secondsLeft);
 
             case TurnPhase.MatchOver:
-                return turns.Winner != null ? $"Kazanan: {turns.Winner.Name}" : "Kazanan yok";
+                return MatchSummary.GetTitle(turns.Winner);
 
             default:
                 return string.Empty;

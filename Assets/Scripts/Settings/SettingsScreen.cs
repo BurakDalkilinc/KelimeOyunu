@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// Ayarlar ekranı (IMGUI): ses kaydırıcıları, tam ekran, çözünürlük, VSync, isim etiketleri, dil. Menüdeki "Ayarlar"
 /// düğmesiyle ya da maçta Esc ile açılır. Görünüşü koleksiyon defteriyle aynıdır (<see cref="UiDraw"/>).
-/// Ses ve isim etiketi değişiklikleri hemen uygulanır; ekran ayarları "Uygula" ile. Kapanırken ayarlar kaydedilir.
+/// Ses, isim etiketi ve dil değişiklikleri hemen uygulanır; ekran ayarları "Uygula" ile. Kapanırken ayarlar kaydedilir.
 /// Açıkken oyunun kendisi durmaz (çok oyunculu), yalnızca yazma/hareket girdisi oyuna gitmez (bkz. <see cref="UiInputBlock"/>).
 /// </summary>
 public class SettingsScreen : MonoBehaviour
@@ -12,7 +12,7 @@ public class SettingsScreen : MonoBehaviour
     const string PageSprite = "ui_book_page";
 
     static SettingsScreen instance;
-    static string leaveLabel;
+    static Func<string> leaveLabel;
     static Action leaveAction;
 
     /// <summary>Ayarlar açık mı? Açıkken menüler kendilerini çizmez, oyun girdisi kapanır.</summary>
@@ -42,10 +42,11 @@ public class SettingsScreen : MonoBehaviour
     }
 
     /// <summary>
-    /// Ekranın altına ek bir düğme koyar (ör. tek kişilik maçta "Ana menüye dön"). Sahibi yok olurken
+    /// Ekranın altına ek bir düğme koyar (ör. tek kişilik maçta "Ana menüye dön"). Yazı her çizimde
+    /// <paramref name="label"/>'dan okunur (dil değişince güncellensin diye). Sahibi yok olurken
     /// <see cref="ClearLeaveAction"/> ile kaldırmalıdır.
     /// </summary>
-    public static void SetLeaveAction(string label, Action action)
+    public static void SetLeaveAction(Func<string> label, Action action)
     {
         leaveLabel = label;
         leaveAction = action;
@@ -216,15 +217,15 @@ public class SettingsScreen : MonoBehaviour
         display.resolutionHeight = size.y;
     }
 
-    /// <summary>Dil seçimi sonraki aşamada gelecek: şimdilik yalnızca "Türkçe" görünür, düğme kapalıdır.</summary>
+    /// <summary>Dil düğmesi: basınca sıradaki dile geçer (Türkçe ↔ English); yazılar hemen değişir ve kaydedilir.</summary>
     void LanguageRow(Rect area)
     {
-        SplitRow(area, out Rect label, out Rect control, out Rect value);
-        GUI.Label(label, SettingsText.Language, labelStyle);
-        GUI.enabled = false;
-        GUI.Button(new Rect(control.x, control.y + control.height * 0.12f, control.width, control.height * 0.76f), SettingsText.LanguageTurkish, buttonStyle);
-        GUI.enabled = true;
-        GUI.Label(value, SettingsText.ComingSoon, smallStyle);
+        SplitRow(area, out Rect label, out Rect control, out Rect _);
+        GUI.Label(label, SettingsText.LanguageLabel, labelStyle);
+        Rect button = new Rect(control.x, control.y + control.height * 0.12f, control.width, control.height * 0.76f);
+        if (!GUI.Button(button, SettingsText.LanguageName(settings.language), buttonStyle)) return;
+        GameAudio.Click();
+        SettingsService.SetLanguage(Language.Next(settings.language));
     }
 
     void DrawFooter(Rect area)
@@ -240,7 +241,7 @@ public class SettingsScreen : MonoBehaviour
 
         if (leave)
         {
-            if (GUI.Button(new Rect(x, area.y, w, area.height), leaveLabel, buttonStyle))
+            if (GUI.Button(new Rect(x, area.y, w, area.height), leaveLabel != null ? leaveLabel() : string.Empty, buttonStyle))
             {
                 GameAudio.Click();
                 Action action = leaveAction;

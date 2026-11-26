@@ -114,7 +114,7 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
 
         List<CreatureModel> models = CreatureBuilder.BuildAttack(word, target, targetPosition, config, arena, random);
         for (int i = 0; i < models.Count; i++)
-            Create(models[i], attackColor, models.Count == 1 || i == 0 ? word.display : string.Empty);
+            Create(models[i], attackColor, models.Count == 1 || i == 0 ? CreatureLabel.NameToken : string.Empty);
     }
 
     void SpawnUnknown()
@@ -133,6 +133,7 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
         model.Locator = bootstrap; // Hedefi ölünce ya da başkası yaklaşınca yeniden seçebilsin (boss, ejderha)
         BossRules.ScaleForPlayers(model, bootstrap.Match.AliveCount, config); // Kalabalıkta boss'un canı artar
         model.Obstacles = bootstrap.Obstacles; // Uçmayan yaratıklar duvardan (oyuncu duvarları ve ev duvarları) geçemez
+        label = CreatureLabel.Resolve(label, model.Word); // "{w}" → kelimenin seçili dildeki adı
 
         var go = new GameObject("Yaratık: " + label);
         go.transform.SetParent(transform, false);

@@ -138,8 +138,13 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         return null;
     }
 
-    /// <summary>Son kelime gönderiminin sonucu (oyuncuya gösterilecek Türkçe metin).</summary>
-    public string Feedback { get; private set; } = "";
+    /// <summary>
+    /// Son kelime gönderiminin sonucu, bu oyuncunun dilinde. Host yalnızca durum kodunu gönderir; yazı burada, her okunuşta
+    /// seçili dille üretilir (dil değişirse hemen yeni dilde görünür). Sonuç yoksa boş.
+    /// </summary>
+    public string Feedback => lastFeedback.HasValue && config != null ? SubmitFeedback.GetMessage(lastFeedback.Value, config.maxWordLength) : "";
+
+    SubmitStatus? lastFeedback;
 
     /// <summary>Bu bilgisayardaki oyuncunun maç numarası.</summary>
     public int LocalPlayerId => NetworkManager != null ? (int)NetworkManager.LocalClientId : -1;
@@ -392,8 +397,9 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     {
         if (clientId == NetworkManager.ServerClientId) return;
 
-        if (host != null) NetworkManager.DisconnectClient(clientId, "Maç başladı, bir sonraki maçı bekle.");
-        else if (NetworkManager.ConnectedClientsIds.Count > MaxPlayers) NetworkManager.DisconnectClient(clientId, "Oda dolu (en çok " + MaxPlayers + " oyuncu).");
+        // Not: sebep yazısı host'un dilindedir (istemci şimdilik bu yazıyı göstermiyor).
+        if (host != null) NetworkManager.DisconnectClient(clientId, Loc.T("net.kick_match_started"));
+        else if (NetworkManager.ConnectedClientsIds.Count > MaxPlayers) NetworkManager.DisconnectClient(clientId, Loc.F("net.kick_room_full", MaxPlayers));
         else BroadcastLobbyNames(); // Yeni gelen listeyi alsın (adı gelince liste yeniden yayılır)
     }
 
@@ -503,7 +509,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
 
         Client.Reset();
         Client.SetRoster(roster, config.startingHealth);
-        Feedback = "";
+        lastFeedback = null;
         Gore.ClearAll(); // Yeni maç: önceki maçın kanı, parçaları, cesetleri silinir
     }
 
@@ -586,7 +592,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         LatestTheme = "";
         TerrainVersion++;
         Client.Reset();
-        Feedback = "";
+        lastFeedback = null;
         latestCreatures = new List<CreatureSnapshot>();
         CreaturesVersion++;
         latestWalls = new List<WallSnapshot>();
@@ -649,7 +655,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     [Rpc(SendTo.SpecifiedInParams)]
     void FeedbackRpc(int status, RpcParams rpcParams)
     {
-        Feedback = SubmitFeedback.GetMessage((SubmitStatus)status, config.maxWordLength);
+        lastFeedback = (SubmitStatus)status;
 
         Action<SubmitStatus> callback = pendingSubmitResult;
         pendingSubmitResult = null;

@@ -15,23 +15,33 @@ public static class SettingsStorage
         return JsonUtility.ToJson(copy, true);
     }
 
-    /// <summary>JSON metnini okur; boş, bozuk ya da tanınmayan metinde varsayılan ayarlar döner. Değerler aralığa çekilir.</summary>
-    public static GameSettings FromJson(string json)
+    /// <summary>
+    /// JSON metnini okur; boş, bozuk ya da tanınmayan metinde varsayılan ayarlar döner (dili <paramref name="firstRunLanguage"/>;
+    /// verilmezse Türkçe). Değerler aralığa çekilir.
+    /// </summary>
+    public static GameSettings FromJson(string json, string firstRunLanguage = null)
     {
-        if (string.IsNullOrWhiteSpace(json)) return new GameSettings();
+        if (string.IsNullOrWhiteSpace(json)) return Defaults(firstRunLanguage);
 
         GameSettings settings;
         try { settings = JsonUtility.FromJson<GameSettings>(json); }
-        catch (Exception) { return new GameSettings(); }
+        catch (Exception) { return Defaults(firstRunLanguage); }
 
         // Sürüm alanı olmayan metin bizim dosyamız değildir (örneğin "{}" ya da başka bir JSON).
-        if (settings == null || settings.version <= 0) return new GameSettings();
+        if (settings == null || settings.version <= 0) return Defaults(firstRunLanguage);
         settings.Clamp();
         return settings;
     }
 
-    /// <summary>Kayıttan ayarları okur.</summary>
-    public static GameSettings Load(ISettingsStore store)
+    /// <summary>İlk açılış ayarları: varsayılanlar, dil verilen (desteklenmiyorsa Türkçe).</summary>
+    public static GameSettings Defaults(string firstRunLanguage)
+    {
+        var settings = new GameSettings { language = Language.Normalize(firstRunLanguage) ?? GameSettings.DefaultLanguage };
+        return settings;
+    }
+
+    /// <summary>Kayıttan ayarları okur. Kayıt yoksa dil <paramref name="firstRunLanguage"/> olur (oyunda sistem dili).</summary>
+    public static GameSettings Load(ISettingsStore store, string firstRunLanguage = null)
     {
         string text = null;
         if (store != null)
@@ -39,7 +49,7 @@ public static class SettingsStorage
             try { text = store.Read(); }
             catch (Exception exception) { Debug.LogWarning("Ayarlar okunamadı, varsayılanlarla başlanıyor: " + exception.Message); }
         }
-        return FromJson(text);
+        return FromJson(text, firstRunLanguage);
     }
 
     /// <summary>Ayarları kaydeder. Başarılıysa true.</summary>

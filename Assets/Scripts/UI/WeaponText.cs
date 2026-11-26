@@ -4,15 +4,17 @@ using UnityEngine;
 public static class WeaponText
 {
     /// <summary>Ağda istemci atış sayısını bilmez; yalnızca silah tuttuğunu bilir.</summary>
-    public const string ArmedOnNetwork = "Silah elinde: Boşluk ile ateş et!";
+    public static string ArmedOnNetwork => Loc.T("weapon.armed_net");
 
     public static string Describe(StatusEffects status)
     {
         if (status == null || !status.HasWeapon) return string.Empty;
 
-        string name = status.Weapon != null && !string.IsNullOrEmpty(status.Weapon.display) ? status.Weapon.display : "Silah";
+        string name = status.Weapon != null ? status.Weapon.LocalizedDisplay : null;
+        if (string.IsNullOrEmpty(name)) name = Loc.T("weapon.default_name");
+        int seconds = Mathf.CeilToInt(status.WeaponTimeLeft);
         if (MeleeRules.IsMelee(status.Weapon))
-            return $"{name} (Boşluk ile vur): {status.WeaponShots} vuruş, {Mathf.CeilToInt(status.WeaponTimeLeft)} sn";
-        return $"{name} (Boşluk ile ateş): {status.WeaponShots} atış, {Mathf.CeilToInt(status.WeaponTimeLeft)} sn";
+            return Loc.F("weapon.melee", name, status.WeaponShots, seconds);
+        return Loc.F("weapon.ranged", name, status.WeaponShots, seconds);
     }
 }

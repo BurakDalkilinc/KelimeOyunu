@@ -59,10 +59,10 @@ public class NetTargetPicker : MonoBehaviour
     string PromptText()
     {
         if (channel == null || channel.TargetingWriterId < 0) return string.Empty;
-        if (channel.IAmChoosingTarget) return $"Hedef seç! Bir oyuncuya tıkla ({Mathf.CeilToInt(channel.TargetingTimeLeft)} sn)";
+        if (channel.IAmChoosingTarget) return Loc.F("target.choose", Mathf.CeilToInt(channel.TargetingTimeLeft));
 
-        string name = channel.Client.Players.TryGetValue(channel.TargetingWriterId, out PlayerState writer) ? writer.Name : "Biri";
-        return name + " hedef seçiyor...";
+        string name = channel.Client.Players.TryGetValue(channel.TargetingWriterId, out PlayerState writer) ? writer.Name : Loc.T("target.someone");
+        return Loc.F("target.other_choosing", name);
     }
 
     /// <summary>Verilen noktaya en yakın, seçilebilir (kendin değil, elenmemiş, görünmez değil) karakter.</summary>

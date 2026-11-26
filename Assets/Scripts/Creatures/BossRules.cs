@@ -85,11 +85,17 @@ public static class BossRules
         else killer.Status.ApplyShield(1, config.shieldDefaultSeconds);
     }
 
-    /// <summary>Boss'un üstündeki yazı: "Godzilla 7/10".</summary>
+    /// <summary>Boss'un üstündeki yazı (seçili dilde): "Godzilla 7/10".</summary>
     public static string Label(CreatureModel boss)
     {
         if (boss == null || !boss.IsBoss) return string.Empty;
-        string name = boss.Word != null ? boss.Word.display : "Boss";
+        return Label(boss, boss.Word != null ? boss.Word.LocalizedDisplay : Loc.T("boss.default_name"));
+    }
+
+    /// <summary>Boss yazısı verilen adla; ağda host adın yerine <see cref="CreatureLabel.NameToken"/> koyar, istemci kendi dilinde doldurur.</summary>
+    public static string Label(CreatureModel boss, string name)
+    {
+        if (boss == null || !boss.IsBoss) return string.Empty;
         return $"{name} {boss.BossHealth}/{boss.BossMaxHealth}";
     }
 }

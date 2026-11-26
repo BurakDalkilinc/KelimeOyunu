@@ -268,7 +268,9 @@ public class DragonFireTests
 
         Assert.AreEqual(ThreatPhase.Active, threat.Phase, "Uyarı beklenmez");
         Assert.AreEqual(1, sink.Models.Count);
-        Assert.AreEqual("Ejderha", sink.Labels[0], "Tek yaratıkta adı yazılır");
+        // Ad dilden bağımsız bir belirteçle gelir; ekrana basan taraf seçili dildeki adı yazar.
+        Assert.AreEqual(CreatureLabel.NameToken, sink.Labels[0], "Tek yaratıkta adı yazılır");
+        Assert.AreEqual(Ejderha().DisplayFor(Language.Turkish), CreatureLabel.Resolve(sink.Labels[0], sink.Models[0].Word));
         Assert.AreEqual(2, threat.Zones.Zones.Count);
         foreach (SafeZone cave in threat.Zones.Zones)
         {

@@ -28,7 +28,7 @@ public static class ConnectionSettings
             string portPart = text.Substring(colon + 1).Trim();
             if (!int.TryParse(portPart, out int parsedPort) || parsedPort < 1 || parsedPort > 65535)
             {
-                error = "Port 1 ile 65535 arasında bir sayı olmalı.";
+                error = Loc.T("connection.bad_port");
                 return false;
             }
             port = (ushort)parsedPort;
@@ -36,7 +36,7 @@ public static class ConnectionSettings
 
         if (!IsIpv4(addressPart))
         {
-            error = "Adres 192.168.1.5 gibi bir IP olmalı.";
+            error = Loc.T("connection.bad_address");
             return false;
         }
 

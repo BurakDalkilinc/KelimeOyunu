@@ -9,10 +9,10 @@ public static class MatchSummary
     /// <summary>Bir satıra sığacak kelime sayısı (uzun listeler alt satıra geçer).</summary>
     public const int WordsPerLine = 6;
 
-    /// <summary>Başlık: "Kazanan: Bot 3" ya da kimse kalmadıysa "Kazanan yok".</summary>
+    /// <summary>Başlık: "Kazanan: Bot 3" ya da kimse kalmadıysa "Kazanan yok" (seçili dilde).</summary>
     public static string GetTitle(PlayerState winner)
     {
-        return winner != null ? $"Kazanan: {winner.Name}" : "Kazanan yok";
+        return winner != null ? Loc.F("match.winner", winner.Name) : Loc.T("match.no_winner");
     }
 
     /// <summary>
@@ -21,20 +21,22 @@ public static class MatchSummary
     /// </summary>
     public static string GetWordsText(IReadOnlyList<WordEntry> usedWords)
     {
-        if (usedWords == null || usedWords.Count == 0) return "Maçta hiç kelime yazılmadı.";
+        if (usedWords == null || usedWords.Count == 0) return Loc.T("match.no_words");
 
         var builder = new StringBuilder();
-        builder.Append("Yazılan kelimeler (").Append(usedWords.Count).Append("):");
+        builder.Append(Loc.F("match.words_header", usedWords.Count));
 
         for (int i = 0; i < usedWords.Count; i++)
         {
             builder.Append(i % WordsPerLine == 0 ? '\n' : ' ');
-            builder.Append(usedWords[i] != null && !string.IsNullOrEmpty(usedWords[i].display) ? usedWords[i].display : "?");
+            // Adı olmayan (bozuk) kayıtta "?" yazılır; varsa seçili dildeki ad.
+            WordEntry word = usedWords[i];
+            builder.Append(word != null && !string.IsNullOrEmpty(word.display) ? word.LocalizedDisplay : "?");
             if (i < usedWords.Count - 1) builder.Append(',');
         }
         return builder.ToString();
     }
 
     /// <summary>Yeniden başlama ipucu.</summary>
-    public static string GetHint() => "Yeniden başlamak için R'ye bas  (Esc: ana menü)";
+    public static string GetHint() => Loc.T("match.restart_hint");
 }

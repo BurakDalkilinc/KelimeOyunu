@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Oyuncunun üzerindeki etkilerin Türkçe özeti ("Yavaşladın! (2 sn)  Kalkan var"). Tek kişilikte kalan süreler yazılır;
+/// Oyuncunun üzerindeki etkilerin seçili dildeki özeti ("Yavaşladın! (2 sn)  Kalkan var"). Tek kişilikte kalan süreler yazılır;
 /// ağda istemci süreleri bilmez, bu yüzden bayraklardan süresiz özet çıkar. Düz hesap, test edilebilir.
 /// </summary>
 public static class StatusText
@@ -12,28 +12,29 @@ public static class StatusText
         if (status == null) return string.Empty;
 
         var parts = new List<string>();
-        if (status.IsSlowed) parts.Add($"Yavaşladın! ({Mathf.CeilToInt(status.SlowTimeLeft)} sn)");
-        if (status.IsPulled) parts.Add("Çekiliyorsun!");
-        if (status.HasShield) parts.Add("Kalkan var");
-        if (status.IsBurning) parts.Add("YANIYORSUN!");
-        if (status.IsDriving) parts.Add($"{status.Vehicle.display} sürüyorsun ({Mathf.CeilToInt(status.VehicleTimeLeft)} sn)" + (VehicleRules.Explodes(status.Vehicle) ? " — eve çarparsan patlarsın!" : ""));
+        if (status.IsSlowed) parts.Add(Loc.F("status.slowed_time", Mathf.CeilToInt(status.SlowTimeLeft)));
+        if (status.IsPulled) parts.Add(Loc.T("status.pulled"));
+        if (status.HasShield) parts.Add(Loc.T("status.shield"));
+        if (status.IsBurning) parts.Add(Loc.T("status.burning"));
+        if (status.IsDriving) parts.Add(Loc.F("status.driving_time", status.Vehicle.LocalizedDisplay, Mathf.CeilToInt(status.VehicleTimeLeft))
+                                        + (VehicleRules.Explodes(status.Vehicle) ? Loc.T("status.driving_explodes") : ""));
         if (status.IsStealthed) parts.Add(status.StealthDisguise != null
-            ? $"Kamufle oldun ({Mathf.CeilToInt(status.StealthTimeLeft)} sn)"
-            : $"Görünmezsin ({Mathf.CeilToInt(status.StealthTimeLeft)} sn)");
-        if (status.IsFlying) parts.Add($"Uçuyorsun ({Mathf.CeilToInt(status.FlightTimeLeft)} sn)");
+            ? Loc.F("status.disguised_time", Mathf.CeilToInt(status.StealthTimeLeft))
+            : Loc.F("status.stealth_time", Mathf.CeilToInt(status.StealthTimeLeft)));
+        if (status.IsFlying) parts.Add(Loc.F("status.flying_time", Mathf.CeilToInt(status.FlightTimeLeft)));
         return string.Join("  ", parts);
     }
 
     public static string Describe(StatusFlags flags)
     {
         var parts = new List<string>();
-        if ((flags & StatusFlags.Slow) != 0) parts.Add("Yavaşladın!");
-        if ((flags & StatusFlags.Pull) != 0) parts.Add("Çekiliyorsun!");
-        if ((flags & StatusFlags.Shield) != 0) parts.Add("Kalkan var");
-        if ((flags & StatusFlags.Stealth) != 0) parts.Add("Görünmezsin");
-        if ((flags & StatusFlags.Flight) != 0) parts.Add("Uçuyorsun");
-        if ((flags & StatusFlags.Burning) != 0) parts.Add("YANIYORSUN!");
-        if ((flags & StatusFlags.Vehicle) != 0) parts.Add("Araç sürüyorsun — eve çarparsan patlarsın!");
+        if ((flags & StatusFlags.Slow) != 0) parts.Add(Loc.T("status.slowed"));
+        if ((flags & StatusFlags.Pull) != 0) parts.Add(Loc.T("status.pulled"));
+        if ((flags & StatusFlags.Shield) != 0) parts.Add(Loc.T("status.shield"));
+        if ((flags & StatusFlags.Stealth) != 0) parts.Add(Loc.T("status.stealth"));
+        if ((flags & StatusFlags.Flight) != 0) parts.Add(Loc.T("status.flying"));
+        if ((flags & StatusFlags.Burning) != 0) parts.Add(Loc.T("status.burning"));
+        if ((flags & StatusFlags.Vehicle) != 0) parts.Add(Loc.T("status.vehicle_net"));
         return string.Join("  ", parts);
     }
 }

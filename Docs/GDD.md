@@ -126,9 +126,17 @@ Harita 34 × 19 karelik bir ızgaradır (kare = 1 birim, 16×16 piksel). Her ma�
 - **Ses:** ana ses, müzik, efektler (0–%100). Kaydırıcı değişince hemen uygulanır, tık sesi yeni düzeyde duyulur.
 - **Görüntü:** tam ekran, çözünürlük (ekranın desteklediği boyutlar arasında önceki/sonraki), dikey eşitleme (VSync). "Uygula" ile değişir.
 - **İsim etiketleri:** karakterlerin üstündeki adları gizler/gösterir (yalnızca bu bilgisayarda).
-- **Dil:** şimdilik yalnızca Türkçe (dil desteği sonraki aşamada).
+- **Dil:** Türkçe ↔ English düğmesi; değişince yazılar hemen değişir ve kaydedilir (bkz. "Dil").
 - Ayarlar açıkken oyun durmaz (çok oyunculu); yalnızca yazma, hareket, itiş ve hedef seçme girdisi oyuna gitmez.
 - Kayıt kişisel ve yerel: `persistentDataPath/settings.json`; bozuk ya da yoksa varsayılanlarla başlanır.
+
+## Dil
+- **Diller:** Türkçe (`tr`) ve İngilizce (`en`). Dil kişiseldir (ayar), sunucuya gitmez; aynı maçta herkes kendi dilinde görür.
+- **İlk açılış:** kayıt yoksa sistem dili Türkçe ise Türkçe, değilse İngilizce.
+- **Arayüz metinleri** kodda değil `Assets/Resources/Data/lang_tr.json` ve `lang_en.json`'dadır (anahtar → metin). Yeni metin = iki dosyaya birer satır; testler iki dosyada aynı anahtarları, boş metin olmamasını ve `{0}` yer tutucularının iki dilde aynı olmasını denetler. Eksik metin önce Türkçe'ye, o da yoksa anahtarın kendisine düşer (editörde bir kez uyarır).
+- **Kelimeler:** `words.json`'da her kelimenin `displayEn` ve `descriptionEn` alanı var; defter, maç akışı ("X wrote: Zombie"), maç sonu listesi, yaratık yazıları ve tehdit alarmı seçili dilde gösterilir. Etiket adları `tag_names.json`'da `name` (Türkçe) ve `nameEn`.
+- **Yazarken dil serbest:** oyuncu hangi dilde oynarsa oynasın kelimeyi Türkçe ya da İngilizce yazabilir (İngilizce ad da eşleşme anahtarıdır). Kilit kelime kimliği üzerinden olduğu için "zombi" yazıldıysa "zombie" de reddedilir. Bir kelimenin İngilizce adı başka kelimenin adı/eş anlamlısıyla çakışamaz (test korur).
+- **Ağ:** host yalnızca kimlik ve sayı gönderir (kelime id, durum kodu, alan türü ve doluluk); yazıları her istemci kendi dilinde üretir. Yaratık yazısında kelime adının yerine `{w}` belirteci gider. İstisna: kadroda adı boş oyuncuya host'un verdiği varsayılan ad ("Oyuncu 3" / "Player 3") host'un dilindedir.
 
 ## Ses
 - Bütün sesler kodla üretilen retro (chiptune) WAV'lardır: `Tools/GenerateSounds.py` (yalnızca Python standart kütüphanesi, sabit seed: her çalıştırmada aynı dosyalar). Çıktı `Assets/Resources/Audio/`. Beğenilmeyen ses aynı adlı WAV ile değiştirilebilir.

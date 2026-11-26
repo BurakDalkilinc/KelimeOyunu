@@ -18,6 +18,12 @@ public class TypingBoxDisplay : MonoBehaviour
     [SerializeField] Text inputText;
     [SerializeField] Text feedbackText;
 
+    /// <summary>
+    /// Kutunun ipucu yazısı ("Bir kelime yaz ve Enter'a bas"). Boşsa paneldeki diğer (giriş ve geri bildirim olmayan) yazı
+    /// kullanılır; böylece sahneye dokunmadan seçili dilde yazılır.
+    /// </summary>
+    [SerializeField] Text hintText;
+
     ITurnView turns;
     TypingBuffer buffer;
     Keyboard keyboard;
@@ -38,6 +44,7 @@ public class TypingBoxDisplay : MonoBehaviour
 
         turns = runner.View;
         buffer = new TypingBuffer(config.maxWordLength);
+        if (hintText == null) hintText = FindHintText();
         panel.SetActive(false);
 
         turns.PhaseChanged += OnPhaseChanged;
@@ -73,9 +80,18 @@ public class TypingBoxDisplay : MonoBehaviour
         if (player != null && player.State != null) player.CanMove = true; // Hayalet de gezebilir
     }
 
+    /// <summary>Paneldeki giriş ve geri bildirim dışındaki ilk yazı (ipucu satırı); yoksa null.</summary>
+    Text FindHintText()
+    {
+        foreach (Text each in panel.GetComponentsInChildren<Text>(true))
+            if (each != inputText && each != feedbackText) return each;
+        return null;
+    }
+
     void Open()
     {
         open = true;
+        if (hintText != null) hintText.text = Loc.T("typing.hint");
         openedAt = Time.unscaledTime;
         buffer.Clear();
         feedbackLeft = 0f;
@@ -125,7 +141,7 @@ public class TypingBoxDisplay : MonoBehaviour
         if (enterJustPressed && !UiInputBlock.IsBlocked) Submit();
 
         UpdateFeedback();
-        inputText.text = "Kelime: " + buffer.Text + (CaretVisible() ? "|" : " ");
+        inputText.text = Loc.F("typing.input", buffer.Text + (CaretVisible() ? "|" : " "));
     }
 
     void Submit()

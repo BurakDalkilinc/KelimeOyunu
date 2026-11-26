@@ -38,9 +38,9 @@ public static class NameTagRules
         return trimmed.Substring(0, Mathf.Max(0, maxLength - 1)).TrimEnd() + ".";
     }
 
-    /// <summary>Kadroda adı bilinmeyen karakterin adı: bot "Bot N" (ilk bot 1), insan "Oyuncu N".</summary>
+    /// <summary>Kadroda adı bilinmeyen karakterin adı: bot "Bot N" (ilk bot 1), insan "Oyuncu N" / "Player N" (seçili dilde).</summary>
     public static string DefaultName(int playerId, bool isBot, int firstBotId)
     {
-        return isBot ? "Bot " + (playerId - firstBotId + 1) : "Oyuncu " + playerId;
+        return isBot ? "Bot " + (playerId - firstBotId + 1) : Loc.F("player.default_name", playerId);
     }
 }

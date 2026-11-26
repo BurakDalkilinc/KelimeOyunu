@@ -47,21 +47,21 @@ public class NetTurnPanel : MonoBehaviour
     {
         var players = channel.LobbyPlayers;
         GUILayout.BeginArea(new Rect(Screen.width - 312, 12, 300, 190 + LobbyNameRowHeight * players.Count), GUI.skin.box);
-        GUILayout.Label("Maç henüz başlamadı.");
-        if (players.Count > 0) GUILayout.Label("Lobidekiler:");
+        GUILayout.Label(Loc.T("net.not_started"));
+        if (players.Count > 0) GUILayout.Label(Loc.T("net.lobby_players"));
         foreach (RosterEntry player in players)
-            GUILayout.Label("- " + player.Name + (player.Id == channel.LocalPlayerId ? " (SEN)" : ""));
+            GUILayout.Label("- " + player.Name + (player.Id == channel.LocalPlayerId ? Loc.T("net.you_suffix") : ""));
         if (manager.IsHost)
         {
             int humans = channel.ConnectedHumans;
             int target = Mathf.Max(channel.TargetPlayers, humans);
-            GUILayout.Label($"Oyuncu sayısı: {target}  ({humans} insan + {Mathf.Max(0, target - humans)} bot)");
+            GUILayout.Label(Loc.F("net.player_count", target, humans, Mathf.Max(0, target - humans)));
             channel.TargetPlayers = Mathf.RoundToInt(GUILayout.HorizontalSlider(channel.TargetPlayers, RosterBuilder.MinPlayers, RosterBuilder.MaxPlayers));
-            if (GUILayout.Button("Maçı başlat")) channel.StartMatch();
+            if (GUILayout.Button(Loc.T("net.start_match"))) channel.StartMatch();
         }
         else
         {
-            GUILayout.Label("Host'un maçı başlatması bekleniyor...");
+            GUILayout.Label(Loc.T("net.wait_host_start"));
         }
         GUILayout.EndArea();
     }
@@ -72,7 +72,7 @@ public class NetTurnPanel : MonoBehaviour
         GUILayout.BeginArea(new Rect((Screen.width - width) * 0.5f, 10, width, 260));
 
         GUILayout.Label(HeadlineFor(client), bigStyle);
-        GUILayout.Label($"Tur {client.TurnNumber} · {client.PhaseTimeLeft:0.0} sn", smallStyle);
+        GUILayout.Label(Loc.F("net.turn_line", client.TurnNumber, client.PhaseTimeLeft), smallStyle);
 
         bool myTurnToType = client.Phase == TurnPhase.Typing && client.Writer != null && client.Writer.Id == channel.LocalPlayerId;
         if (myTurnToType) DrawTyping();
@@ -98,7 +98,7 @@ public class NetTurnPanel : MonoBehaviour
         if (mine == null) return;
 
         var style = new GUIStyle(bigStyle) { alignment = TextAnchor.LowerLeft };
-        string text = mine.IsGhost ? "Elendin! Hayalet olarak izliyorsun." : "Can: " + mine.Health;
+        string text = mine.IsGhost ? Loc.T("health.ghost_net") : Loc.F("health.value_net", mine.Health);
         GUI.Label(new Rect(12, Screen.height - 54, 520, 44), text, style);
     }
 
@@ -109,11 +109,11 @@ public class NetTurnPanel : MonoBehaviour
 
         if (channel.CanRestart)
         {
-            if (GUILayout.Button("Yeni maç için hazırla", GUILayout.Width(300))) channel.RestartMatch();
+            if (GUILayout.Button(Loc.T("net.prepare_new_match"), GUILayout.Width(300))) channel.RestartMatch();
         }
         else
         {
-            GUILayout.Label("Host'un yeni maçı başlatması bekleniyor...", smallStyle);
+            GUILayout.Label(Loc.T("net.wait_host_new_match"), smallStyle);
         }
     }
 
@@ -123,33 +123,33 @@ public class NetTurnPanel : MonoBehaviour
         int writerId = channel.TargetingWriterId;
         if (writerId < 0) return "";
 
-        if (channel.IAmChoosingTarget) return "Hedef seç! Bir oyuncuya tıkla (" + Mathf.CeilToInt(channel.TargetingTimeLeft) + " sn)";
+        if (channel.IAmChoosingTarget) return Loc.F("target.choose", Mathf.CeilToInt(channel.TargetingTimeLeft));
 
-        string name = client.Players.TryGetValue(writerId, out PlayerState writer) ? writer.Name : "Biri";
-        return name + " hedef seçiyor...";
+        string name = client.Players.TryGetValue(writerId, out PlayerState writer) ? writer.Name : Loc.T("target.someone");
+        return Loc.F("target.other_choosing", name);
     }
 
     string HeadlineFor(NetTurnClient client)
     {
         string writer = client.Writer == null ? "" : client.Writer.Name
-            + (client.Writer.Id == channel.LocalPlayerId ? " (SEN)" : "")
-            + (client.Writer.IsBot && client.Writer.Id < NetTurnChannel.FirstBotId ? " (bot devraldı)" : ""); // Normal bot numarası FirstBotId ve üstü; altındaki bot, koparak botlaşan insandır
+            + (client.Writer.Id == channel.LocalPlayerId ? Loc.T("net.you_suffix") : "")
+            + (client.Writer.IsBot && client.Writer.Id < NetTurnChannel.FirstBotId ? Loc.T("net.bot_took_over") : ""); // Normal bot numarası FirstBotId ve üstü; altındaki bot, koparak botlaşan insandır
 
         switch (client.Phase)
         {
-            case TurnPhase.Dice: return "Zar atılıyor... " + writer;
-            case TurnPhase.Typing: return writer + " yazıyor";
+            case TurnPhase.Dice: return Loc.F("net.headline_dice", writer);
+            case TurnPhase.Typing: return Loc.F("net.headline_typing", writer);
             case TurnPhase.Result:
-                return writer + ": " + (client.CurrentWord != null ? client.CurrentWord.display : "???");
+                return Loc.F("net.headline_result", writer, client.CurrentWord != null ? client.CurrentWord.LocalizedDisplay : "???");
             case TurnPhase.MatchOver:
-                return client.Winner != null ? "Kazanan: " + client.Winner.Name : "Kazanan yok";
+                return MatchSummary.GetTitle(client.Winner);
             default: return "";
         }
     }
 
     void DrawTyping()
     {
-        GUILayout.Label("Bir kelime yaz ve Enter'a bas:", smallStyle);
+        GUILayout.Label(Loc.T("net.type_prompt"), smallStyle);
 
         GUI.SetNextControlName("kelime");
         wordText = GUILayout.TextField(wordText, 30, GUILayout.Width(300));
@@ -158,7 +158,7 @@ public class NetTurnPanel : MonoBehaviour
         Event e = Event.current;
         bool enter = e.type == EventType.KeyDown && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter);
 
-        if (GUILayout.Button("Gönder", GUILayout.Width(300)) || enter)
+        if (GUILayout.Button(Loc.T("net.send"), GUILayout.Width(300)) || enter)
         {
             channel.SubmitWord(wordText);
             wordText = "";

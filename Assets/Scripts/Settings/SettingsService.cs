@@ -3,7 +3,7 @@ using System.IO;
 using UnityEngine;
 
 /// <summary>
-/// Bu bilgisayardaki tek ayar kaydı: ilk istenince settings.json'dan okunur, uygulanır (ses düzeyleri, ekran, VSync),
+/// Bu bilgisayardaki tek ayar kaydı: ilk istenince settings.json'dan okunur, uygulanır (ses düzeyleri, ekran, VSync, dil),
 /// istenince kaydedilir. İsim etiketleri gibi görüntü bileşenleri <see cref="ShowNameTags"/>'i okur; GameConfig değişmez.
 /// </summary>
 public static class SettingsService
@@ -37,7 +37,19 @@ public static class SettingsService
     static void Load()
     {
         store = new FileSettingsStore(FilePath);
-        current = SettingsStorage.Load(store);
+        // Kayıt yoksa (ilk açılış) dil sistemden seçilir: Türkçe sistemde Türkçe, değilse İngilizce.
+        current = SettingsStorage.Load(store, Language.FromSystem(Application.systemLanguage));
+        Loc.SetLanguage(current.language);
+    }
+
+    /// <summary>Dili değiştirir: yazılar hemen yeni dile geçer (<see cref="Loc.LanguageChanged"/>) ve ayar kaydedilir.</summary>
+    public static void SetLanguage(string code)
+    {
+        string language = Language.Normalize(code);
+        if (language == null) return;
+        Current.language = language;
+        Loc.SetLanguage(language);
+        Save();
     }
 
     /// <summary>Ayarları diske yazar.</summary>
@@ -48,9 +60,10 @@ public static class SettingsService
         SettingsStorage.Save(store, current);
     }
 
-    /// <summary>Ses ve görüntü ayarlarının hepsini uygular (oyun açılırken).</summary>
+    /// <summary>Ses, görüntü ve dil ayarlarının hepsini uygular (oyun açılırken).</summary>
     public static void ApplyAll()
     {
+        Loc.SetLanguage(Current.language);
         ApplyAudio();
         ApplyDisplay();
     }

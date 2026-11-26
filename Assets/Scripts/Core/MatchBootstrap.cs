@@ -311,7 +311,7 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
         BotObstacles = new CompositeObstacles(Walls, Terrain.AvoidingObstacles);
 
         var states = new List<PlayerState>();
-        var humanState = new PlayerState(0, "Sen", config.startingHealth);
+        var humanState = new PlayerState(0, Loc.T("player.you"), config.startingHealth); // "Sen" / "You": maç başındaki dilde
         states.Add(humanState);
         for (int i = 1; i <= config.botCount; i++)
             states.Add(new PlayerState(i, "Bot " + i, config.startingHealth, isBot: true));

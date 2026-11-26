@@ -11,6 +11,12 @@ public class HealthDisplay : MonoBehaviour
     [SerializeField] TurnViewSource runner;
     [SerializeField] Text label;
 
+    void Awake()
+    {
+        // Uzun "Elendin..." yazısı alt satıra kayıp altındaki satırla çakışmasın: tek satırda sağa taşsın.
+        if (label != null) label.horizontalOverflow = HorizontalWrapMode.Overflow;
+    }
+
     void Update()
     {
         if (runner == null || label == null) return;
@@ -23,6 +29,6 @@ public class HealthDisplay : MonoBehaviour
         }
 
         Health health = player.Health;
-        label.text = health.Current > 0 ? $"Can: {health.Current} / {health.Max}" : "Elendin: hayalet olarak izliyorsun";
+        label.text = health.Current > 0 ? Loc.F("health.value", health.Current, health.Max) : Loc.T("health.ghost");
     }
 }

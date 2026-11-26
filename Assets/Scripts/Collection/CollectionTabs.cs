@@ -1,5 +1,5 @@
 /// <summary>
-/// Defter sekmelerinin kuralı ve Türkçe adları. Sekme kelimenin "category" ve "scope" alanından çıkar, kelimeye özel kod yoktur:
+/// Defter sekmelerinin kuralı ve adları (seçili dilde). Sekme kelimenin "category" ve "scope" alanından çıkar, kelimeye özel kod yoktur:
 /// Yaratıklar = saldırı (category "attack") ve harita çapında değil; Savunma = category "defense"; Büyük tehditler = scope "global".
 /// </summary>
 public static class CollectionTabs
@@ -26,10 +26,10 @@ public static class CollectionTabs
     {
         switch (tab)
         {
-            case CollectionTab.Creatures: return "Yaratıklar";
-            case CollectionTab.Defense: return "Savunma";
-            case CollectionTab.Threats: return "Büyük tehditler";
-            default: return "Tümü";
+            case CollectionTab.Creatures: return Loc.T("collection.tab_creatures");
+            case CollectionTab.Defense: return Loc.T("collection.tab_defense");
+            case CollectionTab.Threats: return Loc.T("collection.tab_threats");
+            default: return Loc.T("collection.tab_all");
         }
     }
 
@@ -39,9 +39,9 @@ public static class CollectionTabs
     /// </summary>
     public static string KindName(WordEntry word)
     {
-        if (Contains(CollectionTab.Threats, word)) return "Büyük tehdit";
-        if (Contains(CollectionTab.Defense, word)) return "Savunma";
-        if (Contains(CollectionTab.Creatures, word)) return "Yaratık";
-        return "Kelime";
+        if (Contains(CollectionTab.Threats, word)) return Loc.T("collection.kind_threat");
+        if (Contains(CollectionTab.Defense, word)) return Loc.T("collection.kind_defense");
+        if (Contains(CollectionTab.Creatures, word)) return Loc.T("collection.kind_creature");
+        return Loc.T("collection.kind_word");
     }
 }

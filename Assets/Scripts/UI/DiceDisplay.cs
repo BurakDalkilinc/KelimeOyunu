@@ -65,7 +65,7 @@ public class DiceDisplay : MonoBehaviour
                 break;
             case TurnPhase.MatchOver:
                 label.color = landedColor;
-                label.text = "Maç bitti";
+                label.text = Loc.T("dice.match_over");
                 break;
             default:
                 label.text = string.Empty;

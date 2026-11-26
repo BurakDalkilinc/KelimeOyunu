@@ -31,18 +31,36 @@ public class MatchEndScreen : MonoBehaviour
         turns = runner.View;
         turns.MatchEnded += OnMatchEnded;
         turns.PhaseChanged += OnPhaseChanged;
+        Loc.LanguageChanged += OnLanguageChanged;
         panel.SetActive(false);
         shown = false;
     }
 
     void OnDisable()
     {
+        Loc.LanguageChanged -= OnLanguageChanged;
         if (turns == null) return;
         turns.MatchEnded -= OnMatchEnded;
         turns.PhaseChanged -= OnPhaseChanged;
     }
 
     void OnMatchEnded(PlayerState winner)
+    {
+        this.winner = winner;
+        FillTexts();
+        panel.SetActive(true);
+        shown = true;
+    }
+
+    /// <summary>Ayarlardan dil değişirse açık özetin yazıları yeni dille yeniden yazılır.</summary>
+    void OnLanguageChanged(string language)
+    {
+        if (shown) FillTexts();
+    }
+
+    PlayerState winner;
+
+    void FillTexts()
     {
         titleText.text = MatchSummary.GetTitle(winner);
         wordsText.text = MatchSummary.GetWordsText(runner.UsedWords);
@@ -52,8 +70,6 @@ public class MatchEndScreen : MonoBehaviour
         string notice = recorder != null ? CollectionText.NewWordsNotice(recorder.NewThisMatch) : string.Empty;
         if (notice.Length > 0) wordsText.text = notice + "\n\n" + wordsText.text;
         hintText.text = runner.RestartHint;
-        panel.SetActive(true);
-        shown = true;
     }
 
     /// <summary>Maç bittikten sonra başka bir aşamaya geçilirse (yeni maç hazırlandı) özet kapanır.</summary>
