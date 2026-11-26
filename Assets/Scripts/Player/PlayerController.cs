@@ -44,6 +44,16 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
         GoreEmitter.Attach(gameObject, () => State != null ? State.Health.Current : 0,
                            () => State != null ? State.Falling : FallKind.None) // Vurulunca kan, ölünce parçalanma
                    .Charred = () => State != null && (State.Status.IsBurning || State.Status.CharLevel >= 0.5f);
+
+        // Başın üstünde adı (kendi karakterin: sarı). Görünmezken soluk, hayaletken soluk.
+        NameTagView.Attach(gameObject, config, () => new NameTagInfo
+        {
+            Name = State != null ? State.Name : null,
+            IsLocal = true,
+            IsAlive = State != null && State.IsAlive,
+            BodyShown = true,
+            IsStealthed = State != null && State.Status.IsStealthed,
+        });
     }
 
     void Awake()

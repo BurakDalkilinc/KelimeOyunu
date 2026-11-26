@@ -35,6 +35,17 @@ public class MapThemeTests
 
     static string Snapshot(TerrainMap map) => map.Encode(null) + "|" + map.EncodeHouses();
 
+    /// <summary>
+    /// Parmak izi için temalardan önceki biçim: karolar + evlerin yalnızca dikdörtgeni ("x,y,w,h"). Kapı bilgisi sonradan eklendi;
+    /// haritanın kendisi (karolar, evlerin yeri) değişmemeli.
+    /// </summary>
+    static string LegacySnapshot(TerrainMap map)
+    {
+        var rects = new List<string>();
+        foreach (House h in map.Houses) rects.Add($"{h.X},{h.Y},{h.W},{h.H}");
+        return map.Encode(null) + "|" + string.Join(";", rects);
+    }
+
     /// <summary>FNV-1a: eski köy haritasının parmak izi.</summary>
     static uint Fingerprint(string text)
     {
@@ -113,12 +124,12 @@ public class MapThemeTests
         };
         foreach (KeyValuePair<int, uint> pair in expected)
         {
-            Assert.AreEqual(pair.Value, Fingerprint(Snapshot(MapGenerator.Generate(W, H, pair.Key, MapRecipe.Default))), $"tohum {pair.Key}");
-            Assert.AreEqual(pair.Value, Fingerprint(Snapshot(MapGenerator.Generate(W, H, pair.Key, MapRecipe.For(MapTheme.Village)))));
+            Assert.AreEqual(pair.Value, Fingerprint(LegacySnapshot(MapGenerator.Generate(W, H, pair.Key, MapRecipe.Default))), $"tohum {pair.Key}");
+            Assert.AreEqual(pair.Value, Fingerprint(LegacySnapshot(MapGenerator.Generate(W, H, pair.Key, MapRecipe.For(MapTheme.Village)))));
         }
 
         // Tema verilmeyen tarif de köydür.
-        string plain = Snapshot(MapGenerator.Generate(W, H, 7, new MapRecipe { Villages = 3, LavaPools = 2, Chasms = 2 }));
+        string plain = LegacySnapshot(MapGenerator.Generate(W, H, 7, new MapRecipe { Villages = 3, LavaPools = 2, Chasms = 2 }));
         Assert.AreEqual(expected[7], Fingerprint(plain));
     }
 
@@ -226,6 +237,52 @@ public class MapThemeTests
             }
         }
         Assert.Greater(withHouses, 15, $"{theme}: evler bulunmalı");
+    }
+
+    [Test]
+    public void EveryTheme_HouseDoor_IsRecordedOnTheStreetSide([ValueSource(nameof(Themes))] MapTheme theme)
+    {
+        int doors = 0;
+        for (int seed = 1; seed <= 20; seed++)
+        {
+            TerrainMap map = MapGenerator.Generate(W, H, seed, MapRecipe.For(theme));
+            foreach (House house in map.Houses)
+            {
+                Assert.IsTrue(house.HasDoor, $"{theme} {seed}: üretilen evin kapısı kayıtlı olmalı");
+                Assert.IsTrue(House.IsValidDoor(house.X, house.W, house.DoorX), $"{theme} {seed}: kapı köşeye değmemeli");
+                Assert.AreEqual(house.DoorUp ? house.Y + house.H - 1 : house.Y, house.DoorY);
+
+                for (int i = 0; i < House.DoorWidth; i++)
+                {
+                    int x = house.DoorX + i;
+                    Assert.AreEqual(theme.FloorTile, map.At(x, house.DoorY), $"{theme} {seed}: kapı karesi zemin olmalı");
+                    Assert.IsTrue(house.IsDoorCell(x, house.DoorY));
+                    Assert.IsTrue(house.IsDoorstep(x, house.DoorstepY));
+                    Assert.IsFalse(house.Contains(x, house.DoorstepY), "kapının önü evin dışında");
+                    Assert.IsTrue(TerrainMap.IsSafeGround(map.At(x, house.DoorstepY)), $"{theme} {seed}: kapının önü yürünür olmalı");
+
+                    // İç taraf (kapının bir içerisi) evin zemini: kapıdan girilir.
+                    int inside = house.DoorUp ? house.DoorY - 1 : house.DoorY + 1;
+                    Assert.AreEqual(theme.FloorTile, map.At(x, inside));
+                }
+
+                // Kapının yanındaki duvar kareleri duvar kalır.
+                Assert.IsTrue(TerrainMap.IsHouseWall(map.At(house.DoorX - 1, house.DoorY)));
+                Assert.IsTrue(TerrainMap.IsHouseWall(map.At(house.DoorX + House.DoorWidth, house.DoorY)));
+                doors++;
+            }
+
+            // Ağ metni kapıyı da taşır.
+            var copy = new TerrainMap(W, H);
+            Assert.IsTrue(copy.TryApplyHouses(map.EncodeHouses()));
+            Assert.AreEqual(map.EncodeHouses(), copy.EncodeHouses());
+            for (int i = 0; i < map.Houses.Count; i++)
+            {
+                Assert.AreEqual(map.Houses[i].DoorX, copy.Houses[i].DoorX);
+                Assert.AreEqual(map.Houses[i].DoorUp, copy.Houses[i].DoorUp);
+            }
+        }
+        Assert.Greater(doors, 15, $"{theme}: kapılı evler bulunmalı");
     }
 
     [Test]

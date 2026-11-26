@@ -76,6 +76,48 @@ public class HouseTests
     }
 
     [Test]
+    public void Houses_WithDoors_EncodeAndApply_RoundTrip_AndRejectBadDoors()
+    {
+        var map = new TerrainMap(34, 19);
+        map.AddHouse(new House(2, 3, 5, 4, 3, true));
+        map.AddHouse(new House(10, 6, 5, 4, 12, false));
+        map.AddHouse(new House(20, 6, 5, 4)); // Kapısız (eski biçim)
+
+        Assert.AreEqual("2,3,5,4,3,u;10,6,5,4,12,d;20,6,5,4", map.EncodeHouses());
+
+        var other = new TerrainMap(34, 19);
+        Assert.IsTrue(other.TryApplyHouses(map.EncodeHouses()));
+        Assert.IsTrue(other.Houses[0].HasDoor);
+        Assert.IsTrue(other.Houses[0].DoorUp);
+        Assert.AreEqual(6, other.Houses[0].DoorY);
+        Assert.AreEqual(7, other.Houses[0].DoorstepY);
+        Assert.IsFalse(other.Houses[1].DoorUp);
+        Assert.AreEqual(6, other.Houses[1].DoorY);
+        Assert.AreEqual(5, other.Houses[1].DoorstepY);
+        Assert.IsFalse(other.Houses[2].HasDoor);
+
+        Assert.IsFalse(other.TryApplyHouses("2,3,5,4,2,u"), "köşedeki kapı bozuk sayılır");
+        Assert.IsFalse(other.TryApplyHouses("2,3,5,4,3,x"));
+        Assert.IsFalse(other.TryApplyHouses("2,3,5,4,3"));
+        Assert.AreEqual(3, other.Houses.Count, "bozuk metin hiçbir şeyi değiştirmez");
+    }
+
+    [Test]
+    public void Roof_DoorCellsAreNotCovered_InteriorIsUntilViewerEnters()
+    {
+        var map = new TerrainMap(34, 19);
+        var house = new House(5, 5, 5, 4, 6, false); // Kapı alt duvarda: (6,5) ve (7,5)
+        map.AddHouse(house);
+
+        Vector2 outside = map.CellCenter(1, 1);
+        Assert.IsTrue(RoofRules.IsUnderVisibleRoof(map, map.CellCenter(7, 6), outside, null), "iç kare çatı altında");
+        Assert.IsFalse(RoofRules.IsUnderVisibleRoof(map, map.CellCenter(6, 5), outside, null), "kapı karesi çatısız");
+        Assert.IsFalse(RoofRules.IsUnderVisibleRoof(map, map.CellCenter(6, 4), outside, null), "kapının önü dışarı");
+        Assert.IsFalse(RoofRules.IsUnderVisibleRoof(map, map.CellCenter(7, 6), map.CellCenter(8, 7), null), "izleyen içerideyse çatı yok");
+        Assert.IsFalse(RoofRules.IsUnderVisibleRoof(map, map.CellCenter(7, 6), outside, (x, y) => x == 8 && y == 7), "yanan evin çatısı açık");
+    }
+
+    [Test]
     public void Escape_FromLava_PointsToSafeGround()
     {
         var map = new TerrainMap(10, 8);

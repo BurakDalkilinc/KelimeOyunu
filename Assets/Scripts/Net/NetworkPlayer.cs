@@ -189,6 +189,7 @@ public class NetworkPlayer : NetworkBehaviour
         if (animator == null) animator = gameObject.AddComponent<SpriteAnimator>();
         animator.SetFrames(SpriteLibrary.GetFrames("char"));
         CharacterStackVisual.Attach(gameObject); // 3D piksel (katmanlı) gövde
+        NameTagView.Attach(gameObject, config, NameTag); // Başın üstünde adı (kadrodan)
 
         playerId.OnValueChanged += (_, __) => ApplyLook();
         health.OnValueChanged += (_, __) => ApplyLook();
@@ -253,6 +254,27 @@ public class NetworkPlayer : NetworkBehaviour
     Vector2 HumanStart()
     {
         return SpawnRing.Point(arena ?? new ArenaBounds(config.arenaSize), (int)OwnerClientId, RosterBuilder.MaxPlayers, HumanRingFraction);
+    }
+
+    /// <summary>
+    /// İsim etiketinin bilgisi: ad host'un gönderdiği kadrodan (lobi adı), kadro henüz gelmediyse "Bot N" / "Oyuncu N".
+    /// Kendi karakterin sarı; başkasının hayaleti çizilmediği için adı da görünmez; görünmezlik/kılıkta ad gizlenir.
+    /// </summary>
+    NameTagInfo NameTag()
+    {
+        int id = playerId.Value;
+        string name = null;
+        if (channel != null && channel.Client != null && channel.Client.Players.TryGetValue(id, out PlayerState state)) name = state.Name;
+        if (string.IsNullOrEmpty(name) && id >= 0) name = NameTagRules.DefaultName(id, isBot.Value, RosterBuilder.FirstBotId);
+
+        return new NameTagInfo
+        {
+            Name = name,
+            IsLocal = IsOwner && !isBot.Value,
+            IsAlive = !IsGhost,
+            BodyShown = spriteRenderer != null && spriteRenderer.enabled,
+            IsStealthed = (Status & StatusFlags.Stealth) != 0 || !disguiseSprite.Value.IsEmpty,
+        };
     }
 
     void ApplyLook()

@@ -2055,20 +2055,26 @@ def make_t_water(frame):
     return c
 
 
-def _snow_shingles(c, roof, roof_dark, snow, snow_shade):
-    """Karla kaplı kiremit: her 4 piksellik sıranın üstü kar, altında kiremit ucu görünür."""
-    rnd = _random.Random(190)
+def _mix(a, b, t):
+    return (int(a[0] + (b[0] - a[0]) * t), int(a[1] + (b[1] - a[1]) * t), int(a[2] + (b[2] - a[2]) * t))
+
+
+def _snow_shingles(c, roof, roof_dark, snow, snow_shade, seed=190, rows=(0, 16)):
+    """Karla kaplı kiremit: zemin kar; kar altından birkaç düzensiz yassı lekede kiremit sırası görünür."""
+    rnd = _random.Random(seed)
+    roof_light = _mix(roof, (255, 255, 255), 0.18)
     _fill(c, snow)
-    for yy in range(16):
-        row = yy // 4
-        offset = 3 if row % 2 else 0
-        for xx in range(16):
-            m = yy % 4
-            if m == 2:
-                c.px[yy][xx] = snow_shade
-            elif m == 3:
-                # kiremit ucu kar altından yer yer görünür; arada kar sarkar
-                c.px[yy][xx] = snow_shade if rnd.random() < 0.35 else (roof if (xx + offset) % 6 != 5 else roof_dark)
+    for _ in range(14):                      # kar dokusu: hafif gölge noktaları
+        _wset(c, rnd.randrange(16), rnd.randrange(16), snow_shade)
+    for _ in range(3):                       # kiremit lekeleri: 4-6 genişlik, alt satır kısa (düzensiz kenar)
+        x, y, ww = rnd.randrange(16), rnd.randrange(rows[0] + 1, rows[1] - 2), rnd.randrange(4, 7)
+        cut = rnd.randrange(1, 3)
+        for k in range(ww):
+            _wset(c, x + k, y - 1, snow_shade)                     # kar kenarının gölgesi
+            _wset(c, x + k, y, roof if (x + k) % 4 else roof_dark)
+            if cut <= k < ww - 1:
+                _wset(c, x + k, y + 1, roof_dark)
+        _wset(c, x + 1, y, roof_light)
 
 
 def make_t_roof_snow(variant):
@@ -2076,13 +2082,13 @@ def make_t_roof_snow(variant):
     if variant == "a":
         _snow_shingles(c, (120, 56, 48), (78, 34, 34), (240, 244, 250), (204, 214, 232))
     else:
-        _snow_shingles(c, (104, 48, 44), (66, 30, 32), (228, 234, 244), (194, 204, 224))
+        _snow_shingles(c, (104, 48, 44), (66, 30, 32), (228, 234, 244), (194, 204, 224), seed=191)
     return c
 
 
 def make_t_roof_snow_ridge():
     c = Canvas()
-    _snow_shingles(c, (120, 56, 48), (78, 34, 34), (240, 244, 250), (204, 214, 232))
+    _snow_shingles(c, (120, 56, 48), (78, 34, 34), (240, 244, 250), (204, 214, 232), seed=192, rows=(12, 16))
     for xx in range(16):                    # sırtta kalın kar yığını
         for yy in range(5, 11):
             c.px[yy][xx] = (250, 252, 255)
@@ -2096,7 +2102,7 @@ def make_t_roof_snow_ridge():
 
 def make_t_roof_snow_eave():
     c = Canvas()
-    _snow_shingles(c, (104, 48, 44), (66, 30, 32), (228, 234, 244), (194, 204, 224))
+    _snow_shingles(c, (104, 48, 44), (66, 30, 32), (228, 234, 244), (194, 204, 224), seed=193, rows=(0, 11))
     ice, ice_light = (176, 220, 246), (224, 244, 255)
     for xx in range(16):                    # saçak: kar kenarı, koyu çıkıntı, sarkan buzlar
         c.px[12][xx] = (240, 244, 250)
@@ -2295,6 +2301,164 @@ def make_t_roof_adobe_eave():
         c.px[12][x0] = wood_light; c.px[12][x0 + 1] = wood
         c.px[13][x0] = wood; c.px[13][x0 + 1] = wood
         c.px[14][x0] = wood_dark; c.px[14][x0 + 1] = wood_dark
+    return c
+
+
+# ---------------- Ev girişleri: kapı eşiği, paspas, saçak ----------------
+# Kapı iki karedir; 32 piksellik tuvale tek parça çizilip sol/sağ karoya bölünür.
+# Yön: içerisi karonun ÜST tarafı, dışarısı ALT tarafı (alt duvardaki kapıyı kod dikey çevirir).
+def _split(wide):
+    """32 genişlikteki tuvali iki 16'lık karoya böler."""
+    left, right = Canvas(), Canvas()
+    for yy in range(16):
+        for xx in range(16):
+            left.px[yy][xx] = wide.px[yy][xx]
+            right.px[yy][xx] = wide.px[yy][xx + 16]
+    return left, right
+
+
+_DOOR_THEMES = {
+    # zemin, kasa (ana, açık, koyu), kanat (ana, açık, koyu), eşik (ana, açık, koyu)
+    "koy": (make_t_wood, ((214, 206, 190), (246, 242, 232), (140, 130, 118)),
+            ((62, 137, 72), (99, 199, 77), (38, 92, 66)),
+            ((150, 102, 58), (186, 134, 82), (90, 58, 30))),
+    "kar": (make_t_stone, ((139, 90, 43), (176, 124, 72), (90, 58, 30)),
+            ((162, 38, 51), (228, 59, 68), (104, 30, 40)),
+            ((176, 180, 192), (214, 218, 228), (110, 112, 124))),
+    "col": (make_t_adobe, ((139, 90, 43), (176, 124, 72), (90, 58, 30)),
+            ((31, 79, 191), (79, 164, 240), (24, 52, 128)),
+            ((226, 210, 178), (246, 236, 210), (150, 124, 92))),
+}
+
+
+def make_t_door(theme):
+    floor_fn, (jm, jl, jd), (lm, ll, ld), (sm, sl, sd) = _DOOR_THEMES[theme]
+    floor = floor_fn()
+    glow = (254, 231, 97)
+    c = Canvas(32, 16)
+    for yy in range(16):
+        for xx in range(32):
+            c.px[yy][xx] = floor.px[yy][xx % 16]
+    # içeriden sızan sıcak ışık: üstte güçlü, eşiğe doğru söner; en üst sıra çatı gölgesi
+    for yy in range(12):
+        for xx in range(32):
+            t = 0.75 - yy * 0.035 - abs(xx - 15.5) * 0.012
+            c.px[yy][xx] = _mix(c.px[yy][xx], glow, t)
+    for xx in range(32):
+        c.px[0][xx] = _mix(c.px[0][xx], K, 0.6)
+        c.px[1][xx] = _mix(c.px[1][xx], K, 0.3)
+    # eşik: dış kenarda boydan boya taş/tahta basamak
+    c.rect(0, 12, 31, 12, sl)
+    c.rect(0, 13, 31, 14, sm)
+    c.rect(10, 12, 21, 12, _mix(sl, glow, 0.5))     # eşiğe düşen ışık
+    c.rect(12, 13, 19, 13, _mix(sm, glow, 0.35))
+    c.rect(0, 15, 31, 15, sd)
+    for xx in (9, 22):
+        c.set(xx, 13, sd); c.set(xx, 14, sd)
+    if theme == "kar":                       # eşikte biraz kar
+        for xx in (5, 6, 7, 18, 19, 25, 26):
+            c.set(xx, 12, (240, 244, 250))
+        c.set(6, 13, (204, 214, 232)); c.set(19, 13, (204, 214, 232))
+    # kalın kasa/pervaz: dış kenarlarda 4 piksel, duvardan farklı renk; dışa doğru taşan baş
+    for x0, x1 in ((0, 3), (28, 31)):
+        c.rect(x0, 0, x1, 15, jm)
+    c.rect(1, 0, 1, 15, jl); c.rect(29, 0, 29, 15, jl)          # parlak yüz
+    c.rect(0, 0, 0, 15, K); c.rect(31, 0, 31, 15, K)            # duvarla ayrım çizgisi
+    c.rect(3, 0, 3, 15, jd); c.rect(28, 0, 28, 15, jd)          # iç tarafa gölge
+    c.rect(4, 1, 4, 15, _mix(jd, K, 0.4)); c.rect(27, 1, 27, 15, _mix(jd, K, 0.4))
+    c.rect(0, 15, 3, 15, jd); c.rect(28, 15, 31, 15, jd)
+    # içe doğru açılmış iki kanat (yukarıdan ince levha), menteşesi kasada
+    for x0 in (5, 25):
+        c.rect(x0, 2, x0 + 1, 10, lm)
+        c.rect(x0, 2, x0, 10, ll)
+        c.rect(x0 + 1, 2, x0 + 1, 10, ld)
+        c.set(x0, 1, K); c.set(x0 + 1, 1, K)
+        c.set(x0, 11, ld); c.set(x0 + 1, 11, ld)
+    c.set(6, 9, (254, 231, 97)); c.set(25, 9, (254, 231, 97))  # kapı kolu
+    return _split(c)
+
+
+def make_t_doormat(theme):
+    c = Canvas(32, 16)
+    if theme == "koy":                        # hasır paspas: örgü deseni, koyu bordür
+        edge, main, alt_, dark = (139, 90, 43), (229, 190, 110), (200, 156, 80), (90, 58, 30)
+        c.rect(3, 3, 28, 12, main)
+        for yy in range(4, 12):
+            for xx in range(4, 28):
+                if (xx // 2 + yy // 2) % 2 == 0:
+                    c.px[yy][xx] = alt_
+        c.rect(4, 4, 27, 4, edge); c.rect(4, 11, 27, 11, edge)
+        c.rect(4, 4, 4, 11, edge); c.rect(27, 4, 27, 11, edge)
+        c.outline(dark)
+        for xx in range(3, 29, 2):            # püsküller
+            c.set(xx, 13, (229, 190, 110))
+    elif theme == "kar":                      # taş basamak, üstünde düzensiz kar
+        top, face, dark, snow, shade = (150, 154, 166), (120, 124, 136), (72, 74, 86), (240, 244, 250), (204, 214, 232)
+        c.rect(2, 2, 29, 10, top)
+        c.rect(2, 2, 29, 2, (176, 180, 192))
+        c.rect(2, 11, 29, 12, face)
+        c.rect(2, 13, 29, 13, dark)
+        for xx in (10, 21):
+            c.rect(xx, 3, xx, 12, dark)
+        for x0, y0, ww in ((3, 3, 5), (4, 4, 3), (14, 3, 4), (24, 3, 5), (25, 4, 4), (17, 8, 3), (6, 9, 2)):
+            c.rect(x0, y0, x0 + ww - 1, y0, snow)
+        for x0, y0, ww in ((4, 5, 2), (25, 5, 3), (15, 4, 2), (17, 9, 3)):
+            c.rect(x0, y0, x0 + ww - 1, y0, shade)
+        c.outline(K)
+    else:                                     # renkli kilim: kırmızı zemin, sarı bordür, ortada baklava
+        c.rect(3, 3, 28, 12, (228, 59, 68))
+        c.rect(4, 4, 27, 11, (247, 118, 34))
+        c.rect(5, 5, 26, 10, (162, 38, 51))
+        c.poly([(16, 5), (21, 8), (16, 11), (11, 8)], (254, 231, 97))
+        c.poly([(16, 6.5), (18.5, 8), (16, 9.5), (13.5, 8)], (31, 79, 191))
+        for cx in (8, 24):                    # yanlarda küçük baklavalar
+            c.poly([(cx, 6), (cx + 2, 8), (cx, 10), (cx - 2, 8)], (254, 231, 97))
+            c.set(cx - 1, 7, (99, 199, 77)); c.set(cx, 8, (99, 199, 77)); c.set(cx - 1, 8, (99, 199, 77)); c.set(cx, 7, (99, 199, 77))
+        c.outline((104, 56, 108))
+        for xx in range(3, 29, 2):            # püsküller iki uçta
+            c.set(xx, 14, (242, 232, 210))
+            c.set(xx, 1, (242, 232, 210))
+    return _split(c)
+
+
+def make_t_awning(theme):
+    """Kapı boşluğunun üstüne saçak: üst 6-7 piksel dolu, alt kenar koyu gölgeli, saydam zemin. Yan yana döşenir."""
+    c = Canvas()
+    if theme == "koy":
+        _shingles(c, (172, 74, 56), (206, 104, 74), (116, 46, 42))
+        c.erase_rect(0, 6, 15, 15)
+        c.rect(0, 3, 15, 3, (206, 104, 74))
+        c.rect(0, 4, 15, 4, (116, 46, 42))
+        c.rect(0, 5, 15, 5, (38, 18, 22))
+        for xx in (2, 7, 12):                 # kiriş uçları
+            c.set(xx, 5, (139, 90, 43))
+    elif theme == "kar":
+        snow, shade = (240, 244, 250), (204, 214, 232)
+        c.rect(0, 0, 15, 2, snow)
+        for xx in (1, 6, 7, 12):
+            c.set(xx, 1, (255, 255, 255))
+        c.rect(0, 2, 15, 2, shade)
+        c.rect(0, 3, 15, 3, (120, 56, 48))
+        for xx in (3, 4, 10):                 # kar kenardan sarkar
+            c.set(xx, 3, snow)
+        c.rect(0, 4, 15, 4, (84, 36, 36))
+        c.rect(0, 5, 15, 5, (38, 18, 22))
+        for xx, ln in ((2, 2), (8, 2), (13, 2)):   # sarkan buzlar
+            for k in range(ln):
+                c.set(xx, 5 + k, (224, 244, 255) if k == 0 else (176, 220, 246))
+    else:                                     # çizgili kumaş tente, alt kenarı dalgalı
+        for xx in range(16):
+            red = (xx // 4) % 2 == 0
+            main, shade, dark = ((228, 59, 68), (196, 48, 58), (104, 30, 40)) if red else \
+                ((242, 232, 210), (214, 200, 172), (150, 124, 92))
+            c.rect(xx, 1, xx, 3, main)
+            c.set(xx, 4, shade)
+            if xx % 4 in (1, 2):              # sarkan dilimler
+                c.set(xx, 5, shade)
+                c.set(xx, 6, dark)
+            else:
+                c.set(xx, 5, dark)
+        c.rect(0, 0, 15, 0, (139, 90, 43))    # duvara bağlandığı ahşap çıta
     return c
 
 
@@ -2664,6 +2828,12 @@ def main():
         "t_roof_adobe_ridge": make_t_roof_adobe_ridge, "t_roof_adobe_eave": make_t_roof_adobe_eave,
         "karton_kutu": make_karton_kutu, "cop_kutusu": make_cop_kutusu,
     }
+    # Ev girişleri: iki karelik kapı/paspas tek parça çizilir, sol/sağ olarak kaydedilir.
+    for theme in ("koy", "kar", "col"):
+        for kind, fn in (("door", make_t_door), ("doormat", make_t_doormat)):
+            static["t_%s_%s_l" % (kind, theme)] = (lambda f=fn, t=theme: f(t)[0])
+            static["t_%s_%s_r" % (kind, theme)] = (lambda f=fn, t=theme: f(t)[1])
+        static["t_awning_" + theme] = (lambda t=theme: make_t_awning(t))
     for name, fn in animated.items():
         save_animated(fn(), name)
     for name, fn in static.items():

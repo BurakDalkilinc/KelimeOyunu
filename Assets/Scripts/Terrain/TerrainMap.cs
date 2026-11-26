@@ -51,23 +51,69 @@ public enum TileType : byte
     Cactus = 14,
 }
 
-/// <summary>Bir evin kapladığı dikdörtgen (duvarlar dahil, karo cinsinden). Çatı bu alanın üstüne çizilir.</summary>
+/// <summary>
+/// Bir evin kapladığı dikdörtgen (duvarlar dahil, karo cinsinden) ve kapısı. Çatı bu alanın üstüne çizilir; kapı kareleri çatısız kalır.
+/// Kapı, sokağa bakan duvarda (alt ya da üst) <see cref="DoorWidth"/> kare geniş bir boşluktur.
+/// </summary>
 public readonly struct House
 {
+    /// <summary>Kapının genişliği (kare).</summary>
+    public const int DoorWidth = 2;
+
     public int X { get; }
     public int Y { get; }
     public int W { get; }
     public int H { get; }
 
+    /// <summary>Kapı bilgisi var mı? (Elle kurulan ya da eski biçimde gelen evlerde olmayabilir.)</summary>
+    public bool HasDoor { get; }
+
+    /// <summary>Kapının sol karesinin sütunu.</summary>
+    public int DoorX { get; }
+
+    /// <summary>Kapı üst duvarda mı (dışarısı yukarıda)? false: alt duvarda (dışarısı aşağıda).</summary>
+    public bool DoorUp { get; }
+
+    /// <summary>Kapı karelerinin satırı (üst ya da alt duvar).</summary>
+    public int DoorY => DoorUp ? Y + H - 1 : Y;
+
+    /// <summary>Kapının hemen dışındaki satır (paspasın yeri).</summary>
+    public int DoorstepY => DoorUp ? Y + H : Y - 1;
+
+    /// <summary>Kapısız ev.</summary>
     public House(int x, int y, int w, int h)
     {
         X = x;
         Y = y;
         W = w;
         H = h;
+        HasDoor = false;
+        DoorX = 0;
+        DoorUp = false;
+    }
+
+    /// <summary>Kapılı ev: kapı <paramref name="doorX"/> sütunundan başlar, <paramref name="doorUp"/> ise üst duvarda.</summary>
+    public House(int x, int y, int w, int h, int doorX, bool doorUp)
+    {
+        X = x;
+        Y = y;
+        W = w;
+        H = h;
+        HasDoor = true;
+        DoorX = doorX;
+        DoorUp = doorUp;
     }
 
     public bool Contains(int x, int y) => x >= X && x < X + W && y >= Y && y < Y + H;
+
+    /// <summary>Bu kare kapının bir karesi mi?</summary>
+    public bool IsDoorCell(int x, int y) => HasDoor && y == DoorY && x >= DoorX && x < DoorX + DoorWidth;
+
+    /// <summary>Bu kare kapının hemen dışındaki (eşik önü) karelerden biri mi?</summary>
+    public bool IsDoorstep(int x, int y) => HasDoor && y == DoorstepY && x >= DoorX && x < DoorX + DoorWidth;
+
+    /// <summary>Kapı köşeye değmeden duvarın içinde mi? (Köşeler duvar kalmalı.)</summary>
+    public static bool IsValidDoor(int x, int w, int doorX) => doorX >= x + 1 && doorX + DoorWidth <= x + w - 1;
 }
 
 /// <summary>
@@ -130,11 +176,18 @@ public class TerrainMap
         HousesChanged?.Invoke();
     }
 
-    /// <summary>Evleri "x,y,w,h;x,y,w,h" metnine çevirir (ağda karo durumuyla birlikte gider).</summary>
+    /// <summary>
+    /// Evleri metne çevirir (ağda karo durumuyla birlikte gider): kapısız ev "x,y,w,h", kapılı ev "x,y,w,h,kapıX,u|d"
+    /// (u: kapı üst duvarda, d: alt duvarda). Evler ";" ile ayrılır.
+    /// </summary>
     public string EncodeHouses()
     {
         var parts = new List<string>();
-        foreach (House h in houses) parts.Add($"{h.X},{h.Y},{h.W},{h.H}");
+        foreach (House h in houses)
+        {
+            string rect = $"{h.X},{h.Y},{h.W},{h.H}";
+            parts.Add(h.HasDoor ? rect + $",{h.DoorX},{(h.DoorUp ? "u" : "d")}" : rect);
+        }
         return string.Join(";", parts);
     }
 
@@ -146,17 +199,36 @@ public class TerrainMap
         {
             foreach (string part in encoded.Split(';'))
             {
-                string[] f = part.Split(',');
-                if (f.Length != 4 || !int.TryParse(f[0], out int x) || !int.TryParse(f[1], out int y)
-                    || !int.TryParse(f[2], out int w) || !int.TryParse(f[3], out int h) || w < 1 || h < 1)
-                    return false;
-                parsed.Add(new House(x, y, w, h));
+                if (!TryParseHouse(part, out House house)) return false;
+                parsed.Add(house);
             }
         }
 
         houses.Clear();
         houses.AddRange(parsed);
         HousesChanged?.Invoke();
+        return true;
+    }
+
+    /// <summary>Tek evin metni: 4 alan (kapısız) ya da 6 alan (kapılı). Kapı duvarın içinde değilse bozuk sayılır.</summary>
+    static bool TryParseHouse(string text, out House house)
+    {
+        house = default;
+        string[] f = text.Split(',');
+        if (f.Length != 4 && f.Length != 6) return false;
+        if (!int.TryParse(f[0], out int x) || !int.TryParse(f[1], out int y)
+            || !int.TryParse(f[2], out int w) || !int.TryParse(f[3], out int h) || w < 1 || h < 1)
+            return false;
+
+        if (f.Length == 4)
+        {
+            house = new House(x, y, w, h);
+            return true;
+        }
+
+        if (!int.TryParse(f[4], out int doorX) || !House.IsValidDoor(x, w, doorX)) return false;
+        if (f[5] != "u" && f[5] != "d") return false;
+        house = new House(x, y, w, h, doorX, f[5] == "u");
         return true;
     }
 

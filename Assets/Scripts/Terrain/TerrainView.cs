@@ -5,7 +5,8 @@ using UnityEngine;
 /// <summary>
 /// Haritayı piksel karolarla çizer: her kare için bir sprite, yanan karelerin üstüne animasyonlu alev. Karo değişince (yanıp kömürleşme)
 /// ilgili sprite güncellenir. Zemin, patika ve çatı resimleri haritanın temasından (<see cref="MapTheme"/>) gelir; bir resim henüz
-/// yoksa köy temasındaki karşılığı kullanılır. Hiçbir kural işletmez; tek kişilik sahnede <see cref="MatchBootstrap"/>'ın, ağ maçında
+/// yoksa köy temasındaki karşılığı kullanılır. Evlerin kapısı görünür: kapı karelerinde kapı resmi, önünde paspas, çatıda kapının
+/// üstü açık (çentik) ve kenarında saçak. Hiçbir kural işletmez; tek kişilik sahnede <see cref="MatchBootstrap"/>'ın, ağ maçında
 /// host'tan gelen durumun haritasını gösterir.
 /// </summary>
 public class TerrainView : MonoBehaviour
@@ -37,6 +38,9 @@ public class TerrainView : MonoBehaviour
     /// </summary>
     const int RoofOrder = CreatureSpriteScale.EntityOrder;
 
+    /// <summary>Paspas: zeminin üstü, alevlerin altı.</summary>
+    const int DoormatOrder = TerrainOrder + 1;
+
     /// <summary>Çatının saydamlaşıp belirme hızı (saniyede alfa).</summary>
     const float RoofFadePerSecond = 6f;
 
@@ -51,8 +55,29 @@ public class TerrainView : MonoBehaviour
     GameObject[] cliffs;
     int[] cliffDepths;
     readonly List<GameObject> roofObjects = new List<GameObject>();
-    readonly List<SpriteStack[]> roofTiles = new List<SpriteStack[]>();
+    readonly List<List<SpriteStack>> roofTiles = new List<List<SpriteStack>>();
     readonly List<float> roofAlpha = new List<float>();
+    readonly List<GameObject> doormats = new List<GameObject>();
+
+    /// <summary>Kapı kareleri (karo sırası → kapının yönü ve hangi yarısı): kapı resmi bu karelere çizilir.</summary>
+    readonly Dictionary<int, DoorTile> doorTiles = new Dictionary<int, DoorTile>();
+
+    readonly struct DoorTile
+    {
+        public readonly bool Up;
+        public readonly bool Left;
+        public DoorTile(bool up, bool left) { Up = up; Left = left; }
+    }
+
+    /// <summary>Sahnedeki etkin harita görünümü (isim etiketleri "çatı altında mı?" sorusunu buna sorar). Yoksa null.</summary>
+    public static TerrainView Active { get; private set; }
+
+    /// <summary>Nokta şu an görünen bir çatının altında mı (bu bilgisayardaki oyuncunun gözünden)?</summary>
+    public bool IsUnderVisibleRoof(Vector2 world)
+    {
+        if (map == null) return false;
+        return RoofRules.IsUnderVisibleRoof(map, world, ViewerPosition?.Invoke(), isBurning);
+    }
 
     /// <summary>
     /// Bu bilgisayardaki oyuncunun konumu; içinde durduğu evin çatısı görünmez olur. Boşsa hiçbir çatı gizlenmez.
@@ -86,6 +111,7 @@ public class TerrainView : MonoBehaviour
 
         map = newMap;
         isBurning = burning;
+        Active = this;
         tiles = new SpriteRenderer[map.Width * map.Height];
         flames = new GameObject[tiles.Length];
         wallStacks = new SpriteStack[tiles.Length];
@@ -134,11 +160,14 @@ public class TerrainView : MonoBehaviour
         roofObjects.Clear();
         roofTiles.Clear();
         roofAlpha.Clear();
+        doormats.Clear();
+        doorTiles.Clear();
         map = null;
     }
 
     void OnDestroy()
     {
+        if (Active == this) Active = null;
         if (map == null) return;
         map.TileChanged -= OnTileChanged;
         map.HousesChanged -= RebuildRoofs;
@@ -159,7 +188,10 @@ public class TerrainView : MonoBehaviour
         return frames.Length > 0 ? frames : SpriteLibrary.GetFrames(fallbackName);
     }
 
-    /// <summary>Her ev için temanın çatısını kurar: üst sıra, sırt, ara sıralar, en altta saçak.</summary>
+    /// <summary>
+    /// Her ev için temanın çatısını kurar: üst sıra, sırt, ara sıralar, en altta saçak. Kapı karelerinin üstü açık kalır (çentik),
+    /// oraya kapı saçağı konur. Kapı karelerine kapı resmi, önüne paspas çizilir.
+    /// </summary>
     void RebuildRoofs()
     {
         foreach (GameObject roof in roofObjects)
@@ -167,8 +199,10 @@ public class TerrainView : MonoBehaviour
         roofObjects.Clear();
         roofTiles.Clear();
         roofAlpha.Clear();
+        RebuildDoors();
         if (map == null) return;
         MapTheme theme = map.Theme;
+        Sprite awning = SpriteOr(theme.AwningSprite, MapTheme.Village.AwningSprite);
 
         foreach (House house in map.Houses)
         {
@@ -181,7 +215,7 @@ public class TerrainView : MonoBehaviour
             var group = root.AddComponent<UnityEngine.Rendering.SortingGroup>();
             group.sortingOrder = RoofOrder;
             Vector3 lift = new Vector3(0f, WallLayers * Pixel, 0f);
-            var renderers = new SpriteStack[house.W * house.H];
+            var renderers = new List<SpriteStack>(house.W * house.H);
             for (int cy = 0; cy < house.H; cy++)
             {
                 int fromTop = house.H - 1 - cy;
@@ -193,11 +227,22 @@ public class TerrainView : MonoBehaviour
 
                 for (int cx = 0; cx < house.W; cx++)
                 {
-                    var anchor = new GameObject("kiremit");
+                    bool door = house.IsDoorCell(house.X + cx, house.Y + cy);
+
+                    // Kapının üstü çatısız (çentik); orada yalnızca saçak durur. Saçak resmi yoksa çentik boş kalır.
+                    Sprite sprite = door ? awning : roofSprite;
+                    if (sprite == null) continue;
+
+                    var anchor = new GameObject(door ? "kapı saçağı" : "kiremit");
                     anchor.transform.SetParent(root.transform, false);
                     anchor.transform.position = (Vector3)map.CellCenter(house.X + cx, house.Y + cy) + lift;
-                    renderers[cy * house.W + cx] = SpriteStack.Create(anchor.transform, "kiremit katmanları",
-                        StackLibrary.Extrude(roofSprite, RoofLayers), RoofOrder, 1f, 1f, 0.7f);
+                    SpriteStack stack = SpriteStack.Create(anchor.transform, door ? "saçak katmanları" : "kiremit katmanları",
+                        StackLibrary.Extrude(sprite, RoofLayers), RoofOrder, 1f, 1f, 0.7f);
+
+                    // Saçak resminde dolu kısım üstte, alt yarısı saydam. Alt duvardaki kapıda saçak çatının ön kenarına yaslanır, kapı
+                    // altında görünür. Üst duvardaki kapıda da çevrilmez: evin arka (dış) kenarında durur; çevrilseydi kapının görünen
+                    // tek yarısını (çatının arkasında kalan) örterdi.
+                    renderers.Add(stack);
                 }
             }
 
@@ -205,6 +250,54 @@ public class TerrainView : MonoBehaviour
             roofTiles.Add(renderers);
             roofAlpha.Add(1f);
         }
+    }
+
+    /// <summary>
+    /// Kapı karelerini ve paspasları yeniden kurar: eski ve yeni kapı kareleri tazelenir (kapı resmi ya da düz zemin), her kapının
+    /// dışındaki iki kareye paspas konur. Resimler yoksa kapı düz zemin olarak kalır, paspas konmaz.
+    /// </summary>
+    void RebuildDoors()
+    {
+        foreach (GameObject mat in doormats)
+            if (mat != null) Destroy(mat);
+        doormats.Clear();
+
+        var stale = new List<int>(doorTiles.Keys);
+        doorTiles.Clear();
+        if (map == null) return;
+
+        MapTheme theme = map.Theme;
+        foreach (House house in map.Houses)
+        {
+            if (!house.HasDoor) continue;
+            for (int i = 0; i < House.DoorWidth; i++)
+            {
+                int x = house.DoorX + i;
+                bool left = i == 0;
+                if (map.InBounds(x, house.DoorY)) doorTiles[map.Index(x, house.DoorY)] = new DoorTile(house.DoorUp, left);
+                CreateDoormat(x, house.DoorstepY, house.DoorUp, left, theme);
+            }
+        }
+
+        foreach (int index in stale) Refresh(index % map.Width, index / map.Width);
+        foreach (int index in doorTiles.Keys) Refresh(index % map.Width, index / map.Width);
+    }
+
+    /// <summary>Kapının önüne paspas (zeminin üstüne ayrı resim). Dışarısı yürünemiyorsa (uçurum, lav) ya da resim yoksa konmaz.</summary>
+    void CreateDoormat(int x, int y, bool doorUp, bool left, MapTheme theme)
+    {
+        if (!map.InBounds(x, y) || !TerrainMap.IsSafeGround(map.At(x, y))) return;
+        Sprite sprite = SpriteOr(theme.DoormatSprite(left), MapTheme.Village.DoormatSprite(left));
+        if (sprite == null) return;
+
+        var go = new GameObject($"Paspas {x},{y}");
+        go.transform.SetParent(transform, false);
+        go.transform.position = map.CellCenter(x, y);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = sprite;
+        sr.flipY = doorUp; // Resimde dışarısı altta; üst duvardaki kapıda dışarısı yukarıda
+        sr.sortingOrder = DoormatOrder;
+        doormats.Add(go);
     }
 
     /// <summary>İçindeki (ya da yanan / yanıp çöken) evin çatısını yumuşakça saydamlaştırır, dışarı çıkınca geri getirir.</summary>
@@ -223,7 +316,7 @@ public class TerrainView : MonoBehaviour
 
             roofAlpha[i] = alpha;
             roofObjects[i].SetActive(alpha > 0.01f);
-            foreach (SpriteStack tile in roofTiles[i]) tile.SetAlpha(alpha);
+            foreach (SpriteStack tile in roofTiles[i]) if (tile != null) tile.SetAlpha(alpha);
         }
     }
 
@@ -345,6 +438,20 @@ public class TerrainView : MonoBehaviour
         cliffs[index] = root;
     }
 
+    /// <summary>
+    /// Kapı karesi hâlâ evin zeminiyse (yanıp kömürleşmediyse) kapı resmiyle çizilir. Resimde içerisi üstte, eşik altta: alt duvardaki
+    /// kapı olduğu gibi, üst duvardaki kapı dikey çevrilerek. Temanın resmi yoksa köyünki, o da yoksa zemin resmi kalır.
+    /// </summary>
+    void ApplyDoorSprite(SpriteRenderer sr, int x, int y, TileType type, MapTheme theme)
+    {
+        if (!TerrainMap.IsBuiltFloor(type) || !doorTiles.TryGetValue(map.Index(x, y), out DoorTile door)) return;
+
+        Sprite sprite = SpriteOr(theme.DoorSprite(door.Left), MapTheme.Village.DoorSprite(door.Left));
+        if (sprite == null) return;
+        sr.sprite = sprite;
+        sr.flipY = door.Up;
+    }
+
     GameObject CreateFlame(int x, int y)
     {
         var go = new GameObject($"Alev {x},{y}");
@@ -369,6 +476,7 @@ public class TerrainView : MonoBehaviour
         // Eski animasyonu temizle (lav → kömür gibi bir değişim olursa).
         var old = sr.GetComponent<SpriteAnimator>();
         if (old != null) Destroy(old);
+        sr.flipY = false;
 
         switch (type)
         {
@@ -403,6 +511,7 @@ public class TerrainView : MonoBehaviour
                 break;
         }
 
+        ApplyDoorSprite(sr, x, y, type, theme);
         RefreshCliff(x, y); // Karonun resmi belli olduktan sonra: uçurum yüzü o resimden yapılır
     }
 }

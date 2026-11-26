@@ -198,7 +198,7 @@ public static class MapGenerator
 
     /// <summary>
     /// Ev: çevresi duvar, içi zemin (3×2), sokağa bakan duvarda 2 kare geniş kapı. Duvar ve zemin temadan gelir
-    /// (tahta, taş, kerpiç). Evin yeri haritaya kaydedilir (çatı çizimi için).
+    /// (tahta, taş, kerpiç). Evin yeri ve kapısı haritaya kaydedilir (çatı ve kapı çizimi için).
     /// </summary>
     static void BuildHouse(TerrainMap map, int x0, int y0, bool doorUp, System.Random random, MapTheme theme)
     {
@@ -211,13 +211,12 @@ public static class MapGenerator
             }
         }
 
-        // Kapı: iç mekânın üstündeki iki kare (soldan ya da sağdan hizalı).
-        int doorX = x0 + 1 + random.Next(0, 2);
-        int doorY = doorUp ? y0 + HouseHeight - 1 : y0;
-        map.Set(doorX, doorY, theme.FloorTile);
-        map.Set(doorX + 1, doorY, theme.FloorTile);
+        // Kapı: iç mekânın üstündeki/altındaki iki kare (soldan ya da sağdan hizalı). Rastgele sayı çekimi eskisiyle aynı
+        // (tek Next(0, 2)): köy haritası birebir aynı kalır.
+        var house = new House(x0, y0, HouseWidth, HouseHeight, x0 + 1 + random.Next(0, 2), doorUp);
+        for (int i = 0; i < House.DoorWidth; i++) map.Set(house.DoorX + i, house.DoorY, theme.FloorTile);
 
-        map.AddHouse(new House(x0, y0, HouseWidth, HouseHeight));
+        map.AddHouse(house); // Kapısıyla birlikte: çatıda kapının üstü açık kalır, paspas ve saçak çizilir
     }
 
     static void SetIfGrass(TerrainMap map, int x, int y, TileType floor)

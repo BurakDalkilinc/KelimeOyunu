@@ -102,5 +102,14 @@ public sealed class MapTheme
     /// <summary>Çatı resminin adı (parça: "a", "ridge", "b", "eave").</summary>
     public string RoofSprite(string part) => RoofPrefix + "_" + part;
 
+    /// <summary>Kapı karosunun resmi (sol ya da sağ yarı): "t_door_{tema}_l/_r". Resimde içerisi üstte, eşik (dışarısı) altta.</summary>
+    public string DoorSprite(bool left) => "t_door_" + Id + (left ? "_l" : "_r");
+
+    /// <summary>Kapının önündeki paspasın resmi (sol ya da sağ yarı, saydam zeminli).</summary>
+    public string DoormatSprite(bool left) => "t_doormat_" + Id + (left ? "_l" : "_r");
+
+    /// <summary>Kapının üstündeki saçağın resmi (çatı katmanında, kapının iki karesine yan yana).</summary>
+    public string AwningSprite => "t_awning_" + Id;
+
     public override string ToString() => Id;
 }

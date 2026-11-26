@@ -322,6 +322,26 @@ public class GameConfig : ScriptableObject
     [Range(0.1f, 1f)] public float shelterCapacityRatio = 0.5f;
     [Min(1)] public int shelterMinCapacity = 1;
 
+    [Header("İsim etiketleri (karakterlerin üstünde)")]
+    [Tooltip("Karakterlerin başının üstünde adları yazsın mı?")]
+    public bool nameTagsEnabled = true;
+    [Tooltip("Yazının karakterin merkezinden ne kadar yukarıda duracağı (birim).")]
+    [Min(0f)] public float nameTagHeight = 0.95f;
+    [Tooltip("Yazının dokuya çizildiği boyut. Piksel yazı tipinin ızgarası 11: 11'in katı olursa harfler net piksel olur (11, 22, 33).")]
+    [Min(1)] public int nameTagFontSize = 11;
+    [Tooltip("Yazı tipinin bir pikselinin dünyadaki boyu (birim). 1/16 = harita resimlerinin bir pikseli; 1/32 = yarısı (küçük yazı).")]
+    [Min(0.005f)] public float nameTagPixelSize = 0.0625f;
+    [Tooltip("En uzun isim (harf). Daha uzunu kısaltılıp sonuna nokta konur.")]
+    [Min(1)] public int nameTagMaxLength = 14;
+    [Tooltip("Kendi karakterinin adının rengi.")]
+    public Color nameTagOwnColor = new Color(1f, 0.87f, 0.25f, 1f);
+    [Tooltip("Diğer karakterlerin adının rengi.")]
+    public Color nameTagOtherColor = Color.white;
+    [Tooltip("Yazının 1 piksellik koyu kenarının rengi (okunaklı olsun diye).")]
+    public Color nameTagOutlineColor = new Color(0.07f, 0.05f, 0.1f, 0.9f);
+    [Tooltip("Soluk isim (kendi hayaletin, görünmezken kendi adın) saydamlığı.")]
+    [Range(0f, 1f)] public float nameTagFaintAlpha = 0.45f;
+
     [Header("Rastgelelik")]
     [Tooltip("0 ise her maç farklı bir seed alır. Sıfırdan farklıysa maç tekrar oynatılabilir.")]
     public int randomSeed = 0;
