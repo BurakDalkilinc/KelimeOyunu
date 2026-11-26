@@ -531,6 +531,10 @@ MUSIC = [("music_menu", music_menu), ("music_match", music_match), ("music_threa
 def main():
     os.makedirs(OUT_DIR, exist_ok=True)
     for name, make in EFFECTS:
+        # Kenney "Digital Audio" (CC0) .ogg ile değiştirilen sesler yeniden üretilmez:
+        # aynı adda .wav olursa Resources.Load hangisini alacağını bilemez.
+        if os.path.exists(os.path.join(OUT_DIR, name + ".ogg")):
+            continue
         write_wav(name, make(random.Random(f"{SEED}-{name}")))
     for name, make in MUSIC:
         write_wav(name, make(random.Random(f"{SEED}-{name}")), loop=True)
