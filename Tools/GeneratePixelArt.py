@@ -1479,6 +1479,119 @@ def make_mermi():
     return c
 
 
+# ---------------- Kelime paketi 10: yaratıklar ve kılıklar ----------------
+def make_maymun():
+    c = Canvas()
+    c.rect(13, 11, 14, 13, n); c.rect(14, 8, 15, 10, n); c.set(13, 8, n)   # kıvrık kuyruk
+    c.sym_rect(3, 8, 4, 13, n)               # uzun kollar
+    c.sym_rect(3, 14, 4, 14, s)              # eller
+    c.ellipse(7.5, 10.5, 3.2, 3.0, N)        # gövde
+    c.ellipse(7.5, 11, 1.8, 1.8, s)          # göbek
+    c.ellipse(3.5, 5, 1.6, 1.6, s); c.ellipse(11.5, 5, 1.6, 1.6, s)   # kulaklar
+    c.ellipse(7.5, 5, 3.4, 3.2, N)           # kafa
+    c.ellipse(7.5, 6, 2.6, 2.0, S)           # yüz
+    c.sym_set(6, 5, K)                       # gözler
+    c.set(7, 7, n); c.set(8, 7, n)           # ağız
+    c.sym_rect(5, 14, 6, 15, n)              # bacaklar
+    c.outline()
+    return c
+
+
+def make_papagan():
+    c = Canvas()
+    c.poly([(0, 6), (6, 8), (6, 12), (1, 11)], L)    # yeşil kanatlar
+    c.poly([(15, 6), (9, 8), (9, 12), (14, 11)], L)
+    c.poly([(0, 9), (6, 11), (6, 12), (1, 12)], B)   # mavi kanat uçları
+    c.poly([(15, 9), (9, 11), (9, 12), (14, 12)], B)
+    c.rect(7, 13, 8, 15, B)                  # kuyruk
+    c.ellipse(7.5, 9.5, 2.6, 3.4, R)         # kırmızı gövde
+    c.ellipse(7.5, 5, 2.6, 2.4, R)           # kafa
+    c.sym_set(6, 4, W); c.sym_set(6, 5, K)   # gözler
+    c.rect(7, 6, 8, 7, w); c.set(7, 8, K)    # kıvrık gaga
+    c.sym_set(6, 13, INK)                    # pençeler
+    c.outline()
+    return c
+
+
+def make_su_aygiri():
+    c = Canvas()
+    c.ellipse(7.5, 11, 7.0, 4.2, G)          # iri gövde
+    c.sym_rect(2, 13, 4, 15, G)              # kalın bacaklar
+    c.sym_rect(3, 1, 4, 2, p)                # küçük kulaklar
+    c.ellipse(7.5, 5, 4.6, 3.4, g)           # kafa
+    c.sym_set(5, 3, W); c.sym_set(5, 4, K)   # gözler
+    c.rect(2, 7, 13, 12, g)                  # geniş ağız
+    c.rect(3, 8, 12, 10, PINK)               # ağız içi
+    c.rect(3, 8, 12, 8, P)
+    c.sym_rect(4, 9, 4, 10, W); c.sym_set(6, 10, W)   # dişler
+    c.sym_set(6, 6, K)                       # burun delikleri
+    c.rect(2, 12, 13, 12, p)                 # çene gölgesi
+    c.outline()
+    return c
+
+
+def make_peri():
+    c = Canvas()
+    c.ellipse(3.5, 6, 2.6, 3.2, C); c.ellipse(12, 6, 2.6, 3.2, C)       # parlak kanatlar
+    c.ellipse(4, 10.5, 1.8, 1.8, C); c.ellipse(11, 10.5, 1.8, 1.8, C)
+    c.sym_set(3, 5, W); c.sym_set(2, 6, W)   # kanat parlaması
+    c.ellipse(7.5, 5, 2.2, 2.0, S)           # kafa
+    c.rect(5, 2, 10, 3, Y)                   # sarı saç
+    c.sym_set(6, 5, K)
+    c.poly([(6, 7), (10, 7), (11, 12), (4, 12)], PINK)   # elbise
+    c.rect(6, 8, 9, 8, P)
+    c.sym_rect(6, 13, 6, 13, S)              # bacaklar
+    c.set(12, 1, Y); c.set(1, 12, Y); c.set(14, 13, W)   # pırıltılar
+    c.outline()
+    return c
+
+
+def make_kovboy():
+    c = Canvas()
+    c.rect(5, 0, 10, 3, N)                   # şapka
+    c.rect(5, 3, 10, 3, n)                   # şapka bandı
+    c.rect(2, 4, 13, 4, N); c.sym_set(2, 3, N)   # kıvrık kenar
+    c.ellipse(7.5, 6.5, 2.6, 2.0, S)         # yüz
+    c.sym_set(6, 6, K)
+    c.rect(6, 8, 9, 8, n)                    # bıyık
+    c.rect(4, 9, 11, 13, B)                  # gömlek
+    c.rect(6, 9, 9, 9, R)                    # bandana
+    c.sym_rect(4, 10, 5, 13, n)              # yelek
+    c.rect(4, 13, 11, 13, K); c.set(7, 13, Y); c.set(8, 13, Y)   # kemer, toka
+    c.rect(12, 11, 13, 12, g)                # tabanca
+    c.sym_rect(5, 14, 6, 14, b)              # kot
+    c.sym_rect(5, 15, 6, 15, n)              # çizmeler
+    c.outline()
+    return c
+
+
+def make_karton_kutu():
+    c = Canvas()
+    c.poly([(2, 7), (4, 4), (15, 4), (13, 7)], s)    # üst yüz
+    c.poly([(13, 7), (15, 4), (15, 13), (13, 15.5)], n)   # yan yüz
+    c.rect(2, 7, 12, 15, N)                  # ön yüz
+    c.poly([(6, 7), (8, 4), (10, 4), (8, 7)], y)     # bant (üst)
+    c.rect(6, 7, 7, 9, y)                    # bant (ön)
+    c.rect(4, 11, 6, 13, w)                  # etiket
+    c.set(5, 12, INK)
+    c.rect(2, 7, 12, 7, n)                   # kenar katı
+    c.outline()
+    return c
+
+
+def make_cop_kutusu():
+    c = Canvas()
+    c.poly([(3, 6), (13, 6), (12, 16), (4, 16)], l)  # yeşil metal gövde
+    c.rect(5, 7, 5, 14, L)                   # parlama
+    c.rect(7, 7, 7, 14, D); c.rect(10, 7, 10, 14, D)   # oluklar
+    c.rect(4, 15, 11, 15, D)                 # dip
+    c.rect(2, 4, 13, 5, g)                   # kapak
+    c.rect(2, 4, 13, 4, w)
+    c.rect(6, 2, 9, 2, G); c.sym_set(6, 3, G)   # kulp
+    c.outline()
+    return c
+
+
 def make_ejderha():
     c = Canvas()
     c.poly([(0, 5), (4, 8), (0, 11)], D)    # kanatlar
@@ -2137,6 +2250,7 @@ def main():
         "polis": make_polis, "uzayli": make_uzayli, "goblin": make_goblin, "balina": make_balina,
         "tilki": make_tilki, "baykus": make_baykus, "sincap": make_sincap, "yengec": make_yengec, "deve": make_deve, "kanguru": make_kanguru, "panda": make_panda, "kirpi": make_kirpi, "viking": make_viking, "gladyator": make_gladyator, "sumocu": make_sumocu, "boksor": make_boksor, "futbolcu": make_futbolcu, "asci": make_asci,
         "minotor": make_minotor, "medusa": make_medusa, "golem": make_golem, "gargoyle": make_gargoyle, "fil": make_fil, "mamut": make_mamut, "cakal": make_cakal, "sirtlan": make_sirtlan, "penguen": make_penguen, "sumuklu": make_sumuklu, "solucan": make_solucan, "denizanasi": make_denizanasi, "pterodaktil": make_pterodaktil, "hirsiz": make_hirsiz,
+        "maymun": make_maymun, "papagan": make_papagan, "su_aygiri": make_su_aygiri, "peri": make_peri, "kovboy": make_kovboy,
     }
     static = {
         "yumruk": make_yumruk, "muz_kabugu": make_muz, "miknatis": make_miknatis, "bomba": make_bomba, "mermi": make_mermi, "ors": make_ors, "piyano": make_piyano, "saksi": make_saksi, "top": make_top, "bowling": make_bowling, "motor": make_motor, "araba": make_araba, "cali": make_cali, "kilic": make_kilic, "sopa": make_sopa,
@@ -2152,6 +2266,7 @@ def main():
         "t_fire": lambda: make_t_fire(0), "t_fire_b": lambda: make_t_fire(1),
         "t_roof_a": lambda: make_t_roof("a"), "t_roof_b": lambda: make_t_roof("b"),
         "t_roof_ridge": make_t_roof_ridge, "t_roof_eave": make_t_roof_eave,
+        "karton_kutu": make_karton_kutu, "cop_kutusu": make_cop_kutusu,
     }
     for name, fn in animated.items():
         save_animated(fn(), name)
