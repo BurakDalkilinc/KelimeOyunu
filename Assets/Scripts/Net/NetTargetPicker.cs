@@ -36,7 +36,7 @@ public class NetTargetPicker : MonoBehaviour
     void Update()
     {
         // Fare tuşunun "yeni basıldı" anı, basılı durumundaki değişimden bulunur (bkz. PressEdge).
-        bool clicked = clickEdge.Update(Mouse.current != null && Mouse.current.leftButton.isPressed);
+        bool clicked = clickEdge.Update(Mouse.current != null && Mouse.current.leftButton.isPressed) && !UiInputBlock.IsBlocked;
 
         if (prompt != null) prompt.text = PromptText();
 

@@ -108,25 +108,28 @@ public class MatchRunner : TurnViewSource
     {
         // Ekran bileşenleri OnEnable'da olaylara abone oldu; şimdi ilk zar atılabilir.
         Turns.Start();
+
+        // Esc ayarları açar (bkz. SettingsHotkey); ana menüye dönüş düğmesi ayarlar ekranında durur.
+        if (SceneUtility.GetBuildIndexByScenePath(MenuScenePath) >= 0) SettingsScreen.SetLeaveAction(SettingsText.BackToMenu, GoToMenu);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         DebugPanel.EnsureExists(); // F1 deneme paneli (oyuncuya giden sürümde yok)
 #endif
     }
 
-    /// <summary>Ana menü (ağ/Steam lobisi) sahnesi; build'de varsa Esc ile oraya dönülür.</summary>
+    /// <summary>Ana menü (ağ/Steam lobisi) sahnesi; build'de varsa ayarlar ekranındaki "Ana menüye dön" ile oraya dönülür.</summary>
     const string MenuScenePath = "Assets/Scenes/NetTest.unity";
+
+    void OnDestroy() => SettingsScreen.ClearLeaveAction(GoToMenu);
+
+    /// <summary>Tek kişilik oyundan ana menüye (lobiye) döner.</summary>
+    void GoToMenu()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneUtility.GetBuildIndexByScenePath(MenuScenePath));
+    }
 
     void Update()
     {
-        // Esc: ana menüye dön (tek kişilik oyundan lobiye).
-        var keyboard = UnityEngine.InputSystem.Keyboard.current;
-        if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame && SceneUtility.GetBuildIndexByScenePath(MenuScenePath) >= 0)
-        {
-            Time.timeScale = 1f;
-            SceneManager.LoadScene(SceneUtility.GetBuildIndexByScenePath(MenuScenePath));
-            return;
-        }
-
         Turns.Tick(Time.deltaTime);
     }
 }

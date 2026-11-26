@@ -40,7 +40,7 @@ public class NameTagView : MonoBehaviour
         if (config == null || source == null) return;
 
         NameTagInfo info = source();
-        bool visible = config.nameTagsEnabled && NameTagRules.IsVisible(info, false);
+        bool visible = config.nameTagsEnabled && SettingsService.ShowNameTags && NameTagRules.IsVisible(info, false);
         if (visible && TerrainView.Active != null && TerrainView.Active.IsUnderVisibleRoof(transform.position))
             visible = NameTagRules.IsVisible(info, true);
 

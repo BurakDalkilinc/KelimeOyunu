@@ -56,6 +56,7 @@ public class ExplosionEffect : MonoBehaviour
         Gore.RegisterStain(scorch);
 
         effect.Apply();
+        GameAudio.Play(SoundId.Explosion);
     }
 
     void Update()

@@ -92,10 +92,12 @@ public class TypingBoxDisplay : MonoBehaviour
 
     void OnTextInput(char c)
     {
-        if (!open) return;
+        if (!open || UiInputBlock.IsBlocked) return; // Ayarlar açıkken harfler kutuya gitmez
         if (Time.unscaledTime - openedAt < config.typingInputGraceSeconds) return;
 
+        string before = buffer.Text;
         buffer.Input(c);
+        if (buffer.Text != before) GameAudio.Play(SoundId.Key, config.audioKeyVolume, config.audioKeyCooldown);
     }
 
     /// <summary>Klavye çıkarılıp takılırsa (yeni cihaz örneği) metin girişine yeniden abone olur.</summary>
@@ -120,7 +122,7 @@ public class TypingBoxDisplay : MonoBehaviour
 
         if (!open) return;
 
-        if (enterJustPressed) Submit();
+        if (enterJustPressed && !UiInputBlock.IsBlocked) Submit();
 
         UpdateFeedback();
         inputText.text = "Kelime: " + buffer.Text + (CaretVisible() ? "|" : " ");
@@ -137,6 +139,8 @@ public class TypingBoxDisplay : MonoBehaviour
 
     void ShowResult(SubmitStatus status)
     {
+        GameAudio.Play(SfxRules.ForSubmit(status));
+
         string message = SubmitFeedback.GetMessage(status, config.maxWordLength);
         if (message.Length > 0)
         {

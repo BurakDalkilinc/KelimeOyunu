@@ -71,4 +71,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [x] 3 farklı harita: Tahta Köy (lav, yangın), Karlı Dağ (taş evler, buz, dondurucu su), Çöl Kasabası (kerpiç evler, bataklık kumu, kaktüs); tema maç tohumundan seçilir, `GameConfig.forcedMapTheme` ile zorlanır
 - [x] Koleksiyon defteri (menüde "Defter"; kendi yazdığın kelime keşfedilir, başkasınınki görülür; kayıt `persistentDataPath/collection.json`, etiket adları `Resources/Data/tag_names.json`)
 - [ ] Ayarlar, ses, Türkçe/İngilizce dil desteği
+  - [x] Ses ve müzik: kodla üretilen retro efektler ve 3 müzik döngüsü (`Tools/GenerateSounds.py`), kelime sesi etiketlerden (`Resources/Data/sfx_tags.json`), tehditte siren ve gerilim müziği; ağ maçında istemcide de duyulur
+  - [x] Ayarlar ekranı (menüde "Ayarlar", maçta Esc): ses düzeyleri, tam ekran, çözünürlük, VSync, isim etiketleri; kayıt `persistentDataPath/settings.json`
+  - [ ] Türkçe/İngilizce dil desteği (ayarlar ekranında "Dil" satırı hazır, şimdilik yalnızca Türkçe)
 - [ ] Çıkış

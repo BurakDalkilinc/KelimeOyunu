@@ -406,6 +406,46 @@ public class GameConfig : ScriptableObject
     [Tooltip("Seçili kart vurgusunun kalınlığı (piksel).")]
     [Min(0f)] public float collectionSelectedOutline = 4f;
 
+    [Header("Ses ve müzik")]
+    [Tooltip("Seslerin Resources altındaki klasörü (Resources/Audio/sfx_hit.wav → \"Audio\").")]
+    public string audioFolder = "Audio";
+    [Tooltip("Etiket → ses eşleme dosyası (Resources altında, uzantısız).")]
+    public string audioSfxTagsPath = "Data/sfx_tags";
+    [Tooltip("Aynı anda çalabilecek en fazla efekt sayısı (fazlası o an atlanır).")]
+    [Min(1)] public int audioMaxSimultaneousSfx = 10;
+    [Tooltip("Aynı efekt bu süreden (sn) önce yeniden istenirse çalınmaz; aynı karede üst üste binmesin diye.")]
+    [Min(0f)] public float audioSameSoundCooldown = 0.06f;
+    [Tooltip("Vuruş sesi için ayrı bekleme süresi (sn): sürüde onlarca vuruş aynı anda gelir.")]
+    [Min(0f)] public float audioHitCooldown = 0.12f;
+    [Tooltip("Yazı tuşu sesi için bekleme süresi (sn).")]
+    [Min(0f)] public float audioKeyCooldown = 0.03f;
+    [Tooltip("Ses kaydırıcısı sürüklenirken tık sesleri arasındaki en kısa süre (sn).")]
+    [Min(0f)] public float audioSliderClickInterval = 0.09f;
+    [Tooltip("Efektlerin perdesi her çalışta ± bu oranda rastgele değişir (0.05 = %5); hep aynı ses bıktırmasın.")]
+    [Range(0f, 0.5f)] public float audioPitchVariation = 0.05f;
+    [Tooltip("İki müzik arasındaki çapraz geçiş süresi (sn).")]
+    [Min(0f)] public float audioMusicCrossfadeSeconds = 1.5f;
+    [Tooltip("Müziğin efektlere göre temel ses düzeyi (ayarlardaki müzik düzeyiyle çarpılır).")]
+    [Range(0f, 1f)] public float audioMusicBaseVolume = 0.45f;
+    [Tooltip("Yazı tuşu sesinin düzeyi.")]
+    [Range(0f, 1f)] public float audioKeyVolume = 0.35f;
+    [Tooltip("Başka bir oyuncu vurulunca vuruş sesinin düzeyi (kendi vuruşun tam düzeyde).")]
+    [Range(0f, 1f)] public float audioOtherHitVolume = 0.45f;
+    [Tooltip("Arayüz tık sesinin düzeyi.")]
+    [Range(0f, 1f)] public float audioUiClickVolume = 0.6f;
+
+    [Header("Ayarlar ekranı")]
+    [Tooltip("Ayarların kayıt dosyası (Application.persistentDataPath altında).")]
+    public string settingsFileName = "settings.json";
+    [Tooltip("Ayarlar panelinin genişliği (1080 piksel yükseklikli ekrana göre).")]
+    [Min(200f)] public float settingsPanelWidth = 980f;
+    [Tooltip("Ayarlar panelindeki bir satırın yüksekliği.")]
+    [Min(20f)] public float settingsRowHeight = 62f;
+    [Tooltip("Satır adının (\"Müzik\", \"Tam ekran\"...) kapladığı genişlik oranı.")]
+    [Range(0.2f, 0.7f)] public float settingsLabelRatio = 0.42f;
+    [Tooltip("Satırdaki değer yazısının (\"%80\", \"1920 × 1080\") genişliği.")]
+    [Min(20f)] public float settingsValueWidth = 140f;
+
     [Header("Rastgelelik")]
     [Tooltip("0 ise her maç farklı bir seed alır. Sıfırdan farklıysa maç tekrar oynatılabilir.")]
     public int randomSeed = 0;

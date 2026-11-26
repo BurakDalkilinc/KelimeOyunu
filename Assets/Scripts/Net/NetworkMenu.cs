@@ -14,13 +14,13 @@ public class NetworkMenu : MonoBehaviour
 
     void OnGUI()
     {
-        if (CollectionBookScreen.IsOpen) return; // Defter açıkken ekranı o kaplar
+        if (CollectionBookScreen.IsOpen || SettingsScreen.IsOpen) return; // Defter/ayarlar açıkken ekranı onlar kaplar
 
         var manager = NetworkManager.Singleton;
         if (manager == null) { GUILayout.Label("NetworkManager yok."); return; }
 
         // Sol alta: sol üst köşe Arena arayüzünün "Can" yazısına ait.
-        float height = manager.IsListening ? 80 : 285;
+        float height = manager.IsListening ? 108 : 313;
         GUILayout.BeginArea(new Rect(12, Screen.height - height - 12, 280, height), GUI.skin.box);
 
         if (manager.IsListening) DrawConnected(manager);
@@ -35,10 +35,11 @@ public class NetworkMenu : MonoBehaviour
         GUILayout.Label("Host'un IP adresi (aynı bilgisayarda boş bırak):");
         addressText = GUILayout.TextField(addressText);
 
-        if (GUILayout.Button("Host (oyunu kur)")) StartNetwork(manager, true);
-        if (GUILayout.Button("Katıl")) StartNetwork(manager, false);
-        if (GUILayout.Button("Tek kişilik oyna (botlarla)")) PlaySolo(manager);
-        if (GUILayout.Button("Defter (koleksiyon)")) CollectionBookScreen.Open();
+        if (Button("Host (oyunu kur)")) StartNetwork(manager, true);
+        if (Button("Katıl")) StartNetwork(manager, false);
+        if (Button("Tek kişilik oyna (botlarla)")) PlaySolo(manager);
+        if (GUILayout.Button("Defter (koleksiyon)")) CollectionBookScreen.Open(); // Defter kendi sayfa sesini çalar
+        if (Button(SettingsText.MenuButton)) SettingsScreen.Open();
 
         if (!string.IsNullOrEmpty(error)) GUILayout.Label(error);
     }
@@ -65,7 +66,16 @@ public class NetworkMenu : MonoBehaviour
         else if (manager.IsConnectedClient) GUILayout.Label("Host'a bağlandın.");
         else GUILayout.Label("Bağlanılıyor...");
 
-        if (GUILayout.Button("Bağlantıyı kes")) manager.Shutdown();
+        if (Button("Bağlantıyı kes")) manager.Shutdown();
+        if (Button(SettingsText.MenuButton)) SettingsScreen.Open();
+    }
+
+    /// <summary>Tık sesli düğme.</summary>
+    static bool Button(string text)
+    {
+        if (!GUILayout.Button(text)) return false;
+        GameAudio.Click();
+        return true;
     }
 
     void StartNetwork(NetworkManager manager, bool host)

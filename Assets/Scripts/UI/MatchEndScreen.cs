@@ -71,7 +71,7 @@ public class MatchEndScreen : MonoBehaviour
 
         if (shown) hintText.text = runner.RestartHint; // Ağda "host bekleniyor" yazısı değişebilir
 
-        if (shown && rPressed && runner.CanRestart) Restart();
+        if (shown && rPressed && runner.CanRestart && !UiInputBlock.IsBlocked) Restart();
     }
 
     /// <summary>Yeni maç için hazırlar (tek kişilikte sahneyi baştan yükler).</summary>

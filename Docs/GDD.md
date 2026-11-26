@@ -118,9 +118,24 @@ Harita 34 × 19 karelik bir ızgaradır (kare = 1 birim, 16×16 piksel). Her ma�
 - **Saldırı animasyonu:** yaratık her vuruşta hedefe atılır ve büyür, sonra geri çekilir; vurduğu yerde toz halkası ve saçılan toprak çıkar, kamera sarsılır (devlerde sert). Devler (boss, King Kong...) yürürken her adımda yer sarsılır ve ayaklarından toz kalkar. Yalnızca görüntüdür.
 
 ## Menü ve deneme araçları
-- **Ana menü:** "Host (oyunu kur)", "Katıl" ve "Tek kişilik oyna (botlarla)". Tek kişilik oyun build'de de açılır.
-- **Esc:** tek kişilik maçtan ana menüye döner.
+- **Ana menü:** "Host (oyunu kur)", "Katıl", "Tek kişilik oyna (botlarla)", "Defter" ve "Ayarlar". Tek kişilik oyun build'de de açılır.
+- **Esc:** defter açıksa defteri kapatır, değilse ayarlar ekranını açar/kapatır (menüde de maçta da). Tek kişilik maçtan ana menüye dönüş ayarlar ekranındaki "Ana menüye dön" düğmesiyledir.
 - **F1 deneme paneli:** yalnızca Unity Editor'da ve geliştirme (development) build'inde vardır; oyuncuya giden sürümde yoktur. Kelimeyi sırayı beklemeden "ben yazmış gibi" ya da "bot yazmış gibi" oynatır (kilitlemez); ölümsüzlük, zaman hızı, botları dondurma/yanına toplama, herkesi diriltme, yaratıkları ve kanı temizleme içerir.
+
+## Ayarlar
+- **Ses:** ana ses, müzik, efektler (0–%100). Kaydırıcı değişince hemen uygulanır, tık sesi yeni düzeyde duyulur.
+- **Görüntü:** tam ekran, çözünürlük (ekranın desteklediği boyutlar arasında önceki/sonraki), dikey eşitleme (VSync). "Uygula" ile değişir.
+- **İsim etiketleri:** karakterlerin üstündeki adları gizler/gösterir (yalnızca bu bilgisayarda).
+- **Dil:** şimdilik yalnızca Türkçe (dil desteği sonraki aşamada).
+- Ayarlar açıkken oyun durmaz (çok oyunculu); yalnızca yazma, hareket, itiş ve hedef seçme girdisi oyuna gitmez.
+- Kayıt kişisel ve yerel: `persistentDataPath/settings.json`; bozuk ya da yoksa varsayılanlarla başlanır.
+
+## Ses
+- Bütün sesler kodla üretilen retro (chiptune) WAV'lardır: `Tools/GenerateSounds.py` (yalnızca Python standart kütüphanesi, sabit seed: her çalıştırmada aynı dosyalar). Çıktı `Assets/Resources/Audio/`. Beğenilmeyen ses aynı adlı WAV ile değiştirilebilir.
+- **Kelime sesi etiketlerden gelir** (`Assets/Resources/Data/sfx_tags.json`): kurallar sırayla denenir, kelimenin taşıdığı ilk eşleşen etiketin sesi çalar (explosive → patlama, fire/ignite → ateş, water → su, shield → kalkan, heal/revive → iyileşme, flying/sky/escape → kanat). Büyük tehdit (`scope: "global"`) → siren. Eşleşme yoksa yaratık doğma sesi. Yeni eşleme = JSON'a satır.
+- Diğer sesler: zar dönmesi ve durması, yazı tuşu, kelime kabul/ret, tur yanması, vuruş (başkasının vuruşu daha kısık), eleme, araç patlaması, zafer/yenilgi, arayüz tıkı, defter sayfası.
+- **Müzik:** menüde ve maç dışında sakin döngü, maçta tempolu döngü, büyük tehdit sahadayken gerilim döngüsü; aralarında çapraz geçiş.
+- Aynı ses kısa sürede üst üste çalmaz, aynı anda en çok `audioMaxSimultaneousSfx` efekt çalar, perde her çalışta hafifçe değişir. Değerler `GameConfig` (`audio*`).
 
 ## Koleksiyon defteri
 Oyuncunun maçlarda karşılaştığı kelimeleri topladığı kişisel defter. Yalnızca ilerleme ve merak hedefidir: **oyun dengesini etkilemez**, kelimelere güç vermez, zar kurallarını değiştirmez.

@@ -27,6 +27,7 @@ public class CollectionBookScreen : MonoBehaviour
         if (instance == null) instance = new GameObject("CollectionBookScreen").AddComponent<CollectionBookScreen>();
         instance.gameObject.SetActive(true);
         instance.Refresh();
+        GameAudio.PageTurn();
     }
 
     /// <summary>Defteri kapatır.</summary>
@@ -65,6 +66,7 @@ public class CollectionBookScreen : MonoBehaviour
 
     void SelectTab(CollectionTab next)
     {
+        GameAudio.PageTurn();
         tab = next;
         page = 0;
         Refresh();
@@ -72,7 +74,9 @@ public class CollectionBookScreen : MonoBehaviour
 
     void ChangePage(int delta)
     {
+        int before = page;
         page = CollectionPaging.ClampPage(page + delta, filtered.Count, config.collectionCardsPerPage);
+        if (page != before) GameAudio.PageTurn();
     }
 
     // ---- Çizim ----
@@ -90,7 +94,7 @@ public class CollectionBookScreen : MonoBehaviour
         float width = Screen.width / scale;
         float height = config.collectionReferenceHeight;
 
-        DrawColor(new Rect(0, 0, width, height), config.collectionBackdropColor);
+        UiDraw.Fill(new Rect(0, 0, width, height), config.collectionBackdropColor);
 
         float m = config.collectionMargin;
         Rect pageRect = new Rect(m, m, width - 2 * m, height - 2 * m);
@@ -117,8 +121,8 @@ public class CollectionBookScreen : MonoBehaviour
     void HandleKeys()
     {
         Event e = Event.current;
-        if (e.type == EventType.KeyDown && e.keyCode == KeyCode.Escape) { Close(); e.Use(); }
-        else if (e.type == EventType.KeyDown && e.keyCode == KeyCode.LeftArrow) { ChangePage(-1); e.Use(); }
+        // Esc'yi tek bir yer dinler (SettingsHotkey): defter açıksa önce defteri kapatır.
+        if (e.type == EventType.KeyDown && e.keyCode == KeyCode.LeftArrow) { ChangePage(-1); e.Use(); }
         else if (e.type == EventType.KeyDown && e.keyCode == KeyCode.RightArrow) { ChangePage(1); e.Use(); }
         else if (e.type == EventType.ScrollWheel) { ChangePage(e.delta.y > 0 ? 1 : -1); e.Use(); }
     }
@@ -130,7 +134,7 @@ public class CollectionBookScreen : MonoBehaviour
         float x = area.x;
         if (bookIcon != null)
         {
-            DrawSprite(new Rect(x, area.y, icon, icon), bookIcon, 1f);
+            UiDraw.DrawSprite(new Rect(x, area.y, icon, icon), bookIcon, 1f);
             x += icon + config.collectionCardSpacing;
         }
 
@@ -179,7 +183,7 @@ public class CollectionBookScreen : MonoBehaviour
     {
         CollectionStatus status = book.GetStatus(word.id);
 
-        if (word == selected) DrawOutline(rect, config.collectionSelectedColor, config.collectionSelectedOutline);
+        if (word == selected) UiDraw.Outline(rect, config.collectionSelectedColor, config.collectionSelectedOutline);
 
         switch (status)
         {
@@ -197,7 +201,7 @@ public class CollectionBookScreen : MonoBehaviour
         if (status == CollectionStatus.Locked)
         {
             Sprite lockIcon = SpriteLibrary.Get(LockIconSprite);
-            if (lockIcon != null) DrawSprite(Shrink(imageRect, 0.5f), lockIcon, 1f);
+            if (lockIcon != null) UiDraw.DrawSprite(UiDraw.Shrink(imageRect, 0.5f), lockIcon, 1f);
             else GUI.Label(imageRect, "?", titleStyle);
 
             Rect nameRect = new Rect(textRect.x, textRect.y, textRect.width, textRect.height * 0.5f);
@@ -209,11 +213,11 @@ public class CollectionBookScreen : MonoBehaviour
         {
             float alpha = status == CollectionStatus.Seen ? config.collectionSeenAlpha : 1f;
             Sprite art = SpriteLibrary.Get(SpriteLibrary.NameFor(word));
-            if (art != null) DrawSprite(imageRect, art, alpha);
+            if (art != null) UiDraw.DrawSprite(imageRect, art, alpha);
             GUI.Label(textRect, word.display, smallCenterStyle);
         }
 
-        if (GUI.Button(rect, GUIContent.none, GUIStyle.none)) selected = word;
+        if (GUI.Button(rect, GUIContent.none, GUIStyle.none)) { selected = word; GameAudio.Click(); }
     }
 
     void DrawFooter(Rect area)
@@ -232,7 +236,7 @@ public class CollectionBookScreen : MonoBehaviour
         if (GUI.Button(new Rect(area.x + 2 * (buttonWidth + gap), area.y, buttonWidth, area.height), "Sonraki >", buttonStyle)) ChangePage(1);
         GUI.enabled = true;
 
-        if (GUI.Button(new Rect(area.x + 3 * (buttonWidth + gap), area.y, buttonWidth, area.height), "Kapat (Esc)", buttonStyle)) Close();
+        if (GUI.Button(new Rect(area.x + 3 * (buttonWidth + gap), area.y, buttonWidth, area.height), "Kapat (Esc)", buttonStyle)) { GameAudio.Click(); Close(); }
     }
 
     void DrawDetail(Rect area)
@@ -256,12 +260,12 @@ public class CollectionBookScreen : MonoBehaviour
         if (status == CollectionStatus.Locked)
         {
             Sprite lockIcon = SpriteLibrary.Get(LockIconSprite);
-            if (lockIcon != null) DrawSprite(Shrink(imageRect, 0.5f), lockIcon, 1f);
+            if (lockIcon != null) UiDraw.DrawSprite(UiDraw.Shrink(imageRect, 0.5f), lockIcon, 1f);
         }
         else
         {
             Sprite art = SpriteLibrary.Get(SpriteLibrary.NameFor(selected));
-            if (art != null) DrawSprite(imageRect, art, discovered ? 1f : config.collectionSeenAlpha);
+            if (art != null) UiDraw.DrawSprite(imageRect, art, discovered ? 1f : config.collectionSeenAlpha);
         }
 
         float textTop = imageRect.yMax + config.collectionCardSpacing;
@@ -292,67 +296,19 @@ public class CollectionBookScreen : MonoBehaviour
         GUILayout.EndArea();
     }
 
-    // ---- Yardımcılar ----
+    // ---- Yardımcılar (ortak çizim: UiDraw) ----
 
-    /// <summary>Çerçeve resmini 9 dilim olarak çizer (kenarlar gerilmez); resim yoksa düz renk kutu.</summary>
-    void DrawFrame(Rect rect, GUIStyle style, Color fallback)
-    {
-        if (style == null) { DrawColor(rect, fallback); return; }
-        if (Event.current.type != EventType.Repaint) return;
-
-        // Resmin bir pikseli ekranda FramePixelScale kadar olsun diye çizimi o ölçekte yaparız.
-        float s = config.collectionFramePixelScale;
-        Matrix4x4 old = GUI.matrix;
-        GUI.matrix = old * Matrix4x4.Scale(new Vector3(s, s, 1f));
-        style.Draw(new Rect(rect.x / s, rect.y / s, rect.width / s, rect.height / s), false, false, false, false);
-        GUI.matrix = old;
-    }
-
-    static void DrawColor(Rect rect, Color color)
-    {
-        Color old = GUI.color;
-        GUI.color = color;
-        GUI.DrawTexture(rect, Texture2D.whiteTexture);
-        GUI.color = old;
-    }
-
-    static void DrawOutline(Rect rect, Color color, float thickness)
-    {
-        DrawColor(new Rect(rect.x - thickness, rect.y - thickness, rect.width + 2 * thickness, rect.height + 2 * thickness), color);
-    }
-
-    /// <summary>Sprite'ı kutuya en/boy oranını koruyarak sığdırır.</summary>
-    static void DrawSprite(Rect box, Sprite sprite, float alpha)
-    {
-        Texture2D texture = sprite.texture;
-        Rect tr = sprite.textureRect;
-        float aspect = tr.width / tr.height;
-        float w = box.width, h = box.width / aspect;
-        if (h > box.height) { h = box.height; w = h * aspect; }
-        Rect fitted = new Rect(box.x + (box.width - w) * 0.5f, box.y + (box.height - h) * 0.5f, w, h);
-        Rect uv = new Rect(tr.x / texture.width, tr.y / texture.height, tr.width / texture.width, tr.height / texture.height);
-
-        Color old = GUI.color;
-        GUI.color = new Color(old.r, old.g, old.b, old.a * alpha);
-        GUI.DrawTextureWithTexCoords(fitted, texture, uv);
-        GUI.color = old;
-    }
-
-    static Rect Shrink(Rect rect, float factor)
-    {
-        float w = rect.width * factor, h = rect.height * factor;
-        return new Rect(rect.x + (rect.width - w) * 0.5f, rect.y + (rect.height - h) * 0.5f, w, h);
-    }
+    void DrawFrame(Rect rect, GUIStyle style, Color fallback) => UiDraw.Frame(rect, style, fallback, config.collectionFramePixelScale);
 
     void EnsureStyles()
     {
         if (stylesReady) return;
         stylesReady = true;
 
-        pageStyle = NineSlice(PageSprite, config.collectionPageBorder);
-        frameStyle = NineSlice(FrameSprite, config.collectionFrameBorder);
-        frameSeenStyle = NineSlice(FrameSeenSprite, config.collectionFrameBorder);
-        frameLockedStyle = NineSlice(FrameLockedSprite, config.collectionFrameBorder);
+        pageStyle = UiDraw.NineSlice(PageSprite, config.collectionPageBorder);
+        frameStyle = UiDraw.NineSlice(FrameSprite, config.collectionFrameBorder);
+        frameSeenStyle = UiDraw.NineSlice(FrameSeenSprite, config.collectionFrameBorder);
+        frameLockedStyle = UiDraw.NineSlice(FrameLockedSprite, config.collectionFrameBorder);
 
         Font font = GameFont.Get();
         Color ink = config.collectionTextColor;
@@ -366,15 +322,5 @@ public class CollectionBookScreen : MonoBehaviour
         lockedCenterStyle = new GUIStyle(smallCenterStyle);
         lockedCenterStyle.normal.textColor = config.collectionLockedTextColor;
         buttonStyle = new GUIStyle(GUI.skin.button) { font = font, fontSize = config.collectionFontSize };
-    }
-
-    /// <summary>Resources/Sprites içindeki resimden 9 dilimli stil; resim yoksa null (düz renge düşülür).</summary>
-    static GUIStyle NineSlice(string spriteName, int border)
-    {
-        Sprite sprite = SpriteLibrary.Get(spriteName);
-        if (sprite == null) return null;
-        var style = new GUIStyle { border = new RectOffset(border, border, border, border) };
-        style.normal.background = sprite.texture;
-        return style;
     }
 }

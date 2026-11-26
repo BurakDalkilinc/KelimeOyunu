@@ -562,7 +562,7 @@ public class NetworkPlayer : NetworkBehaviour
 
         // Boşluk: itiş. Yazma sırasında ve elenince çalışmaz.
         var keyboard = Keyboard.current;
-        if (shoveEdge.Update(keyboard != null && keyboard.spaceKey.isPressed) && !typing && !IsGhost)
+        if (shoveEdge.Update(keyboard != null && keyboard.spaceKey.isPressed) && !typing && !IsGhost && !UiInputBlock.IsBlocked)
         {
             if (IsServer) ServerTryShove(false);
             else ShoveRpc();
@@ -593,7 +593,7 @@ public class NetworkPlayer : NetworkBehaviour
     static Vector2 ReadMoveInput()
     {
         var keyboard = Keyboard.current;
-        if (keyboard == null) return Vector2.zero;
+        if (keyboard == null || UiInputBlock.IsBlocked) return Vector2.zero; // Ayarlar açıkken karakter yürümez
 
         float x = 0f, y = 0f;
         if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) x += 1f;

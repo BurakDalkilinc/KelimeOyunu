@@ -42,7 +42,7 @@ public class SteamLobbyMenu : MonoBehaviour
 
     void OnGUI()
     {
-        if (CollectionBookScreen.IsOpen) return; // Defter açıkken ekranı o kaplar
+        if (CollectionBookScreen.IsOpen || SettingsScreen.IsOpen) return; // Defter/ayarlar açıkken ekranı onlar kaplar
 
         var manager = NetworkManager.Singleton;
         if (manager == null) return;
@@ -67,7 +67,7 @@ public class SteamLobbyMenu : MonoBehaviour
     void DrawConnect()
     {
         GUI.enabled = !busy;
-        if (GUILayout.Button("Steam'e bağlan")) Connect();
+        if (Button("Steam'e bağlan")) Connect();
         GUI.enabled = true;
         GUILayout.Label("Steam istemcisi açık ve giriş yapılmış olmalı.");
     }
@@ -76,13 +76,13 @@ public class SteamLobbyMenu : MonoBehaviour
     {
         GUI.enabled = !busy;
         friendsOnly = GUILayout.Toggle(friendsOnly, "Yalnızca arkadaşlar (davet ile katılır, aramada görünmez)");
-        if (GUILayout.Button("Lobi kur (host ol)")) CreateLobbyAndHost(manager);
-        if (GUILayout.Button("Lobileri bul")) RefreshList();
+        if (Button("Lobi kur (host ol)")) CreateLobbyAndHost(manager);
+        if (Button("Lobileri bul")) RefreshList();
 
         foreach (Lobby lobby in found)
         {
             string owner = new Friend(lobby.Owner.Id).Name;
-            if (GUILayout.Button($"Katıl: {owner} ({lobby.MemberCount}/{lobby.MaxMembers})")) JoinLobby(manager, lobby);
+            if (Button($"Katıl: {owner} ({lobby.MemberCount}/{lobby.MaxMembers})")) JoinLobby(manager, lobby);
         }
         GUI.enabled = true;
     }
@@ -92,9 +92,17 @@ public class SteamLobbyMenu : MonoBehaviour
         if (current.HasValue)
         {
             GUILayout.Label($"Lobi: {current.Value.MemberCount}/{current.Value.MaxMembers} kişi");
-            if (manager.IsHost && GUILayout.Button("Arkadaş davet et (Steam)")) SteamFriends.OpenGameInviteOverlay(current.Value.Id);
+            if (manager.IsHost && Button("Arkadaş davet et (Steam)")) SteamFriends.OpenGameInviteOverlay(current.Value.Id);
         }
-        if (GUILayout.Button("Lobiden ayrıl")) Leave(manager);
+        if (Button("Lobiden ayrıl")) Leave(manager);
+    }
+
+    /// <summary>Tık sesli düğme. ("Ayarlar" düğmesi yandaki NetworkMenu kutusunda; burada ikincisi olmasın.)</summary>
+    static bool Button(string text)
+    {
+        if (!GUILayout.Button(text)) return false;
+        GameAudio.Click();
+        return true;
     }
 
     // ---- İşlemler ----

@@ -101,7 +101,7 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
         var keyboard = Keyboard.current;
         bool pressed = shoveEdge.Update(keyboard != null && keyboard.spaceKey.isPressed);
 
-        if (pressed && CanMove && State.IsAlive && Bootstrap != null) Bootstrap.TryShove(State.Id, false);
+        if (pressed && !UiInputBlock.IsBlocked && CanMove && State.IsAlive && Bootstrap != null) Bootstrap.TryShove(State.Id, false);
     }
 
     /// <summary>
@@ -217,7 +217,7 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
     static Vector2 ReadMoveInput()
     {
         var keyboard = Keyboard.current;
-        if (keyboard == null) return Vector2.zero;
+        if (keyboard == null || UiInputBlock.IsBlocked) return Vector2.zero; // Ayarlar açıkken karakter yürümez
 
         float x = 0f, y = 0f;
         if (keyboard.dKey.isPressed || keyboard.rightArrowKey.isPressed) x += 1f;

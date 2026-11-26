@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "threatSound": "sfx_siren",
+  "defaultSound": "sfx_spawn",
+  "unknownSound": "sfx_spawn",
+  "rules": [
+    { "tag": "explosive", "sound": "sfx_explosion" },
+    { "tag": "fire", "sound": "sfx_fire" },
+    { "tag": "ignite", "sound": "sfx_fire" },
+    { "tag": "water", "sound": "sfx_water" },
+    { "tag": "shield", "sound": "sfx_shield" },
+    { "tag": "heal", "sound": "sfx_heal" },
+    { "tag": "revive", "sound": "sfx_heal" },
+    { "tag": "flying", "sound": "sfx_fly" },
+    { "tag": "sky", "sound": "sfx_fly" },
+    { "tag": "escape", "sound": "sfx_fly" }
+  ]
+}
