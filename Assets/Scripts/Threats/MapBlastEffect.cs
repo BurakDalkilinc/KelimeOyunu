@@ -3,6 +3,7 @@ using UnityEngine;
 /// <summary>
 /// Tüm haritayı vuran patlama (ör. atom bombası): uyarı bitince çözüm alanında korunmayan herkese kelimenin
 /// "stats.damage" kadar hasar verir (genelde elenme). Kalkanı olan bir kez kurtulur. Anında biter.
+/// "explosive" etiketli kelimede hasar ateştir: vurulan tutuşur ve kömürleşir (ölürse kömürleşmiş ceset olarak düşer).
 /// </summary>
 public class MapBlastEffect : IThreatEffect
 {
@@ -17,12 +18,14 @@ public class MapBlastEffect : IThreatEffect
     {
         WordStats stats = context.Word?.stats;
         int damage = stats != null ? Mathf.Max(1, Mathf.RoundToInt(stats.damage)) : 1;
+        bool fiery = context.Word != null && context.Word.HasTag("explosive"); // Patlama ateş hasarı verir
 
         foreach (PlayerState player in context.World.Players)
         {
             if (!player.IsAlive || context.Zones.IsProtected(player.Id)) continue;
 
-            player.TakeDamage(damage);
+            if (fiery) player.TakeFireDamage(damage, context.Config); // Kalkan/dokunulmazlık TakeDamage içinden işler
+            else player.TakeDamage(damage);
             Affected++;
         }
 

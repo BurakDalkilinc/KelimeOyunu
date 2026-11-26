@@ -119,6 +119,15 @@ public class CreatureModel
     /// </summary>
     public bool IgnitesTerrain { get; set; }
 
+    /// <summary>
+    /// true ise vuruşu (patlama, tuzak, mermi) hasar işlediği oyuncuyu tutuşturur ve kömürleştirir; haritayı yakmaz.
+    /// "explosive" etiketi açar (patlamada yanan oyuncu, ölürse kömürleşmiş ceset olarak düşer).
+    /// </summary>
+    public bool IgnitesPlayersOnHit { get; set; }
+
+    /// <summary>Vuruşu hasar işlediği oyuncuyu tutuşturur mu? ("ignite"/"fire" ya da "explosive".)</summary>
+    bool HitIgnites => IgnitesTerrain || IgnitesPlayersOnHit;
+
     /// <summary>Bu yaratığın şimdiye kadar yaptığı vuruş sayısı (saldırı animasyonu için; ağda da gönderilir).</summary>
     public int AttackCount { get; private set; }
 
@@ -323,7 +332,7 @@ public class CreatureModel
             PlayerState hit = FindProjectileVictim(world, playerRadius);
             if (hit != null)
             {
-                if (Damage > 0) hit.TakeDamage(Damage);
+                HitPlayer(hit); // Patlayan mermi tutuşturur
                 IsFinished = true;
                 return hit;
             }
@@ -564,7 +573,7 @@ public class CreatureModel
             if (IsProtectedFromThis(player)) continue;
 
             triggered++;
-            if (Damage > 0) player.TakeDamage(Damage);
+            HitPlayer(player); // Patlayan tuzak (mayın) tutuşturur
             if (SlowSeconds > 0f) player.Status.ApplySlow(SlowMultiplier, SlowSeconds);
             if (KnockbackDistance > 0f && hits != null)
                 hits.Add(new CreatureHit(player, DirectionAway(Position, playerPosition) * KnockbackDistance));
@@ -572,6 +581,19 @@ public class CreatureModel
 
         if (triggered > 0) IsFinished = true; // Tek kullanımlık
         return triggered;
+    }
+
+    /// <summary>
+    /// Vuruş hasarını verir (kalkan/dokunulmazlık <see cref="PlayerState.TakeDamage"/> içinde işler). Hasar gerçekten
+    /// işlediyse ve vuruş tutuşturuyorsa (<see cref="HitIgnites"/>) oyuncu yanar ve biraz kömürleşir.
+    /// </summary>
+    void HitPlayer(PlayerState player)
+    {
+        if (Damage <= 0) return;
+
+        int healthBefore = player.Health.Current;
+        player.TakeDamage(Damage);
+        if (HitIgnites && player.Health.Current < healthBefore) player.Status.Ignite(BurnSecondsOnHit, CharPerHit);
     }
 
     /// <summary>Ateş alanındaki oyuncuya, son yanmasından bu yana yeterli süre geçtiyse hasar verir.</summary>
@@ -648,9 +670,7 @@ public class CreatureModel
             if ((playerPosition - Position).magnitude > Radius + playerRadius) continue;
             if (IsProtectedFromThis(player)) continue;
 
-            int healthBefore = player.Health.Current;
-            if (Damage > 0) player.TakeDamage(Damage);
-            if (IgnitesTerrain && player.Health.Current < healthBefore) player.Status.Ignite(BurnSecondsOnHit, CharPerHit); // "Ateş" vuruşu tutuşturur
+            HitPlayer(player); // "Ateş" vuruşu ve patlama tutuşturur
             if (SlowSeconds > 0f) player.Status.ApplySlow(SlowMultiplier, SlowSeconds);
             affected++;
 
