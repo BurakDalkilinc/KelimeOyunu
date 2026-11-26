@@ -25,6 +25,30 @@ public enum TileType : byte
 
     /// <summary>Kömürleşmiş zemin (yanmış tahta): yürünür, bir daha yanmaz.</summary>
     CharredFloor = 6,
+
+    /// <summary>Taş duvar (karlı dağ evi): içinden geçilmez, yanmaz.</summary>
+    StoneWall = 7,
+
+    /// <summary>Taş zemin (karlı dağ evi içi, meydan): yürünür, yanmaz.</summary>
+    StoneFloor = 8,
+
+    /// <summary>Buz (donmuş göl): yürünür ama kaygan; üstünde karakter zor hızlanır, zor durur.</summary>
+    Ice = 9,
+
+    /// <summary>Dondurucu su (karlı dağda lavın yerine): üstünde durana hasar verir ve yavaşlatır; yanmaz, tutuşturmaz.</summary>
+    FreezingWater = 10,
+
+    /// <summary>Kerpiç duvar (çöl evi): içinden geçilmez, yanmaz.</summary>
+    AdobeWall = 11,
+
+    /// <summary>Kerpiç zemin (çöl evi içi, meydan): yürünür, yanmaz.</summary>
+    AdobeFloor = 12,
+
+    /// <summary>Bataklık kumu (çölde lavın yerine): yavaşlatır ve yavaş yavaş hasar verir.</summary>
+    Quicksand = 13,
+
+    /// <summary>Kaktüs: içinden geçilmez; dokunana küçük hasar verir.</summary>
+    Cactus = 14,
 }
 
 /// <summary>Bir evin kapladığı dikdörtgen (duvarlar dahil, karo cinsinden). Çatı bu alanın üstüne çizilir.</summary>
@@ -64,6 +88,24 @@ public class TerrainMap
 
     /// <summary>Evlerin listesi değişti (üretimde eklendi, ağdan geldi).</summary>
     public event Action HousesChanged;
+
+    MapTheme theme = MapTheme.Village;
+
+    /// <summary>Haritanın teması (köy, karlı dağ, çöl): zeminin ve çatıların resmi buna göre seçilir. Varsayılan köy; null verilirse köy.</summary>
+    public MapTheme Theme
+    {
+        get => theme;
+        set
+        {
+            MapTheme next = value ?? MapTheme.Village;
+            if (next == theme) return;
+            theme = next;
+            ThemeChanged?.Invoke();
+        }
+    }
+
+    /// <summary>Tema değişti (ağdan yeni maçın teması geldi): görünüm bütün karoları yeniden çizer.</summary>
+    public event Action ThemeChanged;
 
     /// <summary>(0,0) karosunun sol alt köşesinin dünya konumu.</summary>
     public Vector2 Origin { get; }
@@ -120,10 +162,45 @@ public class TerrainMap
 
     // ---- Türlerin özellikleri ----
 
-    public static bool IsSolid(TileType type) => type == TileType.WoodWall;
+    // "Duvar mı, tehlikeli mi?" soruları yalnızca buradan sorulur; başka yerde karo türüne tek tek bakılmaz.
+
+    /// <summary>Ev duvarı (tahta, taş, kerpiç): evleri kuran duvarlar.</summary>
+    public static bool IsHouseWall(TileType type) => type == TileType.WoodWall || type == TileType.StoneWall || type == TileType.AdobeWall;
+
+    /// <summary>Yapılmış zemin (tahta, taş, kerpiç): ev içi, meydan, yürüyüş yolu.</summary>
+    public static bool IsBuiltFloor(TileType type) => type == TileType.WoodFloor || type == TileType.StoneFloor || type == TileType.AdobeFloor;
+
+    /// <summary>İçinden geçilmez: ev duvarları ve kaktüs.</summary>
+    public static bool IsSolid(TileType type) => IsHouseWall(type) || type == TileType.Cactus;
+
+    /// <summary>Düşülen tehlike (lav, uçurum): giren bütün canını kaybeder. Yürünmez.</summary>
     public static bool IsHazard(TileType type) => type == TileType.Lava || type == TileType.Chasm;
+
+    /// <summary>Üstünde durana zamanla hasar veren ama yürünebilen karo (dondurucu su, bataklık kumu).</summary>
+    public static bool IsDamaging(TileType type) => type == TileType.FreezingWater || type == TileType.Quicksand;
+
+    /// <summary>Dokunana hasar veren engel (kaktüs).</summary>
+    public static bool IsPrickly(TileType type) => type == TileType.Cactus;
+
+    /// <summary>Kaygan zemin (buz): karakter zor hızlanır, zor durur.</summary>
+    public static bool IsSlippery(TileType type) => type == TileType.Ice;
+
+    /// <summary>Su ya da kum havuzu (lav gibi çukur çizilir ama düşülmez).</summary>
+    public static bool IsPool(TileType type) => type == TileType.Lava || IsDamaging(type);
+
     public static bool IsFlammable(TileType type) => type == TileType.WoodFloor || type == TileType.WoodWall;
+
+    /// <summary>Alev tutabilir mi: lav, uçurum, su, kum ve yanmayan engeller (taş, kerpiç, kaktüs) alev almaz.</summary>
+    public static bool CanHoldFire(TileType type) => !IsHazard(type) && !IsDamaging(type) && (!IsSolid(type) || IsFlammable(type));
+
+    /// <summary>Üstüne basılabilir (duvar ya da düşülen tehlike değil). Dondurucu su ve bataklık kumu da yürünür.</summary>
     public static bool IsWalkable(TileType type) => !IsSolid(type) && !IsHazard(type);
+
+    /// <summary>Güvenli zemin: yürünür ve hasar vermez. Doğma, ışınlanma ve "harita bağlı mı" hesabı buna bakar.</summary>
+    public static bool IsSafeGround(TileType type) => IsWalkable(type) && !IsDamaging(type);
+
+    /// <summary>Botların kendi isteğiyle girmediği karo: duvar, kaktüs, lav, uçurum, dondurucu su, bataklık kumu.</summary>
+    public static bool IsDangerous(TileType type) => !IsSafeGround(type);
 
     // ---- Erişim ----
 
@@ -160,15 +237,11 @@ public class TerrainMap
 
     public Vector2 CellCenter(int x, int y) => new Vector2(Origin.x + x + 0.5f, Origin.y + y + 0.5f);
 
-    /// <summary>Karo, haritanın tamamını (yürünür mü) etkileyen bir "engel" mi: duvar, lav ya da uçurum.</summary>
-    public bool IsBlockedPoint(Vector2 world)
-    {
-        TileType type = At(world);
-        return IsSolid(type) || IsHazard(type);
-    }
+    /// <summary>Nokta güvenli zeminde değil mi: duvar, kaktüs, lav, uçurum, dondurucu su ya da bataklık kumu.</summary>
+    public bool IsBlockedPoint(Vector2 world) => IsDangerous(At(world));
 
     /// <summary>
-    /// <paramref name="world"/> noktasına en yakın yürünür (duvar, lav, uçurum olmayan) karonun merkezi. Hiç yoksa false.
+    /// <paramref name="world"/> noktasına en yakın güvenli (duvar, lav, uçurum, su, kum olmayan) karonun merkezi. Hiç yoksa false.
     /// <paramref name="avoid"/> verilirse true döndüren karolar (ör. yanan) atlanır.
     /// </summary>
     public bool TryFindNearestWalkable(Vector2 world, out Vector2 result, Func<int, int, bool> avoid = null)
@@ -191,7 +264,7 @@ public class TerrainMap
                     if (Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy)) != radius) continue;
 
                     int x = start.x + dx, y = start.y + dy;
-                    if (!InBounds(x, y) || !IsWalkable(tiles[Index(x, y)])) continue;
+                    if (!InBounds(x, y) || !IsSafeGround(tiles[Index(x, y)])) continue;
                     if (avoid != null && avoid(x, y)) continue;
 
                     Vector2 center = CellCenter(x, y);
@@ -218,11 +291,14 @@ public class TerrainMap
         return count;
     }
 
-    /// <summary>Yürünür karolardan en büyük bağlı bölgenin yürünür karoların kaçta kaçı olduğu (0-1). Harita bölünmüş mü anlamak için.</summary>
+    /// <summary>
+    /// Güvenli karolardan en büyük bağlı bölgenin güvenli karoların kaçta kaçı olduğu (0-1). Harita bölünmüş mü anlamak için.
+    /// Dondurucu su ve bataklık kumu da lav gibi bölgeleri ayırır.
+    /// </summary>
     public float LargestWalkableRegionFraction()
     {
         int total = 0;
-        for (int i = 0; i < tiles.Length; i++) if (IsWalkable(tiles[i])) total++;
+        for (int i = 0; i < tiles.Length; i++) if (IsSafeGround(tiles[i])) total++;
         if (total == 0) return 0f;
 
         var seen = new bool[tiles.Length];
@@ -231,7 +307,7 @@ public class TerrainMap
 
         for (int i = 0; i < tiles.Length; i++)
         {
-            if (seen[i] || !IsWalkable(tiles[i])) continue;
+            if (seen[i] || !IsSafeGround(tiles[i])) continue;
 
             int size = 0;
             stack.Push(i);
@@ -256,7 +332,7 @@ public class TerrainMap
     {
         if (!InBounds(x, y)) return;
         int index = Index(x, y);
-        if (seen[index] || !IsWalkable(tiles[index])) return;
+        if (seen[index] || !IsSafeGround(tiles[index])) return;
         seen[index] = true;
         stack.Push(index);
     }
@@ -317,6 +393,14 @@ public class TerrainMap
             case TileType.Lava: return 'l';
             case TileType.Chasm: return 'c';
             case TileType.CharredFloor: return 'k';
+            case TileType.StoneWall: return 'r';
+            case TileType.StoneFloor: return 'n';
+            case TileType.Ice: return 'i';
+            case TileType.FreezingWater: return 'z';
+            case TileType.AdobeWall: return 'a';
+            case TileType.AdobeFloor: return 'b';
+            case TileType.Quicksand: return 'q';
+            case TileType.Cactus: return 't';
             default: return 'g';
         }
     }
@@ -332,6 +416,14 @@ public class TerrainMap
             case 'l': type = TileType.Lava; return true;
             case 'c': type = TileType.Chasm; return true;
             case 'k': type = TileType.CharredFloor; return true;
+            case 'r': type = TileType.StoneWall; return true;
+            case 'n': type = TileType.StoneFloor; return true;
+            case 'i': type = TileType.Ice; return true;
+            case 'z': type = TileType.FreezingWater; return true;
+            case 'a': type = TileType.AdobeWall; return true;
+            case 'b': type = TileType.AdobeFloor; return true;
+            case 'q': type = TileType.Quicksand; return true;
+            case 't': type = TileType.Cactus; return true;
             default: type = TileType.Grass; return false;
         }
     }

@@ -58,6 +58,38 @@ public class GameConfig : ScriptableObject
     [Min(0)] public int chasmFallDamage = 1;
     [Min(0.1f)] public float chasmFallCooldownSeconds = 1.5f;
 
+    [Header("Harita temaları (köy, karlı dağ, çöl)")]
+    [Tooltip("Boşsa her maçta tema harita tohumundan rastgele seçilir. \"koy\" (tahta köy), \"kar\" (karlı dağ) ya da \"col\" (çöl kasabası) yazılırsa hep o tema gelir.")]
+    public string forcedMapTheme = "";
+
+    [Tooltip("Buzda hızın değişme hızı (birim/sn²). Küçük değer: zor hızlanır, uzun kayar. Normal zeminde hız anında değişir.")]
+    [Min(0.1f)] public float iceAcceleration = 6f;
+
+    [Tooltip("Dondurucu suda yürüme hızı çarpanı (1 = normal).")]
+    [Range(0.1f, 1f)] public float freezingWaterSpeedMultiplier = 0.6f;
+    [Tooltip("Dondurucu suda duran oyuncunun aldığı hasar.")]
+    [Min(0)] public int freezingWaterDamage = 1;
+    [Tooltip("Dondurucu suda hasar aralığı (sn). Girişte hemen bir kez vurur.")]
+    [Min(0.1f)] public float freezingWaterDamageIntervalSeconds = 1.5f;
+
+    [Tooltip("Bataklık kumunda yürüme hızı çarpanı (1 = normal).")]
+    [Range(0.1f, 1f)] public float quicksandSpeedMultiplier = 0.45f;
+    [Tooltip("Bataklık kumunda duran oyuncunun aldığı hasar.")]
+    [Min(0)] public int quicksandDamage = 1;
+    [Tooltip("Bataklık kumunda hasar aralığı (sn). İlk hasar da bu kadar bekledikten sonra gelir (yavaş batar).")]
+    [Min(0.1f)] public float quicksandDamageIntervalSeconds = 2.5f;
+
+    [Tooltip("Kaktüse dokunan oyuncunun aldığı hasar (0 = kaktüs yalnızca engel).")]
+    [Min(0)] public int cactusDamage = 1;
+    [Tooltip("Kaktüs batmasından sonra aynı oyuncuya yeniden batabilmesi için geçen süre (sn). Batma yalnızca temas başlarken olur.")]
+    [Min(0.1f)] public float cactusDamageCooldownSeconds = 3f;
+    [Tooltip("Kaktüs batınca karakterin kaktüsten geri itildiği mesafe (birim).")]
+    [Min(0f)] public float cactusPushDistance = 0.4f;
+    [Tooltip("Botların kendi isteğiyle yürürken kaktüsten uzak durduğu ek mesafe (birim). Dokunma mesafesinden büyük olmalı.")]
+    [Min(0f)] public float botCactusClearance = 0.3f;
+    [Tooltip("Karakterin kenarı kaktüs karosuna bu kadar yaklaşınca (birim) dokunmuş sayılır.")]
+    [Min(0f)] public float cactusTouchDistance = 0.08f;
+
     [Header("Karakter itişmesi")]
     [Tooltip("Açıksa karakterler birbirinin içinden geçemez, hareket eden öndekini iter (kuleden de itilebilir). Hayalet ve uçan karakterler geçer.")]
     public bool charactersPushEachOther = true;

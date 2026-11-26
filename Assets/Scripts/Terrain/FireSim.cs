@@ -51,15 +51,16 @@ public class FireSim
     // ---- Tutuşturma ----
 
     /// <summary>
-    /// Karoyu tutuşturur. Lav ve uçurum yanmaz, zaten yanan karo değişmez. Tahta tam süre yanar ve yayılır;
-    /// diğer zeminlerde (çimen, patika, kömür) alev kısa süre kalır ve yayılmaz. Yeni tutuştuysa true.
+    /// Karoyu tutuşturur. Lav, uçurum, su, kum ve yanmayan engeller (taş/kerpiç duvar, kaktüs) alev almaz; zaten yanan karo değişmez.
+    /// Tahta tam süre yanar ve yayılır; diğer zeminlerde (çimen, kar, kum, taş, buz, kömür) alev kısa süre kalır ve yayılmaz.
+    /// Yeni tutuştuysa true.
     /// </summary>
     public bool Ignite(int x, int y)
     {
         if (!map.InBounds(x, y)) return false;
 
         TileType type = map.At(x, y);
-        if (TerrainMap.IsHazard(type)) return false;
+        if (!TerrainMap.CanHoldFire(type)) return false;
 
         int index = map.Index(x, y);
         if (burnLeft[index] > 0f) return false;

@@ -2,7 +2,7 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// Ağ maçında haritayı gösterir: host'tan gelen durum metnini (karo türleri ve yanma) yerel bir haritaya uygular ve
+/// Ağ maçında haritayı gösterir: host'tan gelen durum metnini (tema, karo türleri ve yanma) yerel bir haritaya uygular ve
 /// <see cref="TerrainView"/> ile çizer. İstemcide yangın ya da hasar hesaplanmaz; yalnızca görüntüdür (kurallar host'tadır).
 /// </summary>
 public class NetTerrainView : MonoBehaviour
@@ -57,6 +57,8 @@ public class NetTerrainView : MonoBehaviour
             return;
         }
 
+        // Tema (zemin/çatı resimleri) host'takiyle aynı olsun; değişirse görünüm bütün karoları yeniden çizer.
+        map.Theme = MapTheme.FromId(channel.LatestTheme);
         map.TryApply(text, burning);
 
         // Evler maç boyunca değişmez; yalnızca farklıysa yeniden kur.

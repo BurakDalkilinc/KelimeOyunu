@@ -2,39 +2,47 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Haritanın içinden geçilemeyen karoları (tahta duvar) engel olarak verir: daire biçimli bir karakteri bu karoların dışına iter.
-/// <c>blockHazards</c> açıksa lav, uçurum ve yanan karolar da engel sayılır: botlar kendi isteğiyle oralara girmesin diye kullanılır
-/// (ama itilen ya da fırlatılan karakter yine de girebilir). Düz C# sınıfı, test edilebilir.
+/// Haritanın içinden geçilemeyen karoları (ev duvarları, kaktüs) engel olarak verir: daire biçimli bir karakteri bu karoların dışına iter.
+/// <c>blockHazards</c> açıksa lav, uçurum, dondurucu su, bataklık kumu ve yanan karolar da engel sayılır: botlar kendi isteğiyle
+/// oralara girmesin diye kullanılır (ama itilen ya da fırlatılan karakter yine de girebilir; su/kumun içine itilen bot dışarı yürüyebilir).
+/// Düz C# sınıfı, test edilebilir.
 /// </summary>
 public class TerrainObstacles : IObstacleField
 {
     readonly TerrainMap map;
     readonly FireSim fire;
     readonly bool blockHazards;
+    readonly float pricklyClearance;
 
-    public TerrainObstacles(TerrainMap map, FireSim fire, bool blockHazards)
+    /// <param name="pricklyClearance">blockHazards açıkken kaktüsten fazladan uzak durulan mesafe (botlar kaktüse sürtünmesin).</param>
+    public TerrainObstacles(TerrainMap map, FireSim fire, bool blockHazards, float pricklyClearance = 0f)
     {
         this.map = map;
         this.fire = fire;
         this.blockHazards = blockHazards;
+        this.pricklyClearance = blockHazards ? Mathf.Max(0f, pricklyClearance) : 0f;
     }
 
     public Vector2 Resolve(Vector2 position, float radius)
     {
+        // Su ya da kumun içindeki bot o karoları engel saymaz: yoksa her yönden itilip içinde çakılı kalırdı.
+        bool insideDamaging = blockHazards && TerrainMap.IsDamaging(map.At(position));
+
         // Köşelerde birden fazla karo itebilir: iki tur.
         for (int pass = 0; pass < 2; pass++)
         {
             bool moved = false;
             Vector2Int cell = map.CellOf(position);
-            int reach = Mathf.CeilToInt(radius) + 1;
+            int reach = Mathf.CeilToInt(radius + pricklyClearance) + 1;
 
             for (int y = cell.y - reach; y <= cell.y + reach; y++)
             {
                 for (int x = cell.x - reach; x <= cell.x + reach; x++)
                 {
-                    if (!map.InBounds(x, y) || !Blocks(x, y)) continue;
+                    if (!map.InBounds(x, y) || !Blocks(x, y, insideDamaging)) continue;
 
-                    Vector2 pushed = PushOutOfCell(position, radius, x, y);
+                    float keepAway = TerrainMap.IsPrickly(map.At(x, y)) ? radius + pricklyClearance : radius;
+                    Vector2 pushed = PushOutOfCell(position, keepAway, x, y);
                     if (pushed != position)
                     {
                         position = pushed;
@@ -48,12 +56,13 @@ public class TerrainObstacles : IObstacleField
         return position;
     }
 
-    bool Blocks(int x, int y)
+    bool Blocks(int x, int y, bool insideDamaging)
     {
         TileType type = map.At(x, y);
         if (TerrainMap.IsSolid(type)) return true;
         if (!blockHazards) return false;
-        return TerrainMap.IsHazard(type) || (fire != null && fire.IsBurning(x, y));
+        if (TerrainMap.IsDamaging(type)) return !insideDamaging;
+        return TerrainMap.IsDangerous(type) || (fire != null && fire.IsBurning(x, y));
     }
 
     /// <summary>Daireyi karo kutusunun dışına iter; kutu içindeyse en yakın kenara çıkarır.</summary>

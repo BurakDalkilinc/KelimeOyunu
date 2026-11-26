@@ -13,6 +13,7 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
     ArenaBounds arena;
     SpriteRenderer spriteRenderer;
     readonly KnockbackMotion knockback = new KnockbackMotion();
+    readonly GroundMotion groundMotion = new GroundMotion();
 
     /// <summary>İtiş için maç bağlantısı (<see cref="MatchBootstrap"/> atar).</summary>
     public MatchBootstrap Bootstrap { get; set; }
@@ -168,17 +169,31 @@ public class PlayerController : MonoBehaviour, IKnockable, IFacing
             FacingDirection = heading;
             transform.position = new Vector3(moved.x, moved.y, transform.position.z);
             LandOnHazard(before);
+            groundMotion.Stop();
             return;
         }
 
-        if (!CanMove || State.Falling != FallKind.None) return;
+        if (State.Falling != FallKind.None) { groundMotion.Stop(); return; }
 
-        Vector2 input = ReadMoveInput();
-        if (input == Vector2.zero) return;
+        // Yazarken (CanMove kapalı) yürünmez; ama buzdaysa karakter kaymaya devam eder.
+        Vector2 input = CanMove ? ReadMoveInput() : Vector2.zero;
+        if (input != Vector2.zero) FacingDirection = input;
 
-        FacingDirection = input;
         float speed = config.playerMoveSpeed * State.Status.SpeedMultiplier; // Yavaşlatılmışsa daha yavaş
-        MoveBy(input * (speed * Time.deltaTime));
+        Walk(input, speed);
+    }
+
+    /// <summary>Zemine göre yürür: su ve kumda yavaş, buzda kayarak (bkz. <see cref="GroundMotion"/>).</summary>
+    void Walk(Vector2 direction, float speed)
+    {
+        TerrainSim terrain = Bootstrap != null ? Bootstrap.Terrain : null;
+        TileType ground = GroundRules.GroundUnder(State, terrain != null ? terrain.Map : null, transform.position);
+        Vector2 wanted = groundMotion.Step(direction, speed, ground, config, Time.deltaTime);
+        if (wanted == Vector2.zero) return;
+
+        Vector2 before = transform.position;
+        MoveBy(wanted);
+        groundMotion.Absorb(wanted, (Vector2)transform.position - before, Time.deltaTime);
     }
 
     /// <summary>Üzerindeki etkilere göre renk: yavaş mavimsi, kalkanlı camgöbeği, uçan açık, görünmez soluk.</summary>

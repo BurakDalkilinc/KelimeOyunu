@@ -1915,6 +1915,389 @@ def make_t_fire(frame):
     return c
 
 
+# ---------------- Karlı dağ teması karoları ----------------
+import math as _math
+
+
+def _wset(c, x, y, col):
+    """Kenardan taşanı karşı kenara sarar: karo döşenince desen kesilmez."""
+    c.px[y % 16][x % 16] = col
+
+
+def make_t_snow(variant):
+    rnd = _random.Random(120 + variant)
+    c = Canvas()
+    base, shade, light, blue = (232, 238, 246), (208, 218, 234), (250, 252, 255), (188, 204, 226)
+    _fill(c, base)
+    for _ in range(16):
+        c.set(rnd.randrange(16), rnd.randrange(16), shade)
+    for _ in range(10):
+        c.set(rnd.randrange(16), rnd.randrange(16), light)
+    for _ in range(3 + variant * 2):        # rüzgâr birikintileri: üstü parlak, altı gölgeli kısa yaylar
+        x, y = rnd.randrange(16), rnd.randrange(16)
+        for k in range(4):
+            _wset(c, x + k, y, light)
+            _wset(c, x + k, y + 1, shade if k in (0, 3) else blue)
+    if variant:                              # alt varyant: kardan çıkan birkaç küçük taş
+        for _ in range(2):
+            x, y = rnd.randrange(16), rnd.randrange(16)
+            _wset(c, x, y, (120, 124, 136))
+            _wset(c, x + 1, y, (150, 154, 166))
+    return c
+
+
+def make_t_snow_path():
+    rnd = _random.Random(141)
+    c = Canvas()
+    base, dark, light, slush = (196, 206, 222), (170, 182, 202), (216, 224, 236), (150, 140, 128)
+    _fill(c, base)
+    for _ in range(22):
+        c.set(rnd.randrange(16), rnd.randrange(16), dark)
+    for _ in range(12):
+        c.set(rnd.randrange(16), rnd.randrange(16), light)
+    for x, y in ((2, 1), (9, 4), (4, 9), (11, 12)):   # ayak izleri (çift, 2x2)
+        for dx, dy in ((0, 0), (3, 1)):
+            _wset(c, x + dx, y + dy, dark)
+            _wset(c, x + dx + 1, y + dy, dark)
+            _wset(c, x + dx, y + dy + 1, (156, 168, 190))
+            _wset(c, x + dx + 1, y + dy + 1, (156, 168, 190))
+    for _ in range(5):
+        c.set(rnd.randrange(16), rnd.randrange(16), slush)   # çamurlu kar lekeleri
+    return c
+
+
+def make_t_stone():
+    """Kaldırım taşı: 4x4 hücreler, her sırada 2 kaydırılmış; taş başına ufak ton farkı."""
+    rnd = _random.Random(150)
+    c = Canvas()
+    mortar = (72, 74, 86)
+    tones = [((136, 140, 152), (164, 168, 180), (108, 112, 124)),
+             ((126, 128, 140), (154, 156, 168), (100, 102, 114)),
+             ((146, 146, 154), (172, 172, 180), (116, 116, 124))]
+    _fill(c, mortar)
+    for row in range(4):
+        off = 2 if row % 2 else 0
+        for col in range(4):
+            main, light, dark = tones[rnd.randrange(3)]
+            x0, y0 = col * 4 + off, row * 4
+            for dy in range(3):
+                for dx in range(3):
+                    _wset(c, x0 + dx, y0 + dy, main)
+            _wset(c, x0, y0, light); _wset(c, x0 + 1, y0, light); _wset(c, x0, y0 + 1, light)
+            _wset(c, x0 + 2, y0 + 2, dark)
+    return c
+
+
+def make_t_stonewall():
+    """Gri taş duvar: 4 piksel yüksek sıralar, 8 genişlik bloklar, her sırada 4 kaydırılmış."""
+    rnd = _random.Random(160)
+    c = Canvas()
+    main, light, dark, mortar = (128, 132, 144), (162, 166, 178), (98, 100, 112), (66, 68, 80)
+    _fill(c, main)
+    for yy in range(16):
+        if yy % 4 == 0:
+            for xx in range(16):
+                c.px[yy][xx] = light
+        elif yy % 4 == 3:
+            for xx in range(16):
+                c.px[yy][xx] = mortar
+    for row in range(4):
+        off = 4 if row % 2 else 0
+        for k in range(2):
+            x = off + k * 8
+            for yy in range(row * 4, row * 4 + 3):
+                _wset(c, x, yy, mortar)
+            _wset(c, x + 1, row * 4 + 2, dark)
+            _wset(c, x + 7, row * 4 + 2, dark)
+    for _ in range(6):                       # taş dokusu
+        x, y = rnd.randrange(16), rnd.randrange(16)
+        if y % 4 in (1, 2) and c.px[y][x] == main:
+            c.px[y][x] = dark
+    return c
+
+
+def make_t_ice():
+    rnd = _random.Random(170)
+    c = Canvas()
+    base, deep, shine, crack = (168, 212, 238), (148, 196, 228), (226, 244, 254), (120, 170, 210)
+    _fill(c, base)
+    for _ in range(20):
+        c.set(rnd.randrange(16), rnd.randrange(16), deep)
+    for x0, y0, ln in ((1, 3, 4), (9, 1, 3), (6, 10, 4), (13, 8, 3)):   # parlak çapraz çizgiler (2 piksel kalın)
+        for k in range(ln):
+            _wset(c, x0 + k, y0 - k, shine)
+            _wset(c, x0 + k + 1, y0 - k, shine)
+    x, y = 3, 13                              # ince çatlak
+    for dx, dy in ((0, 0), (1, 0), (2, -1), (3, -1), (4, 0), (5, 1), (6, 1)):
+        _wset(c, x + dx, y + dy, crack)
+    return c
+
+
+def make_t_water(frame):
+    rnd = _random.Random(180)
+    c = Canvas()
+    base, mid, wave, foam = (30, 64, 106), (40, 82, 128), (86, 134, 180), (150, 190, 222)
+    ice, ice_dark = (210, 232, 246), (160, 196, 224)
+    _fill(c, base)
+    for _ in range(26):
+        c.set(rnd.randrange(16), rnd.randrange(16), mid)
+    shift = frame * 2
+    for i, (x, y) in enumerate(((1, 2), (9, 5), (4, 9), (12, 12), (7, 14))):   # dalga tepeleri: karede kayar
+        x += shift if i % 2 == 0 else -shift
+        _wset(c, x, y, wave); _wset(c, x + 1, y, wave); _wset(c, x + 2, y, wave)
+        _wset(c, x + 1, y - 1, foam)
+    for x, y in ((11, 1), (2, 12)):          # yüzen buz parçaları (karede 1 piksel salınır)
+        x += frame
+        _wset(c, x, y, ice); _wset(c, x + 1, y, ice); _wset(c, x, y + 1, ice); _wset(c, x + 1, y + 1, ice_dark)
+        _wset(c, x + 2, y + 1, ice_dark)
+        _wset(c, x, y + 2, base); _wset(c, x + 1, y + 2, base)
+    _wset(c, 6 - frame, 6, ice)
+    return c
+
+
+def _snow_shingles(c, roof, roof_dark, snow, snow_shade):
+    """Karla kaplı kiremit: her 4 piksellik sıranın üstü kar, altında kiremit ucu görünür."""
+    rnd = _random.Random(190)
+    _fill(c, snow)
+    for yy in range(16):
+        row = yy // 4
+        offset = 3 if row % 2 else 0
+        for xx in range(16):
+            m = yy % 4
+            if m == 2:
+                c.px[yy][xx] = snow_shade
+            elif m == 3:
+                # kiremit ucu kar altından yer yer görünür; arada kar sarkar
+                c.px[yy][xx] = snow_shade if rnd.random() < 0.35 else (roof if (xx + offset) % 6 != 5 else roof_dark)
+
+
+def make_t_roof_snow(variant):
+    c = Canvas()
+    if variant == "a":
+        _snow_shingles(c, (120, 56, 48), (78, 34, 34), (240, 244, 250), (204, 214, 232))
+    else:
+        _snow_shingles(c, (104, 48, 44), (66, 30, 32), (228, 234, 244), (194, 204, 224))
+    return c
+
+
+def make_t_roof_snow_ridge():
+    c = Canvas()
+    _snow_shingles(c, (120, 56, 48), (78, 34, 34), (240, 244, 250), (204, 214, 232))
+    for xx in range(16):                    # sırtta kalın kar yığını
+        for yy in range(5, 11):
+            c.px[yy][xx] = (250, 252, 255)
+        c.px[5][xx] = (255, 255, 255)
+        c.px[10][xx] = (196, 208, 228)
+        c.px[11][xx] = (150, 164, 192)
+    for xx in (2, 9, 13):
+        c.px[7][xx] = (228, 236, 248)
+    return c
+
+
+def make_t_roof_snow_eave():
+    c = Canvas()
+    _snow_shingles(c, (104, 48, 44), (66, 30, 32), (228, 234, 244), (194, 204, 224))
+    ice, ice_light = (176, 220, 246), (224, 244, 255)
+    for xx in range(16):                    # saçak: kar kenarı, koyu çıkıntı, sarkan buzlar
+        c.px[12][xx] = (240, 244, 250)
+        c.px[13][xx] = (84, 36, 36)
+        c.px[14][xx] = (60, 24, 28)
+        c.px[15][xx] = (38, 18, 22)
+    for xx, ln in ((1, 3), (4, 2), (6, 3), (9, 2), (12, 3), (14, 2)):
+        for k in range(ln):
+            c.px[13 + k][xx] = ice_light if k == 0 else ice
+    return c
+
+
+# ---------------- Çöl kasabası teması karoları ----------------
+def make_t_sand(variant):
+    rnd = _random.Random(200 + variant)
+    c = Canvas()
+    base, dark, light = (226, 190, 122), (204, 166, 100), (242, 212, 150)
+    _fill(c, base)
+    for _ in range(18):
+        c.set(rnd.randrange(16), rnd.randrange(16), dark if rnd.random() < 0.6 else light)
+    phase = variant * 5
+    for y0 in ((3, 11) if variant == 0 else (6, 14)):   # rüzgâr dalgacıkları (16 pikselde tam dalga: döşenir)
+        for xx in range(16):
+            y = y0 + int(round(1.4 * _math.sin(2 * _math.pi * (xx + phase) / 16.0)))
+            _wset(c, xx, y, dark)
+            _wset(c, xx, y - 1, light)
+    if variant:
+        for _ in range(2):                   # alt varyant: ufak çakıl
+            x, y = rnd.randrange(16), rnd.randrange(16)
+            _wset(c, x, y, (160, 128, 92)); _wset(c, x + 1, y, (184, 152, 112))
+    return c
+
+
+def make_t_sand_path():
+    rnd = _random.Random(220)
+    c = Canvas()
+    base, dark, light = (184, 140, 94), (160, 118, 78), (204, 162, 114)
+    _fill(c, base)
+    for _ in range(22):
+        c.set(rnd.randrange(16), rnd.randrange(16), dark)
+    for _ in range(10):
+        c.set(rnd.randrange(16), rnd.randrange(16), light)
+    for _ in range(3):                       # gömülü çakıllar
+        x, y = rnd.randrange(16), rnd.randrange(16)
+        _wset(c, x, y, (214, 196, 166)); _wset(c, x + 1, y, (214, 196, 166))
+        _wset(c, x, y + 1, (136, 110, 84)); _wset(c, x + 1, y + 1, (136, 110, 84))
+    for xx in range(16):                     # kuru çatlak izi
+        if xx % 5 in (0, 1):
+            _wset(c, xx, 7 + (xx // 5) % 2, dark)
+    return c
+
+
+def make_t_adobe():
+    """Kerpiç ev zemini: 8x8 pişmiş toprak kareler, açık derz, karo başına ufak ton farkı."""
+    rnd = _random.Random(230)
+    c = Canvas()
+    grout = (156, 108, 72)
+    tones = [((200, 134, 88), (220, 158, 110), (176, 114, 76)),
+             ((190, 124, 82), (210, 148, 102), (166, 106, 70)),
+             ((206, 144, 96), (224, 166, 118), (180, 122, 82))]
+    _fill(c, grout)
+    for ty in range(2):
+        for tx in range(2):
+            main, light, dark = tones[(tx + ty * 2 + 1) % 3]
+            x0, y0 = tx * 8, ty * 8
+            c.rect(x0, y0, x0 + 6, y0 + 6, main)
+            c.rect(x0, y0, x0 + 6, y0, light)
+            c.rect(x0, y0, x0, y0 + 6, light)
+            c.rect(x0 + 1, y0 + 6, x0 + 6, y0 + 6, dark)
+            for _ in range(3):
+                c.set(x0 + rnd.randrange(1, 6), y0 + rnd.randrange(1, 6), dark)
+    return c
+
+
+def make_t_adobewall():
+    """Kerpiç duvar: sıva altından seçilen kerpiç tuğlalar, ufak çatlaklar ve saman çöpleri."""
+    rnd = _random.Random(240)
+    c = Canvas()
+    main, light, dark, seam = (214, 162, 110), (232, 186, 136), (178, 126, 84), (190, 138, 92)
+    crack, straw = (138, 92, 60), (240, 214, 136)
+    _fill(c, main)
+    for yy in range(16):
+        if yy % 4 == 0:
+            for xx in range(16):
+                c.px[yy][xx] = light
+        elif yy % 4 == 3:
+            for xx in range(16):
+                c.px[yy][xx] = seam
+    for row in range(4):
+        off = 4 if row % 2 else 0
+        for k in range(2):
+            x = off + k * 8
+            for yy in range(row * 4 + 1, row * 4 + 3):
+                _wset(c, x, yy, seam)
+    for _ in range(8):
+        c.set(rnd.randrange(16), rnd.randrange(16), dark)
+    for x, y in ((3, 1), (10, 6), (6, 13), (13, 10)):   # saman çöpleri (2 piksel yatay)
+        _wset(c, x, y, straw); _wset(c, x + 1, y, straw)
+    for dx, dy in ((0, 0), (1, 1), (1, 2), (2, 3)):     # çatlak
+        _wset(c, 11 + dx, 1 + dy, crack)
+    for dx, dy in ((0, 0), (0, 1), (1, 2)):
+        _wset(c, 2 + dx, 8 + dy, crack)
+    return c
+
+
+def make_t_quicksand(frame):
+    """Koyu bataklık kumu: ortada dönen sarmal; kenarlara doğru söner, karo kenarları sade (döşenir)."""
+    rnd = _random.Random(250)
+    c = Canvas()
+    base, dark, deep, light, bubble = (138, 106, 66), (112, 84, 52), (88, 64, 40), (158, 126, 84), (176, 146, 102)
+    _fill(c, base)
+    for _ in range(18):
+        c.set(rnd.randrange(16), rnd.randrange(16), dark)
+    for yy in range(16):
+        for xx in range(16):
+            dx, dy = xx - 7.5, yy - 7.5
+            r = _math.hypot(dx, dy)
+            if r > 6.6:
+                continue
+            a = _math.atan2(dy, dx) / (2 * _math.pi)        # -0.5..0.5
+            band = (r * 0.85 - a * 3.0 + frame * 1.5) % 3.0
+            if band < 0.9:
+                c.px[yy][xx] = deep if r < 4 else dark
+            elif band < 1.5 and r < 5.5:
+                c.px[yy][xx] = light
+    c.rect(7, 7, 8, 8, deep)
+    for x, y in ((2, 2), (13, 3), (3, 13)) if frame == 0 else ((2, 3), (12, 2), (13, 13)):
+        c.set(x, y, bubble)                  # kenarda kabarcıklar
+    return c
+
+
+def make_t_cactus():
+    """Yukarıdan yuvarlak kaktüs (saydam zemin): koyu kenar, ışınsal kaburgalar, açık diken noktaları.
+    Duvar gibi üst üste katmanlanıp silindir olarak yükselir."""
+    c = Canvas()
+    c.ellipse(7.5, 7.5, 6.1, 6.1, l)
+    c.ellipse(6.6, 6.6, 3.8, 3.8, L)        # üstten gelen ışık (sol üst)
+    for k in range(8):                       # kaburga olukları: merkezden dışa sürekli çizgi
+        ang = k * _math.pi / 4 + _math.pi / 8
+        for t in range(4, 13):
+            rr = t * 0.5
+            x, y = int(_math.floor(7.5 + rr * _math.cos(ang))), int(_math.floor(7.5 + rr * _math.sin(ang)))
+            if c.px[y][x] is not None:
+                c.px[y][x] = D
+    c.outline(D)
+    for k in range(8):                       # dikenler: oluklar arasındaki çıkıntıların ucunda
+        ang = k * _math.pi / 4
+        x, y = int(_math.floor(7.5 + 6.6 * _math.cos(ang))), int(_math.floor(7.5 + 6.6 * _math.sin(ang)))
+        c.set(x, y, W)
+    c.rect(7, 7, 8, 8, PINK)                 # tepede çiçek (yukarıdan bakınca görünür)
+    c.set(7, 7, Y)
+    return c
+
+
+def make_t_roof_adobe(variant):
+    rnd = _random.Random(260 + (variant == "b"))
+    c = Canvas()
+    if variant == "a":
+        base, dark, light = (204, 150, 100), (184, 132, 88), (222, 172, 122)
+    else:
+        base, dark, light = (192, 140, 94), (170, 122, 80), (210, 160, 112)
+    _fill(c, base)
+    for _ in range(22):
+        c.set(rnd.randrange(16), rnd.randrange(16), dark)
+    for _ in range(12):
+        c.set(rnd.randrange(16), rnd.randrange(16), light)
+    for x, y in ((3, 4), (11, 11)):          # düz damda sıva yamaları
+        _wset(c, x, y, light); _wset(c, x + 1, y, light); _wset(c, x + 2, y, light)
+        _wset(c, x, y + 1, dark); _wset(c, x + 1, y + 1, dark); _wset(c, x + 2, y + 1, dark)
+    return c
+
+
+def make_t_roof_adobe_ridge():
+    c = make_t_roof_adobe("a")
+    for xx in range(16):                    # ortada alçak korkuluk (parapet) şeridi
+        for yy in range(6, 10):
+            c.px[yy][xx] = (226, 178, 126)
+        c.px[6][xx] = (240, 198, 148)
+        c.px[10][xx] = (160, 112, 74)
+        c.px[11][xx] = (138, 94, 62)
+    for xx in (3, 11):
+        c.px[8][xx] = (196, 144, 98)
+    return c
+
+
+def make_t_roof_adobe_eave():
+    c = make_t_roof_adobe("b")
+    wood, wood_dark, wood_light = (139, 90, 43), (90, 58, 30), (166, 112, 60)
+    for xx in range(16):                    # kenar: sıva dudağı, gölge
+        c.px[11][xx] = (226, 178, 126)
+        c.px[12][xx] = (160, 112, 74)
+        c.px[13][xx] = (96, 64, 44)
+        c.px[14][xx] = (66, 44, 32)
+        c.px[15][xx] = (44, 30, 24)
+    for x0 in (1, 5, 9, 13):                 # dışarı taşan ahşap kiriş uçları (2 piksel genişlik)
+        c.px[12][x0] = wood_light; c.px[12][x0 + 1] = wood
+        c.px[13][x0] = wood; c.px[13][x0 + 1] = wood
+        c.px[14][x0] = wood_dark; c.px[14][x0 + 1] = wood_dark
+    return c
+
+
 # ================= Sprite stacking (katmanlı 3D piksel) =================
 # Her nesne yukarıdan görünen yatay dilimlerdir (0 = en alt). Hepsi aynı tuval boyunda, ortak merkezli.
 # Araçlar 0 derecede +x yönüne (sağa) bakar; oyunda gittiği yöne döndürülür.
@@ -2266,6 +2649,19 @@ def main():
         "t_fire": lambda: make_t_fire(0), "t_fire_b": lambda: make_t_fire(1),
         "t_roof_a": lambda: make_t_roof("a"), "t_roof_b": lambda: make_t_roof("b"),
         "t_roof_ridge": make_t_roof_ridge, "t_roof_eave": make_t_roof_eave,
+        # Karlı dağ teması
+        "t_snow": lambda: make_t_snow(0), "t_snow_alt": lambda: make_t_snow(1), "t_snow_path": make_t_snow_path,
+        "t_stone": make_t_stone, "t_stonewall": make_t_stonewall, "t_ice": make_t_ice,
+        "t_water": lambda: make_t_water(0), "t_water_b": lambda: make_t_water(1),
+        "t_roof_snow_a": lambda: make_t_roof_snow("a"), "t_roof_snow_b": lambda: make_t_roof_snow("b"),
+        "t_roof_snow_ridge": make_t_roof_snow_ridge, "t_roof_snow_eave": make_t_roof_snow_eave,
+        # Çöl kasabası teması
+        "t_sand": lambda: make_t_sand(0), "t_sand_alt": lambda: make_t_sand(1), "t_sand_path": make_t_sand_path,
+        "t_adobe": make_t_adobe, "t_adobewall": make_t_adobewall,
+        "t_quicksand": lambda: make_t_quicksand(0), "t_quicksand_b": lambda: make_t_quicksand(1),
+        "t_cactus": make_t_cactus,
+        "t_roof_adobe_a": lambda: make_t_roof_adobe("a"), "t_roof_adobe_b": lambda: make_t_roof_adobe("b"),
+        "t_roof_adobe_ridge": make_t_roof_adobe_ridge, "t_roof_adobe_eave": make_t_roof_adobe_eave,
         "karton_kutu": make_karton_kutu, "cop_kutusu": make_cop_kutusu,
     }
     for name, fn in animated.items():

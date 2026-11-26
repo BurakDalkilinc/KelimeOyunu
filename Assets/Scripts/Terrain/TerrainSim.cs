@@ -17,20 +17,30 @@ public class TerrainSim
     public FireSim Fire { get; }
     public TerrainHazards Hazards { get; }
 
-    /// <summary>Yalnızca içinden geçilemeyen karolar (tahta duvar): itilen/fırlatılan karakterler için.</summary>
+    /// <summary>Yalnızca içinden geçilemeyen karolar (ev duvarları, kaktüs): itilen/fırlatılan karakterler için.</summary>
     public IObstacleField SolidObstacles { get; }
 
-    /// <summary>Duvar + lav + uçurum + yanan karolar: botların kendi isteğiyle yürürken kaçındığı yerler.</summary>
+    /// <summary>Duvar + kaktüs + lav + uçurum + su + kum + yanan karolar: botların kendi isteğiyle yürürken kaçındığı yerler.</summary>
     public IObstacleField AvoidingObstacles { get; }
 
     /// <summary>Haritada bir şey değişti (karo ya da yanma). Ağ katmanı bunu görünce yeni durumu yayar.</summary>
     public bool Dirty { get; set; }
 
-    /// <summary>Tohumdan yeni harita üretir.</summary>
+    /// <summary>Tohumdan yeni köy haritası üretir (ilk harita).</summary>
     public TerrainSim(GameConfig config, int seed, System.Random random)
-        : this(config, MapGenerator.Generate(Mathf.RoundToInt(config.arenaSize.x), Mathf.RoundToInt(config.arenaSize.y), seed, MapRecipe.Default), random)
+        : this(config, seed, MapTheme.Village, random)
     {
     }
+
+    /// <summary>Tohumdan verilen temada yeni harita üretir.</summary>
+    public TerrainSim(GameConfig config, int seed, MapTheme theme, System.Random random)
+        : this(config, MapGenerator.Generate(Mathf.RoundToInt(config.arenaSize.x), Mathf.RoundToInt(config.arenaSize.y), seed,
+                                             MapRecipe.For(theme ?? MapTheme.Village)), random)
+    {
+    }
+
+    /// <summary>Maçın teması: ayarlarda zorlanan tema, yoksa tohumdan rastgele (<see cref="MapTheme.Choose"/>).</summary>
+    public static MapTheme ThemeFor(GameConfig config, int seed) => MapTheme.Choose(config != null ? config.forcedMapTheme : null, seed);
 
     /// <summary>Hazır haritayla (testler ve istemci için).</summary>
     public TerrainSim(GameConfig config, TerrainMap map, System.Random random)
@@ -40,17 +50,24 @@ public class TerrainSim
         Fire = new FireSim(map, config, random ?? throw new ArgumentNullException(nameof(random)));
         Hazards = new TerrainHazards(map, Fire, config);
         SolidObstacles = new TerrainObstacles(map, Fire, blockHazards: false);
-        AvoidingObstacles = new TerrainObstacles(map, Fire, blockHazards: true);
+        AvoidingObstacles = new TerrainObstacles(map, Fire, blockHazards: true, pricklyClearance: config.botCactusClearance);
 
         map.TileChanged += (_, __) => Dirty = true;
         Fire.BurnChanged += (_, __) => Dirty = true;
     }
 
-    /// <summary>Nokta lav, uçurum ya da yanan bir karoda mı? (Botlar buradan çıkmaya çalışır.)</summary>
+    /// <summary>Nokta lav, uçurum ya da yanan bir karoda mı? (Savrulan karakter burada durur.)</summary>
     public bool IsHazardousAt(Vector2 point)
     {
         Vector2Int cell = Map.CellOf(point);
         return TerrainMap.IsHazard(Map.At(cell.x, cell.y)) || Fire.IsBurning(cell.x, cell.y);
+    }
+
+    /// <summary>Nokta botun durmak istemeyeceği bir yerde mi: duvar, kaktüs, lav, uçurum, su, kum ya da alev.</summary>
+    public bool IsDangerousAt(Vector2 point)
+    {
+        Vector2Int cell = Map.CellOf(point);
+        return TerrainMap.IsDangerous(Map.At(cell.x, cell.y)) || Fire.IsBurning(cell.x, cell.y);
     }
 
     /// <summary>
@@ -111,7 +128,8 @@ public class TerrainSim
     }
 
     /// <summary>
-    /// Bot gezinme hedefi için kötü yer mi: duvar, lav, uçurum ya da yanan kare, veya bunlardan birine bitişik (kenarda takılmasın).
+    /// Bot gezinme hedefi için kötü yer mi: duvar, kaktüs, lav, uçurum, su, kum ya da yanan kare, veya bunlardan birine bitişik
+    /// (kenarda takılmasın).
     /// </summary>
     public bool IsBadWanderTarget(Vector2 point)
     {
@@ -123,13 +141,13 @@ public class TerrainSim
                 int x = cell.x + dx, y = cell.y + dy;
                 if (!Map.InBounds(x, y)) continue;
                 TileType type = Map.At(x, y);
-                if (TerrainMap.IsSolid(type) || TerrainMap.IsHazard(type) || Fire.IsBurning(x, y)) return true;
+                if (TerrainMap.IsDangerous(type) || Fire.IsBurning(x, y)) return true;
             }
         }
         return false;
     }
 
-    /// <summary>Dünya noktası duvar, lav ya da uçurum karosunda mı? (Kule/sığınak yerleşimi buradan kaçınır.)</summary>
+    /// <summary>Dünya noktası güvenli zeminde değil mi (duvar, kaktüs, lav, uçurum, su, kum)? (Kule/sığınak yerleşimi buradan kaçınır.)</summary>
     public bool IsBlocked(Vector2 point) => Map.IsBlockedPoint(point);
 
     /// <summary>
@@ -139,9 +157,23 @@ public class TerrainSim
     public Vector2 NearestSafe(Vector2 point)
     {
         Vector2Int cell = Map.CellOf(point);
-        if (TerrainMap.IsWalkable(Map.At(cell.x, cell.y)) && !Fire.IsBurning(cell.x, cell.y)) return point;
+        if (TerrainMap.IsSafeGround(Map.At(cell.x, cell.y)) && !IsBadSpawnCell(cell.x, cell.y)) return point;
 
-        return Map.TryFindNearestWalkable(point, out Vector2 safe, Fire.IsBurning) ? safe : point;
+        // Önce kaktüse komşu olmayan kare; hiç yoksa (çok küçük harita) yalnızca yanmayan kare.
+        if (Map.TryFindNearestWalkable(point, out Vector2 safe, IsBadSpawnCell)) return safe;
+        return Map.TryFindNearestWalkable(point, out safe, Fire.IsBurning) ? safe : point;
+    }
+
+    /// <summary>Doğma için kötü kare: yanıyor ya da bir kaktüse komşu (8 yön).</summary>
+    bool IsBadSpawnCell(int x, int y) => Fire.IsBurning(x, y) || IsNextToPrickly(x, y);
+
+    /// <summary>Karonun 8 komşusundan biri kaktüs mü?</summary>
+    public bool IsNextToPrickly(int x, int y)
+    {
+        for (int dy = -1; dy <= 1; dy++)
+            for (int dx = -1; dx <= 1; dx++)
+                if ((dx != 0 || dy != 0) && Map.InBounds(x + dx, y + dy) && TerrainMap.IsPrickly(Map.At(x + dx, y + dy))) return true;
+        return false;
     }
 
     /// <summary>

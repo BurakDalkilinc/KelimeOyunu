@@ -14,6 +14,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
     IReadOnlyList<DangerZone> dangers;
     Color baseColor;
     readonly KnockbackMotion knockback = new KnockbackMotion();
+    readonly GroundMotion groundMotion = new GroundMotion();
 
     /// <summary>Tehdit varken botun sığınacağı yeri söyleyen kaynak (yoksa bot gezinmeye devam eder).</summary>
     public IRefugeProvider Refuge { get; set; }
@@ -156,7 +157,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         FlightVisual.Attach(gameObject).Flying = State.Status.IsFlying; // Uçarken gölge ve alev
         BurnVisual.Attach(gameObject).Burning = State.Status.IsBurning; // Ateş aldı: alevler
         DisguiseVisual.Attach(gameObject).SpriteName = State.Status.StealthDisguise; // Kamuflaj: çalı
-        if (State.Falling != FallKind.None) return;
+        if (State.Falling != FallKind.None) { groundMotion.Stop(); return; }
 
         Vector2 pushed = knockback.Step(Time.deltaTime);
         if (pushed != Vector2.zero)
@@ -169,7 +170,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
 
         // Savrulurken bot kendi yürümez. Yürüseydi "lav/uçuruma girme" engeli onu her karede kenara geri iterdi
         // ve itilen bot kenarda çakılı kalırdı.
-        if (knockback.IsActive) return;
+        if (knockback.IsActive) { groundMotion.Stop(); return; }
 
         Vector2 pulled = State.Status.GetPullStep(transform.position, Time.deltaTime);
         if (pulled != Vector2.zero) MoveBy(pulled);
@@ -187,6 +188,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
             FacingDirection = heading;
             transform.position = new Vector3(moved.x, moved.y, transform.position.z);
             LandOnHazard(here);
+            groundMotion.Stop();
             return;
         }
 
@@ -214,8 +216,7 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
             huntingWithMelee = true;
             direction = brain.ThinkBossAttack(transform.position, dangers, prey, 0f, out Vector2 faceToPrey);
             FacingDirection = faceToPrey;
-            if (direction != Vector2.zero)
-                MoveBy(direction * (config.botMoveSpeed * State.Status.SpeedMultiplier * Time.deltaTime), voluntary: true);
+            Walk(direction);
             return;
         }
 
@@ -223,16 +224,30 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         {
             direction = brain.ThinkBossAttack(transform.position, dangers, attackingBoss.Position, attackingBoss.Radius, out Vector2 face);
             FacingDirection = face;
-            if (direction != Vector2.zero)
-                MoveBy(direction * (config.botMoveSpeed * State.Status.SpeedMultiplier * Time.deltaTime), voluntary: true);
+            Walk(direction);
             return;
         }
 
         direction = brain.Think(Time.deltaTime, transform.position, dangers, refuge, sheltered);
-        if (direction == Vector2.zero) return;
+        if (direction != Vector2.zero) FacingDirection = direction;
+        Walk(direction);
+    }
 
-        FacingDirection = direction;
-        MoveBy(direction * (config.botMoveSpeed * State.Status.SpeedMultiplier * Time.deltaTime), voluntary: true);
+    /// <summary>
+    /// Bot kendi isteğiyle yürür (lav, su, kum ve alevden kaçınarak): zemine göre su ve kumda yavaş, buzda kayarak.
+    /// Yön sıfırsa normal zeminde durur, buzda kaymaya devam eder.
+    /// </summary>
+    void Walk(Vector2 direction)
+    {
+        TerrainSim terrain = Bootstrap != null ? Bootstrap.Terrain : null;
+        TileType ground = GroundRules.GroundUnder(State, terrain != null ? terrain.Map : null, transform.position);
+        float speed = config.botMoveSpeed * State.Status.SpeedMultiplier;
+        Vector2 wanted = groundMotion.Step(direction, speed, ground, config, Time.deltaTime);
+        if (wanted == Vector2.zero) return;
+
+        Vector2 before = transform.position;
+        MoveBy(wanted, voluntary: true);
+        groundMotion.Absorb(wanted, (Vector2)transform.position - before, Time.deltaTime);
     }
 
     /// <summary>Botu kısa bir süreye yayarak kaydırır (bir yaratık fırlattığında).</summary>

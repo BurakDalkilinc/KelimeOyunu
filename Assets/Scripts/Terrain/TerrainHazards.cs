@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Arazinin tehlikeleri: lavda ve yanan karoda duran oyuncuya aralıklarla hasar, uçuruma düşene hasar ve en yakın güvenli kareye dönüş.
+/// Arazinin tehlikeleri: lav/uçuruma düşme, yanan karoda, dondurucu suda ve bataklık kumunda duran oyuncuya aralıklarla hasar,
+/// kaktüse dokunana küçük hasar.
 /// Kalkan hasarı engeller (hasar <see cref="PlayerState.TakeDamage"/> yolundan gider). Uçan ve elenmiş oyuncuya hiçbir şey işlemez.
 /// Düz C# sınıfı: konumu ve ışınlamayı dışarıdan (tek kişilik sahne ya da ağ) alır, test edilebilir.
 /// </summary>
@@ -15,6 +16,13 @@ public class TerrainHazards
         public float FireLeft;
         public float FallCooldown;
         public float DoomLeft;
+
+        /// <summary>Hasar veren zeminde (su, kum) bir sonraki hasara kalan süre; zeminin dışındayken negatif.</summary>
+        public float GroundLeft = -1f;
+        public float CactusCooldown;
+
+        /// <summary>Son karede kaktüse değiyor muydu? Hasar yalnızca temasın başladığı anda verilir (sürtünmek öldürmez).</summary>
+        public bool TouchingCactus;
     }
 
     readonly TerrainMap map;
@@ -42,6 +50,7 @@ public class TerrainHazards
         {
             PlayerTimers t = TimersOf(player.Id);
             t.FallCooldown = Mathf.Max(0f, t.FallCooldown - dt);
+            t.CactusCooldown = Mathf.Max(0f, t.CactusCooldown - dt);
 
             if (player.Falling != FallKind.None)
             {
@@ -58,6 +67,8 @@ public class TerrainHazards
             {
                 t.LavaLeft = 0f;
                 t.FireLeft = 0f;
+                t.GroundLeft = -1f;
+                t.TouchingCactus = false;
                 continue;
             }
 
@@ -71,7 +82,75 @@ public class TerrainHazards
             // Ateş: girişte hemen, sonra her aralıkta bir hasar. Çıkınca sayaç sıfırlanır.
             bool onFire = fire != null && fire.IsBurning(cell.x, cell.y);
             t.FireLeft = TickFire(onFire, t.FireLeft, dt, player);
+
+            // Dondurucu su / bataklık kumu: içinde durdukça aralıklarla hasar. Kaktüs: dokununca hasar, sonra kısa bekleme.
+            t.GroundLeft = TickGround(type, t.GroundLeft, dt, player);
+            TickCactus(player, position.Value, t, teleport);
         }
+    }
+
+    /// <summary>
+    /// Kaktüs: temas yeni başladıysa (ve bekleme bittiyse) bir kez batar ve karakteri kaktüsten biraz geri iter.
+    /// Kaktüse sürtünerek yürümek tekrar tekrar hasar vermez; ayrılıp yeniden değmek gerekir.
+    /// </summary>
+    void TickCactus(PlayerState player, Vector2 position, PlayerTimers t, Action<int, Vector2> teleport)
+    {
+        Vector2 away = Vector2.zero;
+        bool touching = config.cactusDamage > 0 && TryTouchCactus(position, out away);
+        if (touching && !t.TouchingCactus && t.CactusCooldown <= 0f)
+        {
+            player.TakeDamage(config.cactusDamage);
+            t.CactusCooldown = Mathf.Max(0.1f, config.cactusDamageCooldownSeconds);
+
+            // Geri itme: yalnızca güvenli bir kareye (duvara, kuma, lava değil).
+            Vector2 pushedTo = position + away * config.cactusPushDistance;
+            if (config.cactusPushDistance > 0f && teleport != null && TerrainMap.IsSafeGround(map.At(pushedTo)))
+            {
+                teleport(player.Id, pushedTo);
+                touching = false;
+            }
+        }
+        t.TouchingCactus = touching;
+    }
+
+    /// <summary>Hasar veren zeminde: girişte ilk beklemeyi kurar, süre dolunca vurur. Zeminin dışında -1 döner.</summary>
+    float TickGround(TileType type, float left, float dt, PlayerState player)
+    {
+        if (!GroundRules.TryGetGroundDamage(type, config, out int damage, out float interval, out float firstDelay)) return -1f;
+
+        if (left < 0f) left = firstDelay; // Yeni girdi
+        left -= dt;
+        if (left > 0f) return left;
+
+        player.TakeDamage(damage);
+        return interval;
+    }
+
+    /// <summary>Karakterin (daire) kenarı bir kaktüs karosuna değiyor mu? Değiyorsa kaktüsten uzaklaşma yönünü verir.</summary>
+    bool TryTouchCactus(Vector2 position, out Vector2 away)
+    {
+        away = Vector2.zero;
+        float reach = config.playerRadius + config.cactusTouchDistance;
+        Vector2Int cell = map.CellOf(position);
+        int cells = Mathf.CeilToInt(reach) + 1;
+
+        for (int y = cell.y - cells; y <= cell.y + cells; y++)
+        {
+            for (int x = cell.x - cells; x <= cell.x + cells; x++)
+            {
+                if (!map.InBounds(x, y) || !TerrainMap.IsPrickly(map.At(x, y))) continue;
+
+                Vector2 min = new Vector2(map.Origin.x + x, map.Origin.y + y);
+                Vector2 closest = new Vector2(Mathf.Clamp(position.x, min.x, min.x + 1f), Mathf.Clamp(position.y, min.y, min.y + 1f));
+                if ((closest - position).sqrMagnitude > reach * reach) continue;
+
+                Vector2 delta = position - closest;
+                if (delta.sqrMagnitude < 0.000001f) delta = position - map.CellCenter(x, y); // Merkez karonun içinde
+                away = delta.sqrMagnitude < 0.000001f ? Vector2.up : delta.normalized;
+                return true;
+            }
+        }
+        return false;
     }
 
     /// <summary>Yanan karodaki oyuncu: girişte hemen, sonra her aralıkta ateş hasarı alır ve tutuşur. Çıkınca sayaç sıfırlanır.</summary>

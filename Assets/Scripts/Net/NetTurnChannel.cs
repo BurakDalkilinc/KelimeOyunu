@@ -86,6 +86,9 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     /// <summary>Evlerin yerleri ("x,y,w,h;..."): çatı çizimi için.</summary>
     public string LatestHouses { get; private set; } = "";
 
+    /// <summary>Haritanın teması ("koy", "kar", "col"): zemin ve çatı resimleri için. Boşsa köy.</summary>
+    public string LatestTheme { get; private set; } = "";
+
     /// <summary>Yeni harita durumu geldikçe artar.</summary>
     public int TerrainVersion { get; private set; }
 
@@ -152,7 +155,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         // Arazi: harita tohumdan üretilir; istemcilere tam durum yayılır (karo türleri + yangın).
         System.Random terrainRandom = config.CreateRandom();
         int terrainSeed = config.terrainSeed != 0 ? config.terrainSeed : terrainRandom.Next(1, int.MaxValue);
-        var terrain = new TerrainSim(config, terrainSeed, new System.Random(terrainRandom.Next()));
+        var terrain = new TerrainSim(config, terrainSeed, TerrainSim.ThemeFor(config, terrainSeed), new System.Random(terrainRandom.Next()));
         host.MessageReady += Broadcast;
 
         // Kabul edilen kelime host'ta yaratığa dönüşür (ilk zar atılmadan önce abone ol).
@@ -338,7 +341,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         {
             terrainSendPending = false;
             Sim.Terrain.Dirty = false;
-            TerrainRpc(Sim.Terrain.Map.Encode(Sim.Terrain.Fire.IsBurning), Sim.Terrain.Map.EncodeHouses());
+            TerrainRpc(Sim.Terrain.Map.Encode(Sim.Terrain.Fire.IsBurning), Sim.Terrain.Map.EncodeHouses(), Sim.Terrain.Map.Theme.Id);
         }
 
         Sim.SnapshotZones(zoneBuffer);
@@ -501,8 +504,9 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
     }
 
     [Rpc(SendTo.ClientsAndHost)]
-    void TerrainRpc(string encodedTerrain, string encodedHouses)
+    void TerrainRpc(string encodedTerrain, string encodedHouses, string themeId)
     {
+        LatestTheme = themeId ?? "";
         LatestHouses = encodedHouses ?? "";
         LatestTerrain = encodedTerrain ?? "";
         TerrainVersion++;
@@ -530,6 +534,7 @@ public class NetTurnChannel : NetworkBehaviour, INetAvatars
         Gore.ClearAll(); // Maç bitti, yeni maça hazırlanılıyor: yerdeki kan ve cesetler temizlenir
         LatestTerrain = ""; // Harita bir sonraki maçta yeniden gelir
         LatestHouses = "";
+        LatestTheme = "";
         TerrainVersion++;
         Client.Reset();
         Feedback = "";

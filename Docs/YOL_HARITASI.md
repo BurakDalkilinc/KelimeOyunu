@@ -68,7 +68,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 
 ## Aşama 6 — İçerik ve çıkış
 - [x] 300+ kelime
-- [ ] 3 farklı harita (1. harita hazır: tahta köyler, lav, uçurum, yangın; `MapRecipe` ile yenileri eklenir)
+- [x] 3 farklı harita: Tahta Köy (lav, yangın), Karlı Dağ (taş evler, buz, dondurucu su), Çöl Kasabası (kerpiç evler, bataklık kumu, kaktüs); tema maç tohumundan seçilir, `GameConfig.forcedMapTheme` ile zorlanır
 - [ ] Koleksiyon defteri
 - [ ] Ayarlar, ses, Türkçe/İngilizce dil desteği
 - [ ] Çıkış

@@ -60,6 +60,7 @@ public class NetworkPlayer : NetworkBehaviour
     readonly NetworkVariable<float> charLevel = new NetworkVariable<float>(0f);
 
     readonly KnockbackMotion knockback = new KnockbackMotion();
+    readonly GroundMotion groundMotion = new GroundMotion();
 
     /// <summary>Yön mesajı hız sınırı: normal oyunda yalnızca tuş değişince gider; seli engeller.</summary>
     readonly RpcRateLimiter moveLimiter = new RpcRateLimiter(30f, 30f);
@@ -349,6 +350,7 @@ public class NetworkPlayer : NetworkBehaviour
                 // Araç: hiç durmaz, girdi yalnızca yön verir; bot en yakın rakibin üstüne sürer.
                 if (isBot.Value)
                     input = MeleeRules.TryFindPrey(state, next, sim, config.botVehiclePreyRange, out Vector2 prey) ? (prey - next).normalized : Vector2.zero;
+                groundMotion.Stop();
                 Vector2 before = next;
                 next = sim.DriveVehicle(state, next, ref facing, input, dt, obstacles, out bool exploded);
                 if (exploded) crashCount.Value++;
@@ -360,8 +362,14 @@ public class NetworkPlayer : NetworkBehaviour
             }
             else
             {
+                // Zemine göre yürüyüş: su ve kumda yavaş, buzda kayarak. Düşen ya da savrulan karakterin kayması durur.
+                if (falling || stunnedBot) groundMotion.Stop();
                 float speed = (isBot.Value ? config.botMoveSpeed : config.playerMoveSpeed) * speedMultiplier;
-                next = AvatarMover.Step(next, input, speed, dt, config.playerRadius, arena, voluntary);
+                TileType ground = GroundRules.GroundUnder(state, sim != null && sim.Terrain != null ? sim.Terrain.Map : null, next);
+                Vector2 wanted = groundMotion.Step(AvatarMover.SanitizeInput(input), speed, ground, config, dt);
+                Vector2 before = next;
+                next = AvatarMover.Displace(next, wanted, config.playerRadius, arena, voluntary);
+                groundMotion.Absorb(wanted, next - before, dt);
             }
 
             // Duvar tam üstüne çıktıysa karakter dışarı itilir.

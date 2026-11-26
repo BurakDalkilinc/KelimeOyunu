@@ -306,7 +306,7 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
 
         // Arazi: haritayı üret, engelleri (oyuncu duvarları + haritadaki duvarlar) birleştir.
         int terrainSeed = config.terrainSeed != 0 ? config.terrainSeed : Random.Next(1, int.MaxValue);
-        Terrain = new TerrainSim(config, terrainSeed, new System.Random(Random.Next()));
+        Terrain = new TerrainSim(config, terrainSeed, TerrainSim.ThemeFor(config, terrainSeed), new System.Random(Random.Next()));
         Obstacles = new CompositeObstacles(Walls, Terrain.SolidObstacles);
         BotObstacles = new CompositeObstacles(Walls, Terrain.AvoidingObstacles);
 

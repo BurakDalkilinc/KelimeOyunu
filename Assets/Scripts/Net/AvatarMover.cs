@@ -32,4 +32,14 @@ public static class AvatarMover
         Vector2 target = position + direction * (speed * deltaSeconds);
         return ObstacleMover.Move(position, target, radius, arena, radius, obstacles);
     }
+
+    /// <summary>
+    /// Karakteri hazır bir yer değiştirme kadar oynatır (zemine göre hesaplanmış yürüyüş, <see cref="GroundMotion"/>):
+    /// arenanın içinde kalır ve (verilirse) duvarlardan geçmez. Yer değiştirme sıfırsa yalnızca arena sınırı uygulanır.
+    /// </summary>
+    public static Vector2 Displace(Vector2 position, Vector2 delta, float radius, ArenaBounds arena, IObstacleField obstacles)
+    {
+        if (delta == Vector2.zero) return arena.Clamp(position, radius);
+        return ObstacleMover.Move(position, position + delta, radius, arena, radius, obstacles);
+    }
 }

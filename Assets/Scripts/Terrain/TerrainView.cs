@@ -4,8 +4,9 @@ using UnityEngine;
 
 /// <summary>
 /// Haritayı piksel karolarla çizer: her kare için bir sprite, yanan karelerin üstüne animasyonlu alev. Karo değişince (yanıp kömürleşme)
-/// ilgili sprite güncellenir. Hiçbir kural işletmez; tek kişilik sahnede <see cref="MatchBootstrap"/>'ın, ağ maçında host'tan gelen
-/// durumun haritasını gösterir.
+/// ilgili sprite güncellenir. Zemin, patika ve çatı resimleri haritanın temasından (<see cref="MapTheme"/>) gelir; bir resim henüz
+/// yoksa köy temasındaki karşılığı kullanılır. Hiçbir kural işletmez; tek kişilik sahnede <see cref="MatchBootstrap"/>'ın, ağ maçında
+/// host'tan gelen durumun haritasını gösterir.
 /// </summary>
 public class TerrainView : MonoBehaviour
 {
@@ -18,6 +19,9 @@ public class TerrainView : MonoBehaviour
     /// <summary>Katmanlı (3D piksel) ev duvarının yüksekliği (dilim = 1 piksel) ve çatının kalınlığı.</summary>
     const int WallLayers = 8;
     const int RoofLayers = 3;
+
+    /// <summary>Kaktüsün katman sayısı (duvardan biraz yüksek).</summary>
+    const int CactusLayers = 10;
 
     /// <summary>Uçurumun ve lav havuzunun derinliği (piksel): kenardaki zemin bu kadar aşağı inen bir yüz olarak çizilir.</summary>
     const int ChasmDepth = 10;
@@ -43,6 +47,7 @@ public class TerrainView : MonoBehaviour
     SpriteRenderer[] tiles;
     GameObject[] flames;
     SpriteStack[] wallStacks;
+    TileType[] wallStackTypes;
     GameObject[] cliffs;
     int[] cliffDepths;
     readonly List<GameObject> roofObjects = new List<GameObject>();
@@ -84,6 +89,7 @@ public class TerrainView : MonoBehaviour
         tiles = new SpriteRenderer[map.Width * map.Height];
         flames = new GameObject[tiles.Length];
         wallStacks = new SpriteStack[tiles.Length];
+        wallStackTypes = new TileType[tiles.Length];
         cliffs = new GameObject[tiles.Length];
         cliffDepths = new int[tiles.Length];
 
@@ -103,6 +109,16 @@ public class TerrainView : MonoBehaviour
 
         map.TileChanged += OnTileChanged;
         map.HousesChanged += RebuildRoofs;
+        map.ThemeChanged += OnThemeChanged;
+        RebuildRoofs();
+    }
+
+    /// <summary>Tema değişti: bütün karolar ve çatılar yeni temanın resimleriyle yeniden çizilir.</summary>
+    void OnThemeChanged()
+    {
+        for (int y = 0; y < map.Height; y++)
+            for (int x = 0; x < map.Width; x++)
+                Refresh(x, y);
         RebuildRoofs();
     }
 
@@ -112,6 +128,7 @@ public class TerrainView : MonoBehaviour
         {
             map.TileChanged -= OnTileChanged;
             map.HousesChanged -= RebuildRoofs;
+            map.ThemeChanged -= OnThemeChanged;
         }
         for (int i = transform.childCount - 1; i >= 0; i--) Destroy(transform.GetChild(i).gameObject);
         roofObjects.Clear();
@@ -125,9 +142,24 @@ public class TerrainView : MonoBehaviour
         if (map == null) return;
         map.TileChanged -= OnTileChanged;
         map.HousesChanged -= RebuildRoofs;
+        map.ThemeChanged -= OnThemeChanged;
     }
 
-    /// <summary>Her ev için kiremit çatı kurar: üst sıra, sırt, ara sıralar, en altta saçak.</summary>
+    /// <summary>Temanın resmi; yoksa köy temasındaki karşılığı (resim çizilmeden önce de oyun çökmeden çalışsın).</summary>
+    static Sprite SpriteOr(string spriteName, string fallbackName)
+    {
+        Sprite sprite = SpriteLibrary.Get(spriteName);
+        return sprite != null ? sprite : SpriteLibrary.Get(fallbackName);
+    }
+
+    /// <summary>Animasyon kareleri; yoksa yedek resmin kareleri.</summary>
+    static Sprite[] FramesOr(string spriteName, string fallbackName)
+    {
+        Sprite[] frames = SpriteLibrary.GetFrames(spriteName);
+        return frames.Length > 0 ? frames : SpriteLibrary.GetFrames(fallbackName);
+    }
+
+    /// <summary>Her ev için temanın çatısını kurar: üst sıra, sırt, ara sıralar, en altta saçak.</summary>
     void RebuildRoofs()
     {
         foreach (GameObject roof in roofObjects)
@@ -136,6 +168,7 @@ public class TerrainView : MonoBehaviour
         roofTiles.Clear();
         roofAlpha.Clear();
         if (map == null) return;
+        MapTheme theme = map.Theme;
 
         foreach (House house in map.Houses)
         {
@@ -152,10 +185,11 @@ public class TerrainView : MonoBehaviour
             for (int cy = 0; cy < house.H; cy++)
             {
                 int fromTop = house.H - 1 - cy;
-                string spriteName = fromTop == 0 ? "t_roof_a"
-                    : fromTop == 1 ? "t_roof_ridge"
-                    : cy == 0 ? "t_roof_eave"
-                    : "t_roof_b";
+                string part = fromTop == 0 ? "a"
+                    : fromTop == 1 ? "ridge"
+                    : cy == 0 ? "eave"
+                    : "b";
+                Sprite roofSprite = SpriteOr(theme.RoofSprite(part), MapTheme.Village.RoofSprite(part));
 
                 for (int cx = 0; cx < house.W; cx++)
                 {
@@ -163,7 +197,7 @@ public class TerrainView : MonoBehaviour
                     anchor.transform.SetParent(root.transform, false);
                     anchor.transform.position = (Vector3)map.CellCenter(house.X + cx, house.Y + cy) + lift;
                     renderers[cy * house.W + cx] = SpriteStack.Create(anchor.transform, "kiremit katmanları",
-                        StackLibrary.Extrude(SpriteLibrary.Get(spriteName), RoofLayers), RoofOrder, 1f, 1f, 0.7f);
+                        StackLibrary.Extrude(roofSprite, RoofLayers), RoofOrder, 1f, 1f, 0.7f);
                 }
             }
 
@@ -223,25 +257,53 @@ public class TerrainView : MonoBehaviour
         }
     }
 
-    /// <summary>Ev duvarı karesi yükselen bir blok olarak çizilir (katmanlı); duvar yanıp çökünce blok kalkar.</summary>
+    /// <summary>
+    /// İçinden geçilmeyen kare (ev duvarı, kaktüs) yükselen bir blok olarak çizilir (katmanlı); duvar yanıp çökünce blok kalkar.
+    /// Tür değişirse (ör. tema değişti) blok yeniden kurulur.
+    /// </summary>
     void RefreshWallStack(int x, int y, TileType type)
     {
         int index = map.Index(x, y);
-        bool wall = type == TileType.WoodWall;
-        if (wall && wallStacks[index] == null)
-        {
-            var anchor = new GameObject($"Duvar bloğu {x},{y}");
-            anchor.transform.SetParent(transform, false);
-            anchor.transform.position = map.CellCenter(x, y);
-            wallStacks[index] = SpriteStack.Create(anchor.transform, "katmanlar",
-                StackLibrary.Extrude(SpriteLibrary.Get("t_woodwall"), WallLayers), WallStackOrder, 1f);
-        }
-        else if (!wall && wallStacks[index] != null)
+        bool solid = TerrainMap.IsSolid(type);
+
+        if (wallStacks[index] != null && (!solid || wallStackTypes[index] != type))
         {
             Destroy(wallStacks[index].transform.parent.gameObject);
             wallStacks[index] = null;
         }
+        if (!solid || wallStacks[index] != null) return;
+
+        Sprite[] slices = StackSlices(type);
+        if (slices == null) return; // Resim yok: düz karo yeter
+
+        var anchor = new GameObject($"Duvar bloğu {x},{y}");
+        anchor.transform.SetParent(transform, false);
+        anchor.transform.position = map.CellCenter(x, y);
+        wallStacks[index] = SpriteStack.Create(anchor.transform, "katmanlar", slices, WallStackOrder, 1f);
+        wallStackTypes[index] = type;
     }
+
+    /// <summary>Blok dilimleri: kaktüsün hazır katmanlı çizimi varsa o, yoksa düz resim kalınlaştırılır.</summary>
+    static Sprite[] StackSlices(TileType type)
+    {
+        if (TerrainMap.IsPrickly(type))
+            return StackLibrary.Get("t_cactus") ?? StackLibrary.Extrude(SpriteLibrary.Get("t_cactus"), CactusLayers);
+        return StackLibrary.Extrude(SpriteOr(WallSprite(type), "t_woodwall"), WallLayers);
+    }
+
+    /// <summary>Ev duvarının resmi (tahta, taş, kerpiç).</summary>
+    static string WallSprite(TileType type)
+    {
+        switch (type)
+        {
+            case TileType.StoneWall: return "t_stonewall";
+            case TileType.AdobeWall: return "t_adobewall";
+            default: return "t_woodwall";
+        }
+    }
+
+    /// <summary>Çukur gibi çizilen karo: uçurum ya da havuz (lav, dondurucu su, bataklık kumu).</summary>
+    static bool IsHole(TileType type) => type == TileType.Chasm || TerrainMap.IsPool(type);
 
     /// <summary>
     /// Güneyinde uçurum ya da lav olan zemin karosu, aşağı doğru inen bir yüz olarak çizilir: aynı resim katman katman 1 piksel
@@ -252,8 +314,8 @@ public class TerrainView : MonoBehaviour
         int index = map.Index(x, y);
         TileType here = map.At(x, y);
         TileType south = map.InBounds(x, y - 1) ? map.At(x, y - 1) : here;
-        bool hereIsHole = here == TileType.Chasm || here == TileType.Lava;
-        int depth = hereIsHole ? 0 : south == TileType.Chasm ? ChasmDepth : south == TileType.Lava ? LavaDepth : 0;
+        bool hereIsHole = IsHole(here);
+        int depth = hereIsHole ? 0 : south == TileType.Chasm ? ChasmDepth : TerrainMap.IsPool(south) ? LavaDepth : 0;
 
         // Karo ya da güneyi değişmiş olabilir (çimen kömürleşti, uçurum kapandı): yüzü baştan kur.
         Sprite face = tiles[index].sprite;
@@ -299,8 +361,10 @@ public class TerrainView : MonoBehaviour
     {
         SpriteRenderer sr = tiles[map.Index(x, y)];
         TileType type = map.At(x, y);
-        sr.sortingOrder = type == TileType.Chasm || type == TileType.Lava ? HoleOrder : TerrainOrder;
+        sr.sortingOrder = IsHole(type) ? HoleOrder : TerrainOrder;
         RefreshWallStack(x, y, type);
+        MapTheme theme = map.Theme;
+        MapTheme village = MapTheme.Village;
 
         // Eski animasyonu temizle (lav → kömür gibi bir değişim olursa).
         var old = sr.GetComponent<SpriteAnimator>();
@@ -308,10 +372,18 @@ public class TerrainView : MonoBehaviour
 
         switch (type)
         {
-            case TileType.Path: sr.sprite = SpriteLibrary.Get("t_path"); break;
+            case TileType.Path: sr.sprite = SpriteOr(theme.PathSprite, village.PathSprite); break;
             case TileType.WoodFloor: sr.sprite = SpriteLibrary.Get("t_wood"); break;
-            case TileType.WoodWall: sr.sprite = SpriteLibrary.Get("t_woodwall"); break;
+            case TileType.StoneFloor: sr.sprite = SpriteOr("t_stone", "t_path"); break;
+            case TileType.AdobeFloor: sr.sprite = SpriteOr("t_adobe", "t_wood"); break;
+            case TileType.WoodWall:
+            case TileType.StoneWall:
+            case TileType.AdobeWall:
+                sr.sprite = SpriteOr(WallSprite(type), "t_woodwall");
+                break;
             case TileType.CharredFloor: sr.sprite = SpriteLibrary.Get("t_charred"); break;
+            case TileType.Ice: sr.sprite = SpriteOr("t_ice", theme.GroundSprite); break;
+            case TileType.Cactus: sr.sprite = SpriteOr(theme.GroundSprite, village.GroundSprite); break; // Kaktüs bloğu üstünde
             case TileType.Chasm:
                 // Üstündeki karo uçurum değilse kaya dudağı çiz.
                 sr.sprite = SpriteLibrary.Get(map.At(x, y + 1) == TileType.Chasm ? "t_chasm" : "t_chasm_edge");
@@ -319,8 +391,15 @@ public class TerrainView : MonoBehaviour
             case TileType.Lava:
                 sr.gameObject.AddComponent<SpriteAnimator>().SetFrames(SpriteLibrary.GetFrames("t_lava"));
                 break;
+            case TileType.FreezingWater:
+                sr.gameObject.AddComponent<SpriteAnimator>().SetFrames(FramesOr("t_water", "t_lava"));
+                break;
+            case TileType.Quicksand:
+                sr.gameObject.AddComponent<SpriteAnimator>().SetFrames(FramesOr("t_quicksand", "t_lava"));
+                break;
             default:
-                sr.sprite = SpriteLibrary.Get(((x * 7 + y * 13) % 3 == 0) ? "t_grass_alt" : "t_grass");
+                bool alt = (x * 7 + y * 13) % 3 == 0;
+                sr.sprite = alt ? SpriteOr(theme.GroundAltSprite, village.GroundAltSprite) : SpriteOr(theme.GroundSprite, village.GroundSprite);
                 break;
         }
 
