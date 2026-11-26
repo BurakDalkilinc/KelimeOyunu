@@ -14,11 +14,13 @@ public class NetworkMenu : MonoBehaviour
 
     void OnGUI()
     {
+        if (CollectionBookScreen.IsOpen) return; // Defter açıkken ekranı o kaplar
+
         var manager = NetworkManager.Singleton;
         if (manager == null) { GUILayout.Label("NetworkManager yok."); return; }
 
         // Sol alta: sol üst köşe Arena arayüzünün "Can" yazısına ait.
-        float height = manager.IsListening ? 80 : 255;
+        float height = manager.IsListening ? 80 : 285;
         GUILayout.BeginArea(new Rect(12, Screen.height - height - 12, 280, height), GUI.skin.box);
 
         if (manager.IsListening) DrawConnected(manager);
@@ -36,6 +38,7 @@ public class NetworkMenu : MonoBehaviour
         if (GUILayout.Button("Host (oyunu kur)")) StartNetwork(manager, true);
         if (GUILayout.Button("Katıl")) StartNetwork(manager, false);
         if (GUILayout.Button("Tek kişilik oyna (botlarla)")) PlaySolo(manager);
+        if (GUILayout.Button("Defter (koleksiyon)")) CollectionBookScreen.Open();
 
         if (!string.IsNullOrEmpty(error)) GUILayout.Label(error);
     }

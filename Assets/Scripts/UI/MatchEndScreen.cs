@@ -46,6 +46,11 @@ public class MatchEndScreen : MonoBehaviour
     {
         titleText.text = MatchSummary.GetTitle(winner);
         wordsText.text = MatchSummary.GetWordsText(runner.UsedWords);
+
+        // Koleksiyon defteri: bu maçta ilk kez görülen ya da keşfedilen kelime varsa en üstte bildir (yoksa satır yok).
+        CollectionRecorder recorder = runner.GetComponent<CollectionRecorder>();
+        string notice = recorder != null ? CollectionText.NewWordsNotice(recorder.NewThisMatch) : string.Empty;
+        if (notice.Length > 0) wordsText.text = notice + "\n\n" + wordsText.text;
         hintText.text = runner.RestartHint;
         panel.SetActive(true);
         shown = true;

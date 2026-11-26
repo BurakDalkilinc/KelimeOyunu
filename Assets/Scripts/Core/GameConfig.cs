@@ -344,6 +344,68 @@ public class GameConfig : ScriptableObject
     [Tooltip("Soluk isim (kendi hayaletin, görünmezken kendi adın) saydamlığı.")]
     [Range(0f, 1f)] public float nameTagFaintAlpha = 0.45f;
 
+    [Header("Koleksiyon defteri")]
+    [Tooltip("Defterin kaydedildiği dosyanın adı (Application.persistentDataPath içinde).")]
+    public string collectionFileName = "collection.json";
+    [Tooltip("Etiketlerin Türkçe adlarının durduğu dosya (Resources içinde, uzantısız).")]
+    public string collectionTagNamesPath = "Data/tag_names";
+    [Tooltip("Defterde bir sayfadaki kart sayısı.")]
+    [Min(1)] public int collectionCardsPerPage = 15;
+    [Tooltip("Kart ızgarasında bir satırdaki kart sayısı.")]
+    [Min(1)] public int collectionColumns = 5;
+    [Tooltip("Ekran bu yüksekliğe göre tasarlandı; başka çözünürlükte her şey orantılı büyür/küçülür (piksel).")]
+    [Min(100f)] public float collectionReferenceHeight = 1080f;
+    [Tooltip("Defter sayfasının ekran kenarına uzaklığı (piksel, referans yüksekliğe göre).")]
+    [Min(0f)] public float collectionMargin = 40f;
+    [Tooltip("Sayfanın iç boşluğu (piksel).")]
+    [Min(0f)] public float collectionPadding = 36f;
+    [Tooltip("Kartlar arası boşluk (piksel).")]
+    [Min(0f)] public float collectionCardSpacing = 12f;
+    [Tooltip("Sağdaki ayrıntı panelinin genişliği (piksel).")]
+    [Min(50f)] public float collectionDetailWidth = 380f;
+    [Tooltip("Üst satırın (başlık, ilerleme, sekmeler) yüksekliği (piksel).")]
+    [Min(10f)] public float collectionHeaderHeight = 110f;
+    [Tooltip("Alt satırın (sayfa düğmeleri, Kapat) yüksekliği (piksel).")]
+    [Min(10f)] public float collectionFooterHeight = 56f;
+    [Tooltip("Kart içinde resmin kartın yüksekliğine oranı.")]
+    [Range(0.1f, 0.9f)] public float collectionCardImageRatio = 0.6f;
+    [Tooltip("Sayfa resminin (ui_book_page) gerilmeyen kenar kalınlığı (resim pikseli).")]
+    [Min(0)] public int collectionPageBorder = 8;
+    [Tooltip("Kart çerçevesi resimlerinin (ui_card_frame*) gerilmeyen kenar kalınlığı (resim pikseli).")]
+    [Min(0)] public int collectionFrameBorder = 6;
+    [Tooltip("Çerçeve resimlerinin bir pikselinin ekrandaki boyu (piksel). Büyüdükçe kenarlar kalınlaşır, piksel görünüm korunur.")]
+    [Min(1f)] public float collectionFramePixelScale = 3f;
+    [Tooltip("Kartın en/boy oranı (ui_card_frame 32x40 = 0.8).")]
+    [Range(0.2f, 2f)] public float collectionCardAspect = 0.8f;
+    [Tooltip("Başlıktaki defter simgesinin boyu (piksel).")]
+    [Min(1f)] public float collectionIconSize = 36f;
+    [Tooltip("Ekranın arkasına çekilen karartmanın rengi.")]
+    public Color collectionBackdropColor = new Color(0f, 0f, 0f, 0.75f);
+    [Tooltip("Normal yazı boyutu.")]
+    [Min(1)] public int collectionFontSize = 33;
+    [Tooltip("Başlık yazı boyutu.")]
+    [Min(1)] public int collectionTitleFontSize = 44;
+    [Tooltip("Kart üstündeki küçük yazı boyutu.")]
+    [Min(1)] public int collectionSmallFontSize = 22;
+    [Tooltip("Görülmüş ama keşfedilmemiş kelimenin resim saydamlığı (soluk).")]
+    [Range(0f, 1f)] public float collectionSeenAlpha = 0.4f;
+    [Tooltip("Sayfa resmi yoksa arka plan rengi.")]
+    public Color collectionPageColor = new Color(0.93f, 0.86f, 0.7f, 1f);
+    [Tooltip("Resim yoksa keşfedilmiş kart rengi.")]
+    public Color collectionDiscoveredColor = new Color(0.98f, 0.93f, 0.78f, 1f);
+    [Tooltip("Resim yoksa görülmüş kart rengi.")]
+    public Color collectionSeenColor = new Color(0.82f, 0.76f, 0.62f, 1f);
+    [Tooltip("Resim yoksa kilitli kart rengi.")]
+    public Color collectionLockedColor = new Color(0.55f, 0.5f, 0.42f, 1f);
+    [Tooltip("Seçili kartın çevresindeki vurgu rengi.")]
+    public Color collectionSelectedColor = new Color(0.85f, 0.3f, 0.15f, 1f);
+    [Tooltip("Defter yazılarının rengi.")]
+    public Color collectionTextColor = new Color(0.2f, 0.13f, 0.08f, 1f);
+    /// <summary>Kilitli (koyu) kartın üstündeki "???" ve ipucu yazısının rengi.</summary>
+    public Color collectionLockedTextColor = new Color(0.86f, 0.8f, 0.66f, 1f);
+    [Tooltip("Seçili kart vurgusunun kalınlığı (piksel).")]
+    [Min(0f)] public float collectionSelectedOutline = 4f;
+
     [Header("Rastgelelik")]
     [Tooltip("0 ise her maç farklı bir seed alır. Sıfırdan farklıysa maç tekrar oynatılabilir.")]
     public int randomSeed = 0;

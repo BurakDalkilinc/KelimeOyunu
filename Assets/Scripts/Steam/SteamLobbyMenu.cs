@@ -42,6 +42,8 @@ public class SteamLobbyMenu : MonoBehaviour
 
     void OnGUI()
     {
+        if (CollectionBookScreen.IsOpen) return; // Defter açıkken ekranı o kaplar
+
         var manager = NetworkManager.Singleton;
         if (manager == null) return;
 

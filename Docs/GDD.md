@@ -122,6 +122,45 @@ Harita 34 × 19 karelik bir ızgaradır (kare = 1 birim, 16×16 piksel). Her ma�
 - **Esc:** tek kişilik maçtan ana menüye döner.
 - **F1 deneme paneli:** yalnızca Unity Editor'da ve geliştirme (development) build'inde vardır; oyuncuya giden sürümde yoktur. Kelimeyi sırayı beklemeden "ben yazmış gibi" ya da "bot yazmış gibi" oynatır (kilitlemez); ölümsüzlük, zaman hızı, botları dondurma/yanına toplama, herkesi diriltme, yaratıkları ve kanı temizleme içerir.
 
+## Koleksiyon defteri
+Oyuncunun maçlarda karşılaştığı kelimeleri topladığı kişisel defter. Yalnızca ilerleme ve merak hedefidir: **oyun dengesini etkilemez**, kelimelere güç vermez, zar kurallarını değiştirmez.
+
+**Durumlar** (her kelime için bir tane, üstteki alttakini ezer):
+1. **Keşfedildi:** kelimeyi sen yazdın ve sunucu kabul etti.
+2. **Görüldü:** kelimeyi maçta başkası (oyuncu ya da bot) yazdı ve kabul edildi.
+3. **Bulunmamış:** hiç karşılaşmadın.
+
+- Görülmüş bir kelimeyi sonradan yazarsan keşfedildi olur; keşfedildi hiçbir zaman görüldüye düşmez.
+- Eş anlamlılar ana kelimeye sayılır: eş anlamlıyı yazmak ana kelimenin kaydını açar ve sayacını artırır; eş anlamlı defterde ayrı satır olmaz.
+- Reddedilen kelimeler (bilinmeyen, maçta kullanılmış) deftere işlenmez.
+
+**Sayaçlar** (her kelime için):
+- **Yazdın:** kabul edilen yazma sayısı.
+- **Gördün:** başkasının yazdığı, kabul edilen sayısı. Kendi yazdığın gördüne eklenmez.
+
+**Defterde görünüm:**
+| Durum | Resim | Ad | Açıklama | Etiketler | Sayaçlar |
+| --- | --- | --- | --- | --- | --- |
+| Bulunmamış | yok, "???" | "???" | ipucu: kategori + ilk harf + harf sayısı (ör. "Yaratık · Z · 5 harf") | yok | yok |
+| Görüldü | soluk | soluk | kilitli | yok | Gördün |
+| Keşfedildi | tam | tam | açık | Türkçe etiket adları (ör. "Hızlı", "Uçan") | Yazdın + Gördün |
+
+- Harf sayısına boşluk dahil değildir.
+
+**Sekmeler:** Tümü / Yaratıklar (`category: "attack"`, `scope` global değil) / Savunma (`category: "defense"`) / Büyük tehditler (`scope: "global"`).
+- Her sekmenin üstünde "X / N keşfedildi" yazar (X = o sekmede keşfedilen, N = o sekmedeki toplam ana kelime). Görüldüler X'e sayılmaz.
+- N `words.json`'dan hesaplanır; yeni kelime eklenince otomatik büyür.
+
+**Maç sonu:** yeni kayıt varsa sonuç ekranında "Deftere X yeni kelime eklendi!" çıkar (X = bu maçta bulunmamıştan görüldüye ya da keşfedildiye geçen kelime sayısı). Hiç yoksa satır gösterilmez.
+
+**Kayıt:** kişisel ve yerel; oyuncunun bilgisayarında bir dosyada tutulur (ileride Steam Cloud ile eşitlenir). Sunucuya ya da diğer oyunculara gönderilmez. Kayıt dosyası maç sonunda ve oyundan çıkarken yazılır.
+
+**İleride (şimdi yapılmayacak):**
+- [ ] Bir sekmeyi %100 keşfedene küçük kozmetik ödül (ör. karakter şapkası, isim rengi). Oyun dengesini etkilemez.
+- [ ] Steam başarımları: "10 / 50 / 100 kelime keşfet", "Tüm büyük tehditleri keşfet".
+- [ ] Steam Cloud ile defter eşitleme.
+- [ ] Defterde "en çok yazdığın 5 kelime" istatistiği.
+
 ## Ağ mimarisi (Aşama 3 kararı)
 - **Kütüphane:** Netcode for GameObjects (Unity'nin resmi çözümü). Bağlantı katmanı (transport) önce Unity Transport ile yerel ağda denenir; Steam lobisi/daveti en sona kalır (Steamworks entegrasyonu, test için App ID 480).
 - **Model:** Host yetkilidir (sunucu + oyuncu aynı kopyada). Zar, tur sırası, kelime doğrulaması, yaratık/tehdit sonuçları ve eleme sadece host'ta hesaplanır; istemci yalnızca girdi (hareket, yazılan kelime, hedef tıklaması) gönderir ve olayları alıp gösterir.

@@ -2462,6 +2462,146 @@ def make_t_awning(theme):
     return c
 
 
+# ================= Arayüz: Koleksiyon defteri =================
+# Düz arayüz resimleri (16x16 değil). 9-slice sınırları (sol, alt, sağ, üst; piksel):
+#   ui_book_page 64x64 -> 8; ui_card_frame* 32x40 -> 6. Unity'de sprite border olarak ayarlanır.
+# Kâğıt/krem tonları paletteki S ve W'nin karışımından türetilir (yeni renk uydurulmaz).
+
+# Renk karışımı için yukarıdaki ortak _mix kullanılır.
+PAPER = _mix(_mix(S, W, 0.55), Y, 0.22)       # eski, sararmış kâğıt zemini
+PAPER_LT = _mix(PAPER, W, 0.35)                # açık lif
+PAPER_DK = _mix(PAPER, s, 0.25)                # hafif gölge lif
+CREAM = _mix(_mix(S, W, 0.75), Y, 0.12)        # kart içi açık krem
+
+
+def make_ui_book_page():
+    """64x64 eski defter sayfası: kenara doğru koyulaşan bant (8 px), ortası sakin lifli doku, köşelerde lekeler."""
+    size, edge = 64, 8
+    rnd = _random.Random(404)
+    c = Canvas(size, size)
+    # Kenardan uzaklığa göre ton: 0 = koyu çerçeve çizgisi, 1..7 = koyudan kâğıda geçiş
+    ramp = [n, N, s, _mix(s, S, 0.5), S, _mix(S, PAPER, 0.4), _mix(S, PAPER, 0.75), PAPER]
+    for yy in range(size):
+        for xx in range(size):
+            d = min(xx, yy, size - 1 - xx, size - 1 - yy)
+            c.px[yy][xx] = ramp[d] if d < edge else PAPER
+    # Yıpranmış kenar: bandın içinde rastgele birkaç piksel bir ton koyu
+    for _ in range(90):
+        xx, yy = rnd.randrange(size), rnd.randrange(size)
+        d = min(xx, yy, size - 1 - xx, size - 1 - yy)
+        if 2 <= d < edge - 1:
+            c.px[yy][xx] = ramp[d - 1]
+    # Orta doku: seyrek, düşük kontrastlı lifler (gerilince/döşenince göze batmaz)
+    for _ in range(70):
+        xx, yy = rnd.randrange(edge, size - edge), rnd.randrange(edge, size - edge)
+        c.px[yy][xx] = PAPER_LT if rnd.random() < 0.6 else PAPER_DK
+    # Lekeler: köşe karelerinde (9-slice'ta gerilmez)
+    for cx, cy, r_ in ((5, 5, 2.6), (58, 57, 3.2), (57, 6, 1.8)):
+        for yy in range(size):
+            for xx in range(size):
+                dd = ((xx - cx) ** 2 + (yy - cy) ** 2) ** 0.5
+                if dd <= r_ - 0.8:
+                    c.px[yy][xx] = _mix(c.px[yy][xx], s, 0.45)
+                elif dd <= r_:
+                    c.px[yy][xx] = _mix(c.px[yy][xx], N, 0.35)   # lekenin koyu halkası
+    # Köşeleri 1 piksel yuvarla
+    for xx, yy in ((0, 0), (size - 1, 0), (0, size - 1), (size - 1, size - 1)):
+        c.px[yy][xx] = None
+    return c
+
+
+def _card_frame(outer, rim, rim_hi, rim_lo, inner_line, fill, corner_gem):
+    """32x40 kart çerçevesi, 6 px kenar: koyu dış çizgi, kabartmalı (üst-sol açık, alt-sağ koyu) kenar, iç çizgi, dolgu."""
+    w_, h_ = 32, 40
+    c = Canvas(w_, h_)
+    c.rect(0, 0, w_ - 1, h_ - 1, outer)                 # d = 0
+    c.rect(1, 1, w_ - 2, h_ - 2, rim)                   # d = 1..4 kenar gövdesi
+    c.rect(1, 1, w_ - 2, 1, rim_hi)                     # üst ışık
+    c.rect(1, 1, 1, h_ - 2, rim_hi)                     # sol ışık
+    c.rect(1, h_ - 2, w_ - 2, h_ - 2, rim_lo)           # alt gölge
+    c.rect(w_ - 2, 1, w_ - 2, h_ - 2, rim_lo)           # sağ gölge
+    c.rect(4, 4, w_ - 5, h_ - 5, rim_lo)                # iç oluk (d = 4)
+    c.rect(5, 5, w_ - 6, h_ - 6, inner_line)            # iç çizgi (d = 5)
+    c.rect(6, 6, w_ - 7, h_ - 7, fill)                  # içerik alanı
+    # Köşe perçinleri (köşe karelerinin içinde: 2..3)
+    for x0, y0 in ((2, 2), (w_ - 4, 2), (2, h_ - 4), (w_ - 4, h_ - 4)):
+        c.rect(x0, y0, x0 + 1, y0 + 1, corner_gem)
+        c.set(x0, y0, rim_hi)
+    # Köşeleri 1 piksel yuvarla
+    for xx, yy in ((0, 0), (w_ - 1, 0), (0, h_ - 1), (w_ - 1, h_ - 1)):
+        c.px[yy][xx] = None
+    return c
+
+
+def make_ui_card_frame():
+    """Keşfedilmiş kelime kartı: altın kenar, kahve çizgiler, açık krem iç."""
+    return _card_frame(outer=n, rim=y, rim_hi=Y, rim_lo=N, inner_line=n, fill=CREAM, corner_gem=O)
+
+
+def make_ui_card_frame_seen():
+    """Görüldü ama keşfedilmedi: soluk gri-mavi kenar, soğuk açık iç."""
+    return _card_frame(outer=G, rim=g, rim_hi=w, rim_lo=G, inner_line=G, fill=_mix(w, W, 0.45), corner_gem=_mix(g, B, 0.35))
+
+
+def _draw_question(c, ox, oy, col, shadow):
+    """6x9 kabartma soru işareti; gölge 1 piksel sağ-alta düşer."""
+    glyph = [".####.",
+             "##..##",
+             "....##",
+             "...##.",
+             "..##..",
+             "..##..",
+             "......",
+             "..##..",
+             "..##.."]
+    for pass_col, d in ((shadow, 1), (col, 0)):
+        for yy, row in enumerate(glyph):
+            for xx, ch in enumerate(row):
+                if ch == "#":
+                    c.set(ox + xx + d, oy + yy + d, pass_col)
+
+
+def make_ui_card_frame_locked(with_mark=True):
+    """Kilitli kart: koyu mürekkep tonları, ortada kabartma '?'."""
+    c = _card_frame(outer=K, rim=G, rim_hi=g, rim_lo=INK, inner_line=K, fill=INK, corner_gem=K)
+    if with_mark:
+        _draw_question(c, 13, 15, g, K)
+    return c
+
+
+def make_ui_icon_book():
+    """12x12 defter düğmesi: kahve kapak, solda koyu sırt, sağda krem sayfa kenarı, altın amblem."""
+    c = Canvas(12, 12)
+    c.rect(2, 1, 9, 10, N)            # kapak
+    c.rect(2, 1, 3, 10, n)            # sırt
+    c.rect(10, 2, 10, 10, CREAM)      # sayfa kenarı
+    c.rect(4, 10, 10, 10, CREAM)      # alt sayfa kenarı
+    c.rect(5, 3, 8, 3, Y)             # başlık bandı
+    c.rect(6, 5, 7, 7, Y)             # amblem
+    c.set(7, 7, y)
+    c.rect(4, 1, 9, 1, _mix(N, S, 0.3))   # üst ışık
+    c.outline(K)
+    return c
+
+
+def make_ui_icon_lock():
+    """12x12 kilit: gri halka, altın gövde, koyu anahtar deliği."""
+    c = Canvas(12, 12)
+    c.rect(3, 1, 8, 2, g)             # halka üstü
+    c.rect(3, 1, 4, 5, g)             # halka sol bacak
+    c.rect(7, 1, 8, 5, g)             # halka sağ bacak
+    c.rect(4, 1, 7, 1, w)             # halka ışığı
+    c.rect(2, 5, 9, 10, y)            # gövde
+    c.rect(2, 5, 9, 5, Y)             # gövde üst ışık
+    c.rect(2, 10, 9, 10, N)           # gövde alt gölge
+    c.rect(5, 7, 6, 8, K)             # anahtar deliği
+    c.set(5, 9, K)
+    c.set(6, 9, K)
+    c.erase_rect(0, 0, 11, 0)
+    c.outline(K)
+    return c
+
+
 # ================= Sprite stacking (katmanlı 3D piksel) =================
 # Her nesne yukarıdan görünen yatay dilimlerdir (0 = en alt). Hepsi aynı tuval boyunda, ortak merkezli.
 # Araçlar 0 derecede +x yönüne (sağa) bakar; oyunda gittiği yöne döndürülür.
@@ -2827,6 +2967,12 @@ def main():
         "t_roof_adobe_a": lambda: make_t_roof_adobe("a"), "t_roof_adobe_b": lambda: make_t_roof_adobe("b"),
         "t_roof_adobe_ridge": make_t_roof_adobe_ridge, "t_roof_adobe_eave": make_t_roof_adobe_eave,
         "karton_kutu": make_karton_kutu, "cop_kutusu": make_cop_kutusu,
+
+        # Arayüz: koleksiyon defteri
+        "ui_book_page": make_ui_book_page, "ui_card_frame": make_ui_card_frame,
+        "ui_card_frame_seen": make_ui_card_frame_seen, "ui_card_frame_locked": make_ui_card_frame_locked,
+        "ui_card_frame_locked_plain": lambda: make_ui_card_frame_locked(False),
+        "ui_icon_book": make_ui_icon_book, "ui_icon_lock": make_ui_icon_lock,
     }
     # Ev girişleri: iki karelik kapı/paspas tek parça çizilir, sol/sağ olarak kaydedilir.
     for theme in ("koy", "kar", "col"):
