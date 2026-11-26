@@ -148,6 +148,17 @@ public class ThreatAtmosphere : MonoBehaviour
                 BloodDrop.Spawn(at, new Vector2(Random.Range(-0.3f, 0.3f), Random.Range(0.4f, 1f)), 0.05f, Random.Range(6f, 10f), Random.Range(0.1f, 0.2f),
                                 Color.Lerp(preset.ParticleColor, new Color(1f, 0.9f, 0.3f), Random.value), false);
                 break;
+            case ThreatFxPreset.ParticleKind.Rain:
+                // Yukarıdan hızla düşen ince damlalar (iz bırakmaz).
+                BloodDrop rain = BloodDrop.Spawn(at, new Vector2(-1.2f, 0f), Random.Range(7f, 11f), -8f, 0.15f, preset.ParticleColor, false);
+                rain.transform.localScale = new Vector3(0.14f, Random.Range(0.7f, 1f), 1f); // İnce uzun çizgi
+                break;
+            case ThreatFxPreset.ParticleKind.Dust:
+                // Yerden savrulan toz: yatay sürüklenir, alçakta kalır.
+                BloodDrop dust = BloodDrop.Spawn(at, new Vector2(Random.Range(2.5f, 4.5f), Random.Range(-0.3f, 0.3f)), Random.Range(0.5f, 2f), Random.Range(1f, 2.5f),
+                                                 0.25f, preset.ParticleColor, false);
+                dust.transform.localScale = new Vector3(Random.Range(0.35f, 0.6f), Random.Range(0.15f, 0.25f), 1f); // Yatay savrulan toz
+                break;
             case ThreatFxPreset.ParticleKind.Fog:
                 FogPuff.Spawn(at, preset.ParticleColor, Random.Range(2f, 4f), Random.Range(3f, 5f));
                 break;
