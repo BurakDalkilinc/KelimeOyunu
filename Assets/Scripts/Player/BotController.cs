@@ -71,6 +71,8 @@ public class BotController : MonoBehaviour, IKnockable, IFacing
         State.Health.Died += OnDied;
         GoreEmitter.Attach(gameObject, () => State.Health.Current, () => State.Falling) // Kan ve parçalanma
                    .Charred = () => State.Status.IsBurning || State.Status.CharLevel >= 0.5f;
+        HitFeedback.Attach(gameObject, () => State.Health.Current, () => State.Falling, () => false, // Vuruş hissi
+                           () => State.Status.ShieldBlocks);
 
         // Başın üstünde adı: görünmezken, çatı altındayken ve elenince gizlenir (bkz. NameTagRules).
         NameTagView.Attach(gameObject, config, () => new NameTagInfo

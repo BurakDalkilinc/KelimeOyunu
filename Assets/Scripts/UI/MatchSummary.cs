@@ -37,6 +37,26 @@ public static class MatchSummary
         return builder.ToString();
     }
 
+    /// <summary>
+    /// Maç sonu ekranında sırayla belirecek satırlar: (varsa) defter bildirimi, oynanan tur, oyuncu sayısı ve yazılan kelimeler
+    /// (kelime listesi tek satır sayılır, kendi içinde alt satırlara bölünür).
+    /// </summary>
+    public static List<string> GetStatRows(string notice, int turnsPlayed, int playerCount, IReadOnlyList<WordEntry> usedWords)
+    {
+        var rows = new List<string>();
+        if (!string.IsNullOrEmpty(notice)) rows.Add(notice);
+        rows.Add(Loc.F("match.stat_turns", turnsPlayed));
+        rows.Add(Loc.F("match.stat_players", playerCount));
+        rows.Add(GetWordsText(usedWords));
+        return rows;
+    }
+
+    /// <summary>Başlık, bu bilgisayardaki oyuncu kazandıysa "KAZANDIN!", değilse <see cref="GetTitle"/>.</summary>
+    public static string GetTitleFor(PlayerState winner, bool localWon)
+    {
+        return localWon ? Loc.T("match.you_won") : GetTitle(winner);
+    }
+
     /// <summary>Yeniden başlama ipucu.</summary>
     public static string GetHint() => Loc.T("match.restart_hint");
 }

@@ -276,6 +276,174 @@ public class GameConfig : ScriptableObject
     [Tooltip("Ağda istemci, vuruş anında yaratığa bu kadar yakın (yaratık + oyuncu yarıçapına ek, birim) en yakın karakteri hedef sayar.")]
     [Min(0f)] public float attackMarkTargetSearchMargin = 0.6f;
 
+    [Header("Vuruş hissi (yalnızca görüntü ve ses; kural ve hasar zamanı değişmez, Time.timeScale'e dokunulmaz)")]
+    [Tooltip("Vuruş donması: vuran yaratığın ve vurulan karakterin görüntüsü bu kadar durur (sn).")]
+    [Min(0f)] public float hitStopSeconds = 0.07f;
+    [Tooltip("Dev (boss) vuruşunda donma (sn).")]
+    [Min(0f)] public float hitStopGiantSeconds = 0.12f;
+    [Tooltip("Eleme vuruşunda donma (vuran yaratık; sn).")]
+    [Min(0f)] public float hitStopDeathSeconds = 0.18f;
+    [Tooltip("Boss'a vurulunca boss'un donması (sn).")]
+    [Min(0f)] public float hitStopBossHurtSeconds = 0.06f;
+    [Tooltip("İtişte (Boşluk) iten ve itilenlerin donması (sn).")]
+    [Min(0f)] public float hitStopShoveSeconds = 0.05f;
+    [Tooltip("Donma sırasında vurulanın vuruş yönünde titremesi (birim).")]
+    [Min(0f)] public float hitStopJitter = 0.035f;
+    [Tooltip("Yerel oyuncu vurulunca kamera takibinin donması (sn).")]
+    [Min(0f)] public float hitLocalFollowFreezeSeconds = 0.06f;
+    [Tooltip("Vurulan karakter, bu kadar yakınındaki (birim) yaklaşan yaratık darbesini kendi vuruşu sayar ve tepkisini darbe anına denk getirir.")]
+    [Min(0f)] public float hitImpactMatchRadius = 1.3f;
+    [Tooltip("Dev vuruşunda eşleşme yarıçapının katı.")]
+    [Min(1f)] public float hitImpactGiantRadiusMultiplier = 2.5f;
+    [Tooltip("Can düşmeden en fazla bu kadar önce görünmüş darbe de eşleşir (ağda gecikme için; sn).")]
+    [Min(0f)] public float hitImpactLookBackSeconds = 0.15f;
+    [Tooltip("Tepki darbe anını en fazla bu kadar bekler (sn).")]
+    [Min(0f)] public float hitImpactMaxWaitSeconds = 0.35f;
+
+    [Tooltip("Beyaz parlama süresi (1-2 kare; sn).")]
+    [Min(0f)] public float hitFlashWhiteSeconds = 0.035f;
+    [Tooltip("Beyazdan sonra sönen renk tonunun süresi (sn).")]
+    [Min(0f)] public float hitFlashTintSeconds = 0.22f;
+    [Tooltip("Hasar alınca beyazdan sonraki renk tonu.")]
+    public Color hitFlashTintColor = new Color(1f, 0.2f, 0.16f, 1f);
+    [Tooltip("Renk tonunun en güçlü hâli (0-1).")]
+    [Range(0f, 1f)] public float hitFlashTintStrength = 0.75f;
+    [Tooltip("Kalkan vuruşu engelleyince beyazdan sonraki renk tonu.")]
+    public Color hitFlashBlockColor = new Color(0.55f, 0.95f, 1f, 1f);
+
+    [Tooltip("Vurulanın vuruş yönünde basılma oranı (0,2 = %80'e iner).")]
+    [Range(0f, 0.6f)] public float hitSquash = 0.2f;
+    [Tooltip("Vurulanın yanlara şişme oranı (0,25 = %125'e çıkar).")]
+    [Range(0f, 0.6f)] public float hitBulge = 0.25f;
+    [Tooltip("Ezilmenin geri yaylanma sıklığı (saniyede tur).")]
+    [Min(0.1f)] public float hitSquashFrequency = 4.5f;
+    [Tooltip("Ezilme yayının sönümü (1'den küçük = aşıp geri seker).")]
+    [Range(0f, 1.5f)] public float hitSquashDamping = 0.35f;
+    [Tooltip("Atılan (pounce) yaratığın gidiş yönünde uzama oranı.")]
+    [Range(0f, 0.6f)] public float creatureLungeStretch = 0.22f;
+
+    [Tooltip("Ekran sarsıntısının en büyük kayması (birim).")]
+    [Min(0f)] public float cameraShakeMaxOffset = 0.6f;
+    [Tooltip("Sarsıntı gürültüsünün hızı (saniyede).")]
+    [Min(0.1f)] public float cameraShakeFrequency = 28f;
+    [Tooltip("Sarsıntı şiddeti = travma ^ bu üs (2 = karesi).")]
+    [Min(1f)] public float cameraShakeExponent = 2f;
+    [Tooltip("Kaynak kameraya bu kadar yakınsa (birim) sarsıntı tam.")]
+    [Min(0f)] public float cameraShakeFullDistance = 4f;
+    [Tooltip("Kaynak bu kadar uzaksa (birim) sarsıntı yok.")]
+    [Min(0f)] public float cameraShakeZeroDistance = 16f;
+    [Tooltip("Kameranın yön itmesi (kick) yayının sıklığı (saniyede tur).")]
+    [Min(0.1f)] public float cameraKickFrequency = 4.5f;
+    [Tooltip("Kamera itme yayının sönümü.")]
+    [Range(0f, 1.5f)] public float cameraKickDamping = 0.5f;
+    [Tooltip("Kamera itmesinin en büyük kayması (birim).")]
+    [Min(0f)] public float cameraKickMax = 0.45f;
+    [Tooltip("Yerel oyuncu vurulunca kameranın vuruş yönünde itilmesi (birim).")]
+    [Min(0f)] public float cameraKickLocalHit = 0.16f;
+    [Tooltip("Dev vuruşunda kamera itmesi (birim).")]
+    [Min(0f)] public float cameraKickGiantHit = 0.28f;
+    [Tooltip("Eleme anında kamera itmesi (birim).")]
+    [Min(0f)] public float cameraKickDeath = 0.32f;
+    [Tooltip("Eleme anında eklenen sarsıntı travması (0-1).")]
+    [Range(0f, 1f)] public float cameraTraumaDeath = 0.45f;
+    [Tooltip("Boss ölünce eklenen sarsıntı travması (0-1).")]
+    [Range(0f, 1f)] public float cameraTraumaBossDeath = 0.7f;
+    [Tooltip("Boss'a vurulunca eklenen sarsıntı travması (0-1).")]
+    [Range(0f, 1f)] public float cameraTraumaBossHurt = 0.25f;
+    [Tooltip("Patlamada kamera itmesi (birim).")]
+    [Min(0f)] public float cameraKickExplosion = 0.3f;
+    [Tooltip("Patlamada eklenen sarsıntı travması (0-1).")]
+    [Range(0f, 1f)] public float cameraTraumaExplosion = 0.5f;
+    [Tooltip("İtişte kameranın itiş yönünde itilmesi (birim; birini ittiysen 2 katı).")]
+    [Min(0f)] public float cameraKickShove = 0.06f;
+    [Tooltip("Sarsıntılarda travma sönme süresi (sn).")]
+    [Min(0.05f)] public float cameraTraumaSeconds = 0.45f;
+
+    [Tooltip("Hasar sayısının ömrü (sn).")]
+    [Min(0.1f)] public float damageNumberSeconds = 0.75f;
+    [Tooltip("Hasar sayısının yukarı fırlama hızı (birim/sn).")]
+    [Min(0f)] public float damageNumberRiseSpeed = 3.4f;
+    [Tooltip("Hasar sayısının yana savrulma hızı (en çok; birim/sn).")]
+    [Min(0f)] public float damageNumberSideSpeed = 0.8f;
+    [Tooltip("Hasar sayısını aşağı çeken yerçekimi (birim/sn²).")]
+    [Min(0f)] public float damageNumberGravity = 9f;
+    [Tooltip("Hasar sayısı karakterin merkezinden bu kadar yukarıda çıkar (birim).")]
+    [Min(0f)] public float damageNumberHeight = 0.55f;
+    [Tooltip("Hasar sayısının yazı boyutu (11'in katı net piksel verir).")]
+    [Min(1)] public int damageNumberFontSize = 11;
+    [Tooltip("Hasar sayısında bir yazı tipi pikselinin dünyadaki boyu (birim).")]
+    [Min(0.005f)] public float damageNumberPixelSize = 0.0625f;
+    [Tooltip("Hasar sayısı ilk çıktığında bu kadar büyük görünür, hızla normale iner.")]
+    [Min(1f)] public float damageNumberPopScale = 1.7f;
+    [Tooltip("Büyükten normale inme süresi (sn).")]
+    [Min(0f)] public float damageNumberPopSeconds = 0.1f;
+    [Tooltip("Ömrün son bu kadarında söner (0-1).")]
+    [Range(0f, 1f)] public float damageNumberFadeFraction = 0.35f;
+    [Tooltip("Hasar sayısının rengi.")]
+    public Color damageNumberColor = new Color(1f, 0.32f, 0.26f, 1f);
+    [Tooltip("Kendi hasarının rengi (daha parlak).")]
+    public Color damageNumberLocalColor = new Color(1f, 0.85f, 0.3f, 1f);
+    [Tooltip("Kalkan engelleyince \"BLOK\" yazısının rengi.")]
+    public Color damageNumberBlockColor = new Color(0.55f, 0.95f, 1f, 1f);
+
+    [Tooltip("Yerel oyuncu vurulunca ekran kenarının kırmızı parlaması (sn).")]
+    [Min(0f)] public float hurtFlashSeconds = 0.35f;
+    [Tooltip("Kırmızı parlamanın en koyu hâli (0-1).")]
+    [Range(0f, 1f)] public float hurtFlashMaxAlpha = 0.6f;
+    [Tooltip("Kırmızı parlamanın kalınlığı, ekranın kısa kenarına göre.")]
+    [Range(0.01f, 0.6f)] public float hurtFlashThickness = 0.3f;
+    [Tooltip("Can yazısının sallanma süresi (sn).")]
+    [Min(0f)] public float healthShakeSeconds = 0.4f;
+    [Tooltip("Can yazısının sallanma genliği (piksel).")]
+    [Min(0f)] public float healthShakePixels = 9f;
+    [Tooltip("Can yazısının hasar anındaki rengi.")]
+    public Color healthHurtColor = new Color(1f, 0.25f, 0.2f, 1f);
+    [Tooltip("Can bu kadara (ya da altına) inince düşük can nabzı başlar.")]
+    [Min(1)] public int lowHealthThreshold = 1;
+    [Tooltip("Düşük can kalp atışı (dakikada).")]
+    [Min(1f)] public float lowHealthHeartbeatBpm = 72f;
+    [Tooltip("Düşük can nabzının en koyu hâli (0-1).")]
+    [Range(0f, 1f)] public float lowHealthPulseAlpha = 0.32f;
+    [Tooltip("Kalp atışı için kullanılan mevcut ses (ayrı kalp sesi yok; boş = sessiz).")]
+    public string lowHealthHeartbeatSound = "sfx_dice_land";
+    [Tooltip("Kalp atışı sesinin perdesi (düşük = boğuk güm).")]
+    [Range(0.1f, 3f)] public float lowHealthHeartbeatPitch = 0.42f;
+    [Tooltip("Kalp atışı sesinin düzeyi.")]
+    [Range(0f, 1f)] public float lowHealthHeartbeatVolume = 0.3f;
+
+    [Tooltip("Elenen karakterin kan/parça patlamasının katı (1 = eski).")]
+    [Min(1f)] public float deathGorePower = 1.5f;
+    [Tooltip("Tek kişilik maçta son elemede ağır çekimin zaman çarpanı (yalnızca tek kişilik; ağda yok).")]
+    [Range(0.05f, 1f)] public float finalSlowMotionScale = 0.3f;
+    [Tooltip("Ağır çekimin süresi (gerçek zaman, sn).")]
+    [Min(0f)] public float finalSlowMotionSeconds = 0.8f;
+    [Tooltip("Ağır çekimin son bu kadarında zaman yumuşakça normale döner (0-1).")]
+    [Range(0f, 1f)] public float finalSlowMotionEaseFraction = 0.35f;
+
+    [Tooltip("Vuruş seslerinin perde oynaması (±; 0,08 = %8).")]
+    [Range(0f, 0.5f)] public float hitSoundPitchVariation = 0.08f;
+    [Tooltip("Aynı vuruş sesi en sık bu aralıkla çalar (sn); art arda vuruşlar duyulsun ama üst üste binmesin.")]
+    [Min(0f)] public float hitSoundCooldown = 0.05f;
+    [Tooltip("Vuruşun altına eklenen kısa, düşük \"güm\" sesi (mevcut seslerden).")]
+    public string hitThumpSound = "sfx_dice_land";
+    [Tooltip("Güm sesinin perdesi.")]
+    [Range(0.1f, 3f)] public float hitThumpPitch = 0.55f;
+    [Tooltip("Güm sesinin düzeyi (ana vuruşa göre).")]
+    [Range(0f, 1f)] public float hitThumpVolume = 0.65f;
+    [Tooltip("Ağır vuruşta (dev, eleme) eklenen üçüncü katman.")]
+    public string hitHeavySound = "sfx_explosion";
+    [Tooltip("Ağır katmanın perdesi (yüksek = kısa, sert).")]
+    [Range(0.1f, 3f)] public float hitHeavyPitch = 1.5f;
+    [Tooltip("Ağır katmanın düzeyi.")]
+    [Range(0f, 1f)] public float hitHeavyVolume = 0.35f;
+    [Tooltip("İtişte itilen olursa çalan güm sesinin düzeyi.")]
+    [Range(0f, 1f)] public float shoveThumpVolume = 0.5f;
+    [Tooltip("İtişte itilenin ayağından kalkan tozun boyu.")]
+    [Min(0f)] public float shoveDustSize = 0.5f;
+
+    [Tooltip("Ayarlarda ekran sarsıntısı kapalıyken ekran parlamaları bu kadar yumuşar (0-1).")]
+    [Range(0f, 1f)] public float reducedScreenFlashFactor = 0.4f;
+
     [Tooltip("Ateşten hasar alan karakterin yanma (alev görüntüsü) süresi (sn).")]
     [Min(0f)] public float burnSeconds = 2.5f;
 
@@ -596,4 +764,158 @@ public class GameConfig : ScriptableObject
         int capacity = Mathf.FloorToInt(alivePlayers * shelterCapacityRatio);
         return Mathf.Max(shelterMinCapacity, capacity);
     }
+
+    // ---- Arayüz cilası (menü, geçiş, zar, yazı kutusu, maç sonu). Pikseller 1920×1080 ekrana göredir. ----
+
+    [Header("Arayüz cilası")]
+    [Tooltip("Sahne geçişindeki piksel kararma/açılma süresi (sn, her yön için).")]
+    [Min(0f)] public float uiFadeSeconds = 0.35f;
+    [Tooltip("Geçişteki piksel karelerin boyu (1080 yükseklikli ekrana göre).")]
+    [Min(4f)] public float uiFadeCellPixels = 40f;
+    public Color uiFadeColor = Color.black;
+
+    [Tooltip("Menü düğmesinin genişliği ve yüksekliği.")]
+    [Min(100f)] public float uiMenuButtonWidth = 560f;
+    [Min(30f)] public float uiMenuButtonHeight = 78f;
+    [Tooltip("Menü düğmeleri arasındaki boşluk.")]
+    [Min(0f)] public float uiMenuButtonSpacing = 16f;
+    [Min(1)] public int uiMenuFontSize = 38;
+    [Min(1)] public int uiMenuSmallFontSize = 24;
+    public Color uiMenuTextColor = new Color(0.2f, 0.13f, 0.08f, 1f);
+    [Tooltip("Üzerine gelinen düğmenin yazı rengi.")]
+    public Color uiMenuHoverTextColor = new Color(0.75f, 0.22f, 0.1f, 1f);
+    [Tooltip("Düğme resmi yoksa düz renk.")]
+    public Color uiMenuButtonFallbackColor = new Color(0.98f, 0.93f, 0.78f, 1f);
+    [Tooltip("Üzerine gelince düğmenin büyüme ölçeği.")]
+    [Min(1f)] public float uiMenuHoverScale = 1.08f;
+    [Tooltip("Basılıyken düğmenin ölçeği.")]
+    [Range(0.5f, 1f)] public float uiMenuPressScale = 0.93f;
+    [Tooltip("Düğme yayının sertliği (büyük = hızlı).")]
+    [Min(1f)] public float uiSpringStiffness = 420f;
+    [Tooltip("Düğme yayının sönümü (küçük = daha çok sallanır).")]
+    [Min(0f)] public float uiSpringDamping = 20f;
+    [Tooltip("Düğmenin üzerine gelince çalan hafif tık sesinin düzeyi (0 = sessiz).")]
+    [Range(0f, 1f)] public float uiMenuHoverVolume = 0.2f;
+
+    [Tooltip("Logonun ekran yüksekliğine oranı; logo bu boya en yakın TAM SAYI katında büyütülür (piksel net kalsın).")]
+    [Range(0.05f, 0.5f)] public float uiLogoHeightRatio = 0.2f;
+    [Tooltip("Logonun üst kenardan uzaklığı (ekran yüksekliği oranı).")]
+    [Range(0f, 0.5f)] public float uiLogoTopRatio = 0.07f;
+    [Tooltip("Logonun yukarı-aşağı süzülme miktarı (logo pikseli).")]
+    [Min(0)] public int uiLogoBobPixels = 2;
+    [Tooltip("Logonun süzülme hızı (saniyede kaç kez).")]
+    [Min(0f)] public float uiLogoBobSpeed = 0.5f;
+
+    [Tooltip("Menü arka planının iki karo rengi.")]
+    public Color uiBackdropColorA = new Color(0.10f, 0.11f, 0.20f, 1f);
+    public Color uiBackdropColorB = new Color(0.13f, 0.14f, 0.25f, 1f);
+    [Min(8f)] public float uiBackdropTileSize = 72f;
+    [Tooltip("Karo deseninin kayma hızı (piksel/sn).")]
+    public float uiBackdropScrollSpeed = 14f;
+    [Min(0)] public int uiBackdropLetterCount = 26;
+    [Tooltip("Uçuşan harflerin yükselme hızı (piksel/sn).")]
+    public float uiBackdropLetterSpeed = 26f;
+    [Min(1f)] public float uiBackdropLetterMinSize = 40f;
+    [Min(1f)] public float uiBackdropLetterMaxSize = 120f;
+    public Color uiBackdropLetterColor = new Color(1f, 0.85f, 0.35f, 1f);
+    [Range(0f, 1f)] public float uiBackdropLetterAlpha = 0.14f;
+    [Tooltip("Çok oyunculu sayfasında Steam kutusunun genişliği.")]
+    [Min(100f)] public float uiOnlinePanelWidth = 420f;
+
+    [Tooltip("Ortadaki büyük duyuru yazısının (HAZIR!, SIRA SENDE!, oyuncu adı) boyu.")]
+    [Min(1)] public int uiBannerFontSize = 120;
+    [Tooltip("Duyurunun ekran ortasından yukarı kayıklığı.")]
+    public float uiBannerYOffset = 170f;
+    [Min(0f)] public float uiBannerInSeconds = 0.35f;
+    [Min(0f)] public float uiBannerHoldSeconds = 0.9f;
+    [Min(0f)] public float uiBannerOutSeconds = 0.3f;
+    [Tooltip("Duyurunun başlangıç ölçeği (küçükten büyüyerek girer).")]
+    [Min(0f)] public float uiBannerStartScale = 0.2f;
+    [Tooltip("Girişte hedefi aşma miktarı (OutBack).")]
+    [Min(0f)] public float uiBannerOvershoot = 2.4f;
+    [Tooltip("Çıkarken yukarı kayma mesafesi.")]
+    public float uiBannerSlideDistance = 120f;
+    [Tooltip("\"SIRA SENDE!\" sarsıntısının genliği (piksel) ve sıklığı (Hz).")]
+    [Min(0f)] public float uiBannerShakePixels = 10f;
+    [Min(0f)] public float uiBannerShakeFrequency = 18f;
+    public Color uiBannerReadyColor = new Color(0.55f, 1f, 0.6f, 1f);
+    public Color uiBannerYourTurnColor = new Color(1f, 0.88f, 0.2f, 1f);
+    public Color uiBannerWriterColor = Color.white;
+
+    [Tooltip("Akış yazılarının (\"X yazdı: Kurt\", tehdit uyarısı) giriş süresi, başlangıç ölçeği ve taşması.")]
+    [Min(0f)] public float uiTextPunchSeconds = 0.3f;
+    [Min(0f)] public float uiTextPunchStartScale = 0.4f;
+    [Min(0f)] public float uiTextPunchOvershoot = 2f;
+    [Tooltip("Akış yazılarının yukarı kayarak çıkış süresi ve mesafesi.")]
+    [Min(0f)] public float uiTextSlideOutSeconds = 0.3f;
+    public float uiTextSlideOutDistance = 50f;
+
+    [Tooltip("Zar simgesinin boyu ve dönerken attığı tur sayısı (sonda yavaşlar).")]
+    [Min(8f)] public float uiDiceSize = 92f;
+    [Min(0f)] public float uiDiceSpinTurns = 4f;
+    [Tooltip("İsim her değiştiğinde zar yazısının küçük sıçraması (ölçek artışı) ve süresi.")]
+    [Min(0f)] public float uiDiceTickBump = 0.1f;
+    [Min(0f)] public float uiDiceTickSeconds = 0.12f;
+    [Tooltip("Zar durunca büyük sıçrama (ölçek artışı) ve süresi.")]
+    [Min(0f)] public float uiDiceLandBump = 0.5f;
+    [Min(0f)] public float uiDiceLandSeconds = 0.55f;
+    [Tooltip("Zar durduktan sonra simgenin ekranda kalma süresi.")]
+    [Min(0f)] public float uiDiceLingerSeconds = 0.7f;
+    public Color uiDiceColor = new Color(0.98f, 0.96f, 0.9f, 1f);
+    public Color uiDicePipColor = new Color(0.15f, 0.1f, 0.08f, 1f);
+
+    [Tooltip("Yazılan her harfin küçükten büyüye \"pop\" süresi, başlangıç ölçeği ve taşması.")]
+    [Min(0f)] public float uiLetterPopSeconds = 0.14f;
+    [Min(0f)] public float uiLetterPopStartScale = 0.3f;
+    [Min(0f)] public float uiLetterPopOvershoot = 2.6f;
+    [Tooltip("Her tuşta kutunun titremesi (piksel, sn).")]
+    [Min(0f)] public float uiKeyJitterPixels = 3f;
+    [Min(0f)] public float uiKeyJitterSeconds = 0.08f;
+    [Tooltip("Reddedilen kelimede kutunun sağa-sola sallanması (piksel, sn, Hz).")]
+    [Min(0f)] public float uiRejectShakePixels = 24f;
+    [Min(0f)] public float uiRejectShakeSeconds = 0.4f;
+    [Min(0f)] public float uiShakeFrequency = 14f;
+    public Color uiRejectColor = new Color(0.75f, 0.1f, 0.08f, 0.9f);
+    public Color uiAcceptColor = new Color(0.15f, 0.7f, 0.25f, 0.9f);
+    [Tooltip("Kırmızı/yeşil parlamanın sönme süresi (sn).")]
+    [Min(0f)] public float uiFlashSeconds = 0.4f;
+    [Tooltip("Kabul edilen kelimenin kutudan yukarı uçma süresi ve mesafesi.")]
+    [Min(0f)] public float uiWordFlySeconds = 0.8f;
+    public float uiWordFlyDistance = 280f;
+    [Tooltip("Kutunun açılış (punch) ve kapanış süresi.")]
+    [Min(0f)] public float uiTypingOpenSeconds = 0.25f;
+    [Min(0f)] public float uiTypingCloseSeconds = 0.3f;
+    [Tooltip("Sayacın kırmızı nabız ve tik sesine başladığı son saniyeler.")]
+    [Min(0)] public int uiCountdownWarnSeconds = 3;
+    public Color uiCountdownColor = new Color(1f, 0.25f, 0.2f, 1f);
+    [Tooltip("Tik anında sayaç yazısının büyüme oranı.")]
+    [Min(0f)] public float uiCountdownPulseScale = 0.3f;
+    [Tooltip("Tik sesi (yazı tuşu sesi) perdesi ve düzeyi.")]
+    [Range(0.1f, 3f)] public float uiCountdownTickPitch = 0.6f;
+    [Range(0f, 1f)] public float uiCountdownTickVolume = 0.7f;
+
+    [Tooltip("Maç sonu başlığının giriş süresi ve başlangıç ölçeği.")]
+    [Min(0f)] public float uiEndTitleSeconds = 0.5f;
+    [Min(0f)] public float uiEndTitleStartScale = 0.2f;
+    [Tooltip("Maç sonu satırlarının arka arkaya belirme aralığı ve her birinin belirme süresi.")]
+    [Min(0f)] public float uiEndRowDelay = 0.22f;
+    [Min(0f)] public float uiEndRowFadeSeconds = 0.25f;
+    public Color uiWinTitleColor = new Color(1f, 0.85f, 0.2f, 1f);
+    public Color uiLoseTitleColor = new Color(0.9f, 0.45f, 0.4f, 1f);
+    [Tooltip("Maç sonu düğmelerinin boyu ve aralığı.")]
+    [Min(50f)] public float uiEndButtonWidth = 380f;
+    [Min(30f)] public float uiEndButtonHeight = 70f;
+    [Min(0f)] public float uiEndButtonGap = 28f;
+    [Tooltip("Zafer konfetisi: parça sayısı, boyu, hız aralığı, yerçekimi, hava direnci.")]
+    [Min(0)] public int uiConfettiCount = 160;
+    [Min(1f)] public float uiConfettiPieceSize = 10f;
+    [Min(0f)] public float uiConfettiMinSpeed = 200f;
+    [Min(0f)] public float uiConfettiMaxSpeed = 700f;
+    public float uiConfettiGravity = 260f;
+    [Min(0f)] public float uiConfettiDrag = 2.2f;
+    public Color[] uiConfettiColors =
+    {
+        new Color(1f, 0.85f, 0.2f), new Color(0.95f, 0.3f, 0.3f), new Color(0.35f, 0.8f, 1f),
+        new Color(0.5f, 0.95f, 0.45f), new Color(0.9f, 0.5f, 1f),
+    };
 }

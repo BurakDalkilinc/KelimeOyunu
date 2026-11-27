@@ -91,7 +91,9 @@ public class CreatureView : MonoBehaviour
                 bool giant = CreatureSpriteScale.IsGiant(radius);
                 CreatureAttackAnimator.Attach(body, () => Model.AttackCount, giant, TargetPosition,
                                               AttackMarkEffect.EffectFor(Model.Word, giant), // Saldırı animasyonu + etiketten vuruş izi
-                                              () => Model.IsPounceWindup);                    // Atılma hazırlığında kırmızı yanar
+                                              () => Model.IsPounceWindup,                     // Atılma hazırlığında kırmızı yanar
+                                              () => Model.IsLunging);                         // Atılırken uzar
+                CreatureHurtFeedback.Attach(body, () => Model.IsBoss ? Model.BossHealth : -1); // Boss'a vurulunca parlar, "-1"
                 return;
             }
 

@@ -39,6 +39,12 @@ public abstract class TurnViewSource : MonoBehaviour
     /// <summary>Yeni maç için sıfırlar/yeniden başlatır.</summary>
     public abstract void Restart();
 
+    /// <summary>Maç sonu ekranında "Ana menü" düğmesi gösterilsin mi?</summary>
+    public virtual bool CanLeaveToMenu => false;
+
+    /// <summary>Maçtan ana menüye döner (tek kişilikte menü sahnesi, ağda bağlantı kesilip menü).</summary>
+    public virtual void LeaveToMenu() { }
+
     /// <summary>Maç sonu ekranının alt yazısı.</summary>
     public virtual string RestartHint => MatchSummary.GetHint();
 

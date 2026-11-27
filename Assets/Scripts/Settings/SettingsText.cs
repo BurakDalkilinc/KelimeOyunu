@@ -15,6 +15,8 @@ public static class SettingsText
     public static string VSync => Loc.T("settings.vsync");
     public static string NameTags => Loc.T("settings.name_tags");
     public static string LanguageLabel => Loc.T("settings.language");
+    public static string ScreenShake => Loc.T("settings.screen_shake");
+    public static string ScreenShakeStrength => Loc.T("settings.screen_shake_strength");
 
     public static string On => Loc.T("settings.on");
     public static string Off => Loc.T("settings.off");

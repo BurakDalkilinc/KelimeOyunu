@@ -30,6 +30,12 @@ public class GameSettings
     public bool vSync = true;
     public bool showNameTags = true;
 
+    /// <summary>Ekran sarsıntısı (kamera titremesi ve itmesi) açık mı? Kapalıyken ekran parlamaları da yumuşar (erişilebilirlik).</summary>
+    public bool screenShake = true;
+
+    /// <summary>Ekran sarsıntısının şiddeti (0..1).</summary>
+    [Range(0f, 1f)] public float screenShakeStrength = 1f;
+
     /// <summary>Dil kodu: "tr" ya da "en" (bkz. <see cref="Language"/>). İlk açılışta sistem dilinden seçilir.</summary>
     public string language = DefaultLanguage;
 
@@ -41,6 +47,7 @@ public class GameSettings
         sfxVolume = ClampVolume(sfxVolume);
         if (resolutionWidth <= 0 || resolutionHeight <= 0) { resolutionWidth = 0; resolutionHeight = 0; }
         language = Language.Normalize(language) ?? DefaultLanguage;
+        screenShakeStrength = ClampVolume(screenShakeStrength);
         version = CurrentVersion;
     }
 

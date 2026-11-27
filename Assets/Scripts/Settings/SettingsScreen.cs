@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// Ayarlar ekranı (IMGUI): ses kaydırıcıları, tam ekran, çözünürlük, VSync, isim etiketleri, dil. Menüdeki "Ayarlar"
+/// Ayarlar ekranı (IMGUI): ses kaydırıcıları, tam ekran, çözünürlük, VSync, isim etiketleri, ekran sarsıntısı, dil. Menüdeki "Ayarlar"
 /// düğmesiyle ya da maçta Esc ile açılır. Görünüşü koleksiyon defteriyle aynıdır (<see cref="UiDraw"/>).
 /// Ses, isim etiketi ve dil değişiklikleri hemen uygulanır; ekran ayarları "Uygula" ile. Kapanırken ayarlar kaydedilir.
 /// Açıkken oyunun kendisi durmaz (çok oyunculu), yalnızca yazma/hareket girdisi oyuna gitmez (bkz. <see cref="UiInputBlock"/>).
@@ -109,7 +109,7 @@ public class SettingsScreen : MonoBehaviour
 
         UiDraw.Fill(new Rect(0, 0, width, height), config.collectionBackdropColor);
 
-        const int rowCount = 8;
+        const int rowCount = 10;
         float p = config.collectionPadding;
         float gap = config.collectionCardSpacing;
         float row = config.settingsRowHeight;
@@ -130,6 +130,8 @@ public class SettingsScreen : MonoBehaviour
         ResolutionRow(new Rect(inner.x, y, inner.width, row)); y += row;
         display.vSync = ToggleRow(new Rect(inner.x, y, inner.width, row), SettingsText.VSync, display.vSync); y += row;
         settings.showNameTags = ToggleRow(new Rect(inner.x, y, inner.width, row), SettingsText.NameTags, settings.showNameTags); y += row;
+        settings.screenShake = ToggleRow(new Rect(inner.x, y, inner.width, row), SettingsText.ScreenShake, settings.screenShake); y += row;
+        PercentRow(new Rect(inner.x, y, inner.width, row), SettingsText.ScreenShakeStrength, ref settings.screenShakeStrength, settings.screenShake); y += row;
         LanguageRow(new Rect(inner.x, y, inner.width, row)); y += row;
 
         y += gap;
@@ -168,6 +170,31 @@ public class SettingsScreen : MonoBehaviour
         {
             lastSliderClick = Time.unscaledTime;
             GameAudio.Play(SoundId.UiClick, config.audioUiClickVolume, 0f);
+        }
+    }
+
+    /// <summary>
+    /// Yüzde kaydırıcısı (ekran sarsıntısının şiddeti): değer hemen geçerli olur, kapanırken kaydedilir.
+    /// <paramref name="enabled"/> kapalıysa kaydırıcı soluk ve dokunulmaz.
+    /// </summary>
+    void PercentRow(Rect area, string title, ref float amount, bool enabled)
+    {
+        SplitRow(area, out Rect label, out Rect control, out Rect value);
+        GUI.Label(label, title, labelStyle);
+
+        Rect slider = new Rect(control.x, control.y + control.height * 0.4f, control.width, control.height * 0.3f);
+        GUI.enabled = enabled;
+        float next = GameSettings.ClampVolume(GUI.HorizontalSlider(slider, amount, 0f, 1f));
+        GUI.enabled = true;
+        GUI.Label(value, SettingsText.Percent(next), valueStyle);
+
+        if (Mathf.Approximately(next, amount)) return;
+        amount = next;
+        if (Time.unscaledTime - lastSliderClick >= config.audioSliderClickInterval)
+        {
+            lastSliderClick = Time.unscaledTime;
+            GameAudio.Play(SoundId.UiClick, config.audioUiClickVolume, 0f);
+            CameraShake.Shake(config.cameraShakeMaxOffset * 0.25f * next, 0.15f); // Ne kadar sarsılacağını hemen göster
         }
     }
 

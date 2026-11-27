@@ -165,6 +165,26 @@
     {"key": "steam.connecting_host", "value": "Host'a bağlanılıyor..."},
     {"key": "steam.client_failed", "value": "Bağlantı başlatılamadı."},
     {"key": "steam.join_error", "value": "Katılma hatası: {0}"},
-    {"key": "steam.left", "value": "Lobiden ayrıldın."}
+    {"key": "steam.left", "value": "Lobiden ayrıldın."},
+    {"key": "menu.solo", "value": "Tek kişilik oyna"},
+    {"key": "menu.multiplayer", "value": "Çok oyunculu"},
+    {"key": "menu.book", "value": "Defter"},
+    {"key": "menu.quit", "value": "Çıkış"},
+    {"key": "menu.back", "value": "< Geri"},
+    {"key": "menu.lan_host", "value": "Yerel ağda kur (host)"},
+    {"key": "menu.lan_join", "value": "Yerel ağda katıl"},
+    {"key": "menu.advanced_closed", "value": "Gelişmiş (+)"},
+    {"key": "menu.advanced_open", "value": "Gelişmiş (-)"},
+    {"key": "banner.ready", "value": "HAZIR!"},
+    {"key": "banner.your_turn", "value": "SIRA SENDE!"},
+    {"key": "typing.hint_time", "value": "Bir kelime yaz ve Enter'a bas  ·  {0}"},
+    {"key": "match.you_won", "value": "KAZANDIN!"},
+    {"key": "match.stat_turns", "value": "Oynanan tur: {0}"},
+    {"key": "match.stat_players", "value": "Oyuncu sayısı: {0}"},
+    {"key": "match.play_again", "value": "Tekrar oyna"},
+    {"key": "match.main_menu", "value": "Ana menü"},
+    {"key": "settings.screen_shake", "value": "Ekran sarsıntısı"},
+    {"key": "settings.screen_shake_strength", "value": "Sarsıntı şiddeti"},
+    {"key": "hit.block", "value": "BLOK"}
   ]
 }

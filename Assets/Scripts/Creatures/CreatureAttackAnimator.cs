@@ -7,7 +7,10 @@ using UnityEngine;
 /// Devler yürürken her adımda yeri sarsar. Kareler yoksa yalnızca hareket oynar. Süreler <see cref="GameConfig"/>'te,
 /// hesap <see cref="AttackPhase"/>'te. Saldırı sayısını sahibi verir (tek kişilikte modelden, ağda anlık görüntüden).
 /// Yalnızca görüntüdür: hasar kuralda, saldırı olayı anında işlenir (hazırlık bu yüzden kısadır).
-/// Atılmaya hazırlanan yaratık (kuraldaki <see cref="PounceStage.Windup"/>) hazırlık karesinde durur, titrer ve kırmızı yanar.
+/// Atılmaya hazırlanan yaratık (kuraldaki <see cref="PounceStage.Windup"/>) hazırlık karesinde durur, titrer ve kırmızı yanar;
+/// atılırken gidiş yönünde uzar. Vuruş hissi: saldırı başlarken darbenin görüneceği an <see cref="StrikeRegistry"/>'ye bildirilir
+/// (vurulan karakter tepkisini o ana denk getirir), darbe anında yaratığın görüntüsü kısa süre donar (<see cref="HitStop"/>);
+/// donukken animasyon zamanı ilerlemez.
 /// </summary>
 public class CreatureAttackAnimator : MonoBehaviour
 {
@@ -19,6 +22,8 @@ public class CreatureAttackAnimator : MonoBehaviour
     Func<int> attacks;
     Func<Vector2?> targetPosition;
     Func<bool> pounceWindup;
+    Func<bool> lunging;
+    SpringValue lungeStretch;
     SpriteRenderer bodyRenderer;
     Color baseColor = Color.white;
     bool tinted;
@@ -48,7 +53,7 @@ public class CreatureAttackAnimator : MonoBehaviour
     /// <param name="pounceWindup">Yaratık şu an atılmaya hazırlanıyor mu (tek kişilikte modelden, ağda anlık görüntüden)?</param>
     public static CreatureAttackAnimator Attach(GameObject body, Func<int> attackCount, bool giant,
                                                 Func<Vector2?> targetPosition = null, string markEffect = null,
-                                                Func<bool> pounceWindup = null)
+                                                Func<bool> pounceWindup = null, Func<bool> lunging = null)
     {
         var animator = body.GetComponent<CreatureAttackAnimator>();
         if (animator == null) animator = body.AddComponent<CreatureAttackAnimator>();
@@ -57,6 +62,7 @@ public class CreatureAttackAnimator : MonoBehaviour
         animator.targetPosition = targetPosition;
         animator.markEffect = markEffect;
         animator.pounceWindup = pounceWindup;
+        animator.lunging = lunging;
         animator.config = GameConfigLoader.Get();
         animator.phase = new AttackPhase(
             giant ? animator.config.creatureAttackGiantWindupSeconds : animator.config.creatureAttackWindupSeconds,
@@ -93,9 +99,10 @@ public class CreatureAttackAnimator : MonoBehaviour
         Vector3 offset = Vector3.zero;
         Vector2 scale = Vector2.one;
 
+        bool frozen = HitStop.IsFrozen(gameObject); // Vuruş donması: animasyon zamanı durur, poz korunur
         if (attackTime >= 0f)
         {
-            attackTime += Time.deltaTime;
+            if (!frozen) attackTime += Time.deltaTime;
             if (!impactDone && attackTime >= phase.ImpactTime) Impact();
 
             AttackStage stage = phase.Evaluate(attackTime, out float progress);
@@ -109,6 +116,7 @@ public class CreatureAttackAnimator : MonoBehaviour
 
         if (giant) offset += Vector3.up * stepBob;
         offset += PounceWindupVisual();
+        scale = Vector2.Scale(scale, LungeStretch(frozen));
 
         transform.localPosition = baseLocalPosition + offset;
         transform.localScale = new Vector3(baseLocalScale.x * scale.x, baseLocalScale.y * scale.y, baseLocalScale.z);
@@ -142,6 +150,21 @@ public class CreatureAttackAnimator : MonoBehaviour
 
         float amplitude = config.creaturePounceTremble * (giant ? 2f : 1f);
         return new Vector3(UnityEngine.Random.Range(-amplitude, amplitude), UnityEngine.Random.Range(-amplitude, amplitude) * 0.5f, 0f);
+    }
+
+    /// <summary>
+    /// Atılırken (kuraldaki <see cref="PounceStage.Lunge"/>) gidiş yönünde uzar, bitince yayla eski hâline seker
+    /// (ezilmenin tersi, bkz. <see cref="HitFeelMath.SquashScale"/>).
+    /// </summary>
+    Vector2 LungeStretch(bool frozen)
+    {
+        if (lunging == null) return Vector2.one;
+        if (lungeStretch == null) lungeStretch = new SpringValue(config.hitSquashFrequency, config.hitSquashDamping);
+
+        lungeStretch.Target = lunging() ? -1f : 0f; // Eksi = gidiş yönünde uzama
+        if (!frozen) lungeStretch.Step(Time.deltaTime);
+        if (Mathf.Abs(lungeStretch.Value) < 0.001f && lungeStretch.Target == 0f) return Vector2.one;
+        return HitFeelMath.SquashScale(moveDirection, lungeStretch.Value, config.creatureLungeStretch, config.creatureLungeStretch * 0.6f);
     }
 
     /// <summary>Hareket yönünü izler (atılma yönü); devler her adımda yeri sarsar.</summary>
@@ -181,12 +204,20 @@ public class CreatureAttackAnimator : MonoBehaviour
                         : moveDirection.sqrMagnitude > 0.01f ? moveDirection : Vector2.down;
 
         if (frames != null && windupFrame != null && phase.WindupSeconds > 0f) frames.Hold(windupFrame, phase.WindupSeconds);
+
+        // Darbenin görüneceği anı bildir: vurulan karakter tepkisini (donma, parlama, sayı, ses) o ana denk getirir.
+        Vector2 aimed = target ?? (Vector2)Root.position + attackDirection * config.attackMarkForwardOffset * SpriteSize;
+        StrikeRegistry.Shared.Add(new IncomingStrike
+        {
+            Position = aimed, Direction = attackDirection, ImpactTime = Time.time + phase.ImpactTime, Giant = giant, Attacker = this,
+        });
     }
 
     /// <summary>Darbe anı (hazırlık bitti): saldırı karesi, toz, sarsıntı ve hedefte vuruş izi.</summary>
     void Impact()
     {
         impactDone = true;
+        HitStop.Freeze(gameObject, giant ? config.hitStopGiantSeconds : config.hitStopSeconds); // Vuran da bir an donar
 
         float hold = phase.StrikeSeconds + phase.RecoverSeconds * config.creatureAttackFrameRecoverFraction;
         if (frames != null && attackFrame != null) frames.Hold(attackFrame, hold);

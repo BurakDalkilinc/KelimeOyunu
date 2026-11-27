@@ -29,6 +29,9 @@ public class CharacterStackVisual : MonoBehaviour
         return visual;
     }
 
+    /// <summary>Katmanlı gövde (vuruş tepkisi rengini ve ölçeğini buna uygular); yoksa null.</summary>
+    public SpriteStack Stack => stack;
+
     /// <summary>Katmanlı çizim varsa düz resmi gizler (araç görüntüsü de bunu bilir).</summary>
     public bool Active => stack != null;
 
@@ -65,7 +68,8 @@ public class CharacterStackVisual : MonoBehaviour
         Vector3 moved = transform.position - lastPosition;
         lastPosition = transform.position;
         bool isMoving = moved.sqrMagnitude > 0.000004f && Time.deltaTime > 0f;
-        if (isMoving)
+        bool frozen = HitStop.IsFrozen(gameObject); // Vuruş donması: dönüş ve zıplama bir an durur
+        if (isMoving && !frozen)
         {
             float target = Mathf.Atan2(moved.y, moved.x) * Mathf.Rad2Deg;
             angle = Mathf.MoveTowardsAngle(angle, target, TurnDegreesPerSecond * Time.deltaTime);
@@ -73,8 +77,11 @@ public class CharacterStackVisual : MonoBehaviour
         stack.Angle = angle;
 
         // Yürürken zıpla, dururken yere in.
-        moving = Mathf.MoveTowards(moving, isMoving ? 1f : 0f, Time.deltaTime * 6f);
-        bobPhase += Time.deltaTime * BobSpeed * moving;
+        if (!frozen)
+        {
+            moving = Mathf.MoveTowards(moving, isMoving ? 1f : 0f, Time.deltaTime * 6f);
+            bobPhase += Time.deltaTime * BobSpeed * moving;
+        }
         float parentScale = Mathf.Max(0.01f, transform.lossyScale.y);
         stack.transform.localPosition = new Vector3(0f, Mathf.Abs(Mathf.Sin(bobPhase)) * BobHeight * moving / parentScale, 0f);
     }

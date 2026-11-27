@@ -52,8 +52,17 @@ public class SteamLobbyMenu : MonoBehaviour
         // Yerel ağda (Steam lobisi olmadan) host/istemciyken Steam kutusu gereksiz.
         if (manager.IsListening && !current.HasValue) return;
 
-        float height = manager.IsListening ? 130f : (SteamClient.IsValid ? 270f : 120f);
-        GUILayout.BeginArea(new Rect(304, Screen.height - height - 12, 320, height), GUI.skin.box);
+        // Ağ başlamadan önce kutu yalnızca ana menünün "Çok oyunculu" sayfasında, düğmelerin yanında durur.
+        if (!manager.IsListening && !NetworkMenu.OnlinePanelVisible) return;
+
+        float height = manager.IsListening ? 130f : (SteamClient.IsValid ? 270f + 26f * found.Count : 120f);
+        Rect area = new Rect(304, Screen.height - height - 12, 320, height);
+        if (!manager.IsListening)
+        {
+            Rect place = NetworkMenu.OnlinePanelRect;
+            area = new Rect(place.x, place.y, place.width, height);
+        }
+        GUILayout.BeginArea(area, GUI.skin.box);
         GUILayout.Label(Loc.T("steam.title"));
 
         if (!SteamClient.IsValid) DrawConnect();

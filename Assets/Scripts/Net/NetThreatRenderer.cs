@@ -92,7 +92,7 @@ public class NetThreatRenderer : MonoBehaviour
 
         if (flash != null) flash.color = new Color(flashColor.r, flashColor.g, flashColor.b, flashAlpha);
         ReportAtmosphere();
-        if (banner != null) banner.text = AlarmText();
+        if (banner != null) PunchText.Of(banner).Set(AlarmText(), channel.LatestThreat.AlarmWordId); // Yeni uyarı "punch" ile girer
     }
 
     string lastAlarmWordId = "";

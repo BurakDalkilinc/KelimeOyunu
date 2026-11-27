@@ -1,21 +1,16 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Maçın seslerini tur olaylarından çalar (zar, kelime, tur yanması, maç sonu), oyuncuların canını izleyip vuruş ve
-/// eleme sesi çıkarır, duruma göre müziği seçtirir. Tek kişilikte ve ağ maçında (istemcide de) aynı tur görünümünü dinler.
+/// Maçın seslerini tur olaylarından çalar (zar, kelime, tur yanması, maç sonu), duruma göre müziği seçtirir. Vuruş ve eleme
+/// sesleri karakterlerin vuruş tepkisinde, darbe anında çalar (bkz. <see cref="HitFeedback"/>, <see cref="HitSounds"/>). Tek kişilikte ve ağ maçında (istemcide de) aynı tur görünümünü dinler.
 /// Tur kaynağının (<see cref="TurnViewSource"/>) yanına kendiliğinden eklenir; sahneye elle koymak gerekmez.
 /// </summary>
 public class MatchAudio : MonoBehaviour
 {
     TurnViewSource source;
     ITurnView subscribed;
-    GameConfig config;
     TurnPhase lastPhase = TurnPhase.NotStarted;
-
-    /// <summary>Oyuncu kimliği → son görülen can. Ağda oyuncu nesneleri yeniden kurulabildiği için kimlikle tutulur.</summary>
-    readonly Dictionary<int, int> lastHealth = new Dictionary<int, int>();
 
     // ---- Sahnedeki tur kaynaklarına kendiliğinden eklenme ----
 
@@ -40,7 +35,6 @@ public class MatchAudio : MonoBehaviour
     void Awake()
     {
         source = GetComponent<TurnViewSource>();
-        config = GameConfigLoader.Get();
     }
 
     void OnDisable()
@@ -59,14 +53,12 @@ public class MatchAudio : MonoBehaviour
         if (service != null)
             service.RequestMusic(view != null ? MusicDirector.Choose(true, view.Phase, view.CurrentWord) : MusicTrack.Menu);
 
-        if (view != null) WatchHealth();
     }
 
     void Resubscribe(ITurnView view)
     {
         Unsubscribe();
         subscribed = view;
-        lastHealth.Clear();
         if (subscribed == null) return;
 
         lastPhase = subscribed.Phase;
@@ -107,21 +99,4 @@ public class MatchAudio : MonoBehaviour
     void OnTurnSkipped(PlayerState writer) => GameAudio.Play(SoundId.WordBad);
 
     void OnMatchEnded(PlayerState winner) => GameAudio.Play(SfxRules.ForMatchEnd(winner, source.LocalPlayer));
-
-    /// <summary>Can düşen oyuncuda vuruş, canı biten oyuncuda eleme sesi. Başkasının vuruşu daha kısık duyulur.</summary>
-    void WatchHealth()
-    {
-        PlayerState local = source.LocalPlayer;
-        foreach (PlayerState player in source.Players)
-        {
-            int current = player.Health.Current;
-            if (lastHealth.TryGetValue(player.Id, out int before) && current < before)
-            {
-                bool mine = local != null && local.Id == player.Id;
-                if (current <= 0) GameAudio.Play(SoundId.Eliminated, 1f, config.audioHitCooldown);
-                else GameAudio.Play(SoundId.Hit, mine ? 1f : config.audioOtherHitVolume, config.audioHitCooldown);
-            }
-            lastHealth[player.Id] = current;
-        }
-    }
 }

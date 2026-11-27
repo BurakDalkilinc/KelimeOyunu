@@ -122,7 +122,9 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
             if (urgent == null || threat.WarningLeft < urgent.WarningLeft) urgent = threat;
         }
 
-        banner.text = urgent != null ? ThreatText.GetAlarm(urgent.Word, Mathf.CeilToInt(urgent.WarningLeft)) : string.Empty;
+        // Yeni tehdit uyarısı "punch" ile girer, bitince yukarı kayarak çıkar (bkz. PunchText).
+        string alarm = urgent != null ? ThreatText.GetAlarm(urgent.Word, Mathf.CeilToInt(urgent.WarningLeft)) : string.Empty;
+        PunchText.Of(banner).Set(alarm, urgent != null ? urgent.Word.id : null);
 
         ReportAtmosphere();
     }

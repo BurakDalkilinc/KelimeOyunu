@@ -43,6 +43,9 @@ public class ExtrudedSpriteVisual : MonoBehaviour
 
     public bool FlipWithMovement { get; set; } = true;
 
+    /// <summary>Katmanlı model (vuruş tepkisi rengini ve ölçeğini buna uygular); henüz kurulmadıysa null.</summary>
+    public SpriteStack Stack => stack;
+
     void LateUpdate()
     {
         if (source == null) source = GetComponent<SpriteRenderer>();
@@ -71,7 +74,8 @@ public class ExtrudedSpriteVisual : MonoBehaviour
                 shownSprite = source.sprite.name;
                 stack.SetSlices(StackLibrary.Get(shownSprite));
             }
-            bool isMoving = FlipWithMovement && moved.sqrMagnitude > 0.000004f && Time.deltaTime > 0f;
+            bool isMoving = FlipWithMovement && moved.sqrMagnitude > 0.000004f && Time.deltaTime > 0f
+                            && !HitStop.IsFrozen(gameObject); // Vuruş donmasında sallanma ve dönüş durur
             if (isMoving && Mathf.Abs(moved.x) > 0.002f) facingLeft = moved.x < 0f;
             stack.SetFlipY(facingLeft);
 
@@ -86,7 +90,7 @@ public class ExtrudedSpriteVisual : MonoBehaviour
         stack.SetSprite(source.sprite); // Animasyon karesi
         if (FlipWithMovement)
         {
-            if (Mathf.Abs(moved.x) > 0.002f) facingLeft = moved.x < 0f;
+            if (Mathf.Abs(moved.x) > 0.002f && !HitStop.IsFrozen(gameObject)) facingLeft = moved.x < 0f; // Donmada yön değişmez
             stack.SetFlipX(facingLeft != source.flipX);
         }
         else stack.SetFlipX(source.flipX);

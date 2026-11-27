@@ -81,12 +81,16 @@ public class MatchRunner : TurnViewSource
 
     public override bool CanRestart => true;
 
-    /// <summary>Sahneyi baştan yükler: yeni maç, yeni oyuncular, yeni kelime kilidi.</summary>
+    /// <summary>Sahneyi baştan yükler (piksel geçişle): yeni maç, yeni oyuncular, yeni kelime kilidi.</summary>
     public override void Restart()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().path);
+        ScreenFader.LoadScene(SceneManager.GetActiveScene().path);
     }
+
+    public override bool CanLeaveToMenu => SceneUtility.GetBuildIndexByScenePath(MenuScenePath) >= 0;
+
+    public override void LeaveToMenu() => GoToMenu();
 
     void Awake()
     {
@@ -125,7 +129,7 @@ public class MatchRunner : TurnViewSource
     void GoToMenu()
     {
         Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneUtility.GetBuildIndexByScenePath(MenuScenePath));
+        ScreenFader.LoadScene(SceneUtility.GetBuildIndexByScenePath(MenuScenePath));
     }
 
     void Update()

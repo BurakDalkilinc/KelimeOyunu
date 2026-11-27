@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// İki (ya da daha fazla) kareyi sırayla gösterir: piksel sanat "nefes alma" hareketi.
-/// <see cref="Hold"/> ile döngü kısa süre durup tek bir kare gösterir (yaratığın saldırı karesi).
+/// <see cref="Hold"/> ile döngü kısa süre durup tek bir kare gösterir (yaratığın saldırı karesi). Vuruş donmasında (<see cref="HitStop"/>) bekler.
 /// </summary>
 [RequireComponent(typeof(SpriteRenderer))]
 public class SpriteAnimator : MonoBehaviour
@@ -42,6 +42,7 @@ public class SpriteAnimator : MonoBehaviour
     void Update()
     {
         if (target == null) return;
+        if (HitStop.IsFrozen(gameObject)) return; // Vuruş donması: kare ilerlemez
 
         if (held != null)
         {

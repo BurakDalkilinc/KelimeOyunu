@@ -142,7 +142,9 @@ public class NetCreatureRenderer : MonoBehaviour
             bool giant = CreatureSpriteScale.IsGiant(s.Radius);
             CreatureAttackAnimator.Attach(body, () => view.Last.Attacks, giant, () => NearestVictim(view),
                                           AttackMarkEffect.EffectFor(word, giant), // Saldırı animasyonu + etiketten vuruş izi
-                                          () => view.Last.IsPounceWindup);        // Atılma hazırlığı host'tan bayrakla gelir
+                                          () => view.Last.IsPounceWindup,         // Atılma hazırlığı host'tan bayrakla gelir
+                                          () => view.Last.IsLunging);             // Atılırken uzar
+            CreatureHurtFeedback.Attach(body, () => HitFeelMath.BossHealthFromLabel(view.Last.Label)); // Boss canı yazıdan ("{w} 7/10")
         }
         else
         {

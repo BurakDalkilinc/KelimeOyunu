@@ -56,6 +56,9 @@ public class NetworkPlayer : NetworkBehaviour
     readonly NetworkVariable<Vector2> swingDirection = new NetworkVariable<Vector2>(Vector2.up);
     readonly NetworkVariable<float> swingReach = new NetworkVariable<float>(1.6f);
 
+    /// <summary>Kalkanın engellediği vuruş sayısı (host yazar); artınca her istemci karakterin üstünde "BLOK" gösterir.</summary>
+    readonly NetworkVariable<int> blockCount = new NetworkVariable<int>(0);
+
     /// <summary>Kömürleşme (0..1); her istemci karakteri o kadar karartır.</summary>
     readonly NetworkVariable<float> charLevel = new NetworkVariable<float>(0f);
 
@@ -205,6 +208,9 @@ public class NetworkPlayer : NetworkBehaviour
         GoreEmitter.Attach(gameObject, () => health.Value,
                            () => (Status & StatusFlags.FallLava) != 0 ? FallKind.Lava : (Status & StatusFlags.FallChasm) != 0 ? FallKind.Chasm : FallKind.None) // Kan ve parçalanma (her istemcide)
                    .Charred = () => (Status & StatusFlags.Burning) != 0 || charLevel.Value >= 0.5f;
+        HitFeedback.Attach(gameObject, () => health.Value,                                   // Vuruş hissi (her istemcide)
+                           () => (Status & (StatusFlags.FallLava | StatusFlags.FallChasm)) != 0 ? FallKind.Lava : FallKind.None,
+                           () => IsOwner && !isBot.Value, () => blockCount.Value);
 
         if (IsServer) InitOnServer();
 
@@ -410,6 +416,7 @@ public class NetworkPlayer : NetworkBehaviour
         if (state != null)
         {
             if (health.Value != state.Health.Current) health.Value = state.Health.Current;
+            if (blockCount.Value != state.Status.ShieldBlocks) blockCount.Value = state.Status.ShieldBlocks;
 
             int flags = (int)StatusFlagsUtil.Of(state.Status);
             if (state.Status.HasWeapon) flags |= (int)StatusFlags.Weapon;

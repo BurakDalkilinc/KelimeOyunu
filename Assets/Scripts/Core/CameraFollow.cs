@@ -31,6 +31,21 @@ public class CameraFollow : MonoBehaviour
     Vector2 position;
     bool placed;
 
+    /// <summary>Takibin donduğu son an (gerçek zaman, sn); bkz. <see cref="Hold"/>.</summary>
+    static float holdUntil = -1f;
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    static void ResetStatics() => holdUntil = -1f;
+
+    /// <summary>
+    /// Kamera takibini <paramref name="seconds"/> saniye dondurur (yerel oyuncu vurulunca kısa "durak" hissi; yalnızca görüntü).
+    /// </summary>
+    public static void Hold(float seconds)
+    {
+        if (seconds <= 0f) return;
+        holdUntil = Mathf.Max(holdUntil, Time.unscaledTime + seconds);
+    }
+
     /// <summary>Kameranın izleyeceği nokta; null ise arenanın ortası.</summary>
     public Func<Vector2?> TargetProvider { get; set; }
 
@@ -54,7 +69,8 @@ public class CameraFollow : MonoBehaviour
         Vector2 wanted = CameraFollowMath.Clamp(target ?? Vector2.zero, arenaHalf, viewHalf, edgeMargin);
 
         // İlk karede ya da görüş değişirken sıçrayarak değil, yumuşakça gider (genel bakışa geçiş de yumuşak olur).
-        position = placed ? CameraFollowMath.Smooth(position, wanted, Time.unscaledDeltaTime, followSharpness) : wanted;
+        bool held = placed && Time.unscaledTime < holdUntil && !InOverview; // Vuruş anında takip bir an durur
+        if (!held) position = placed ? CameraFollowMath.Smooth(position, wanted, Time.unscaledDeltaTime, followSharpness) : wanted;
         placed = true;
 
         transform.position = new Vector3(position.x, position.y, -10f);

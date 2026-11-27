@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Sahnelerden bağımsız servisleri oyun açılırken bir kez kurar: ses (<see cref="AudioService"/>) ve Esc kısayolu
-/// (<see cref="SettingsHotkey"/>); ardından kayıtlı ayarları uygular. Nesne sahneler arasında kalır; sahneye elle koymak gerekmez.
+/// (<see cref="SettingsHotkey"/>), sahne geçişi (<see cref="ScreenFader"/>); ardından kayıtlı ayarları uygular. Nesne sahneler arasında kalır; sahneye elle koymak gerekmez.
 /// </summary>
 public static class GameServices
 {
@@ -17,6 +17,7 @@ public static class GameServices
         Object.DontDestroyOnLoad(host);
         host.AddComponent<AudioService>();
         host.AddComponent<SettingsHotkey>();
+        host.AddComponent<ScreenFader>(); // Sahne geçişlerinde piksel kararma
 
         SettingsService.ApplyAll();
     }

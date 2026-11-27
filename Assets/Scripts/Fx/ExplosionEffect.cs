@@ -57,6 +57,13 @@ public class ExplosionEffect : MonoBehaviour
 
         effect.Apply();
         GameAudio.Play(SoundId.Explosion);
+
+        // Vuruş hissi: sarsıntı ve kameranın patlamadan dışarı doğru itilmesi (uzaktaysa azalır).
+        GameConfig config = GameConfigLoader.Get();
+        CameraShake.AddTrauma(config.cameraTraumaExplosion, at);
+        Camera cam = Camera.main;
+        Vector2 away = cam != null ? (Vector2)cam.transform.position - at : Vector2.zero;
+        CameraShake.Kick(away.sqrMagnitude > 0.01f ? away : Vector2.down, config.cameraKickExplosion, at);
     }
 
     void Update()

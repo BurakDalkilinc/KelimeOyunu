@@ -10,6 +10,13 @@ public static class GameAudio
         if (service != null) service.Play(id, volume, cooldown);
     }
 
+    /// <summary>Efekti verilen perdeyle çalar (bkz. <see cref="AudioService.PlayPitched"/>).</summary>
+    public static void PlayPitched(string id, float volume, float cooldown, float pitch)
+    {
+        AudioService service = AudioService.Instance;
+        if (service != null) service.PlayPitched(id, volume, cooldown, pitch);
+    }
+
     /// <summary>Arayüz düğmesi tık sesi.</summary>
     public static void Click() => Play(SoundId.UiClick, GameConfigLoader.Get().audioUiClickVolume);
 

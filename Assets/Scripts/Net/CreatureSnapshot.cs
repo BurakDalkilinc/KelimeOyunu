@@ -71,6 +71,7 @@ public struct CreatureSnapshot
     public const int FlagHarmful = 4;
 
     public bool IsPounceWindup => (Flags & FlagPounceWindup) != 0;
+    public bool IsLunging => (Flags & FlagLunging) != 0;
     public bool IsHarmful => (Flags & FlagHarmful) != 0;
 }
 

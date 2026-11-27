@@ -4,8 +4,10 @@ using UnityEngine;
 /// <summary>
 /// Bir karakterin canını her kare izler: can azalınca kan sıçratır, sıfıra inince karakteri parçalara ayırır.
 /// Lavda ölen kömürleşip kıvılcım saçar; uçuruma düşen parçalanmaz (onun kendi animasyonu var). Tek kişilik sahnede ve ağda
-/// (her istemcide, eşitlenen candan) aynı şekilde çalışır.
+/// (her istemcide, eşitlenen candan) aynı şekilde çalışır. Vuruş tepkisi (<see cref="HitFeedback"/>) yaratığın darbe anını bekliyorsa
+/// kan da o ana kadar bekler (darbe ile kan aynı anda görünsün). Elemede patlama <see cref="GameConfig.deathGorePower"/> katı büyüktür.
 /// </summary>
+[DefaultExecutionOrder(60)] // Vuruş tepkisinden sonra
 public class GoreEmitter : MonoBehaviour
 {
     Func<int> health;
@@ -19,6 +21,7 @@ public class GoreEmitter : MonoBehaviour
     bool wasCharred;
     Color aliveColor = Color.white;
     Sprite aliveSprite;
+    HitFeedback feedback;
 
     /// <summary>Karaktere bağlar. <paramref name="health"/> şu anki can, <paramref name="falling"/> düşüyor mu.</summary>
     public static GoreEmitter Attach(GameObject target, Func<int> health, Func<FallKind> falling)
@@ -38,6 +41,10 @@ public class GoreEmitter : MonoBehaviour
         int current = health();
         if (lastHealth == int.MinValue) lastHealth = current;
 
+        // Darbe hazırlıkta: kan, darbenin göründüğü kareye kadar bekler (en çok hitImpactMaxWaitSeconds).
+        if (current < lastHealth && feedback == null) TryGetComponent(out feedback);
+        if (current < lastHealth && feedback != null && feedback.IsWaitingForImpact) return;
+
         if (current < lastHealth && lastHealth > 0)
         {
             Vector2 at = transform.position;
@@ -48,7 +55,7 @@ public class GoreEmitter : MonoBehaviour
             else if (wasFalling == FallKind.None)
             {
                 if (current <= 0 && (wasCharred || (Charred != null && Charred()))) Gore.ExplodeCharred(aliveSprite, at, transform.lossyScale.x, aliveColor);
-                else if (current <= 0) Gore.Explode(aliveSprite, at, transform.lossyScale.x, aliveColor);
+                else if (current <= 0) Gore.Explode(aliveSprite, at, transform.lossyScale.x, aliveColor, GameConfigLoader.Get().deathGorePower);
                 else Gore.Splash(at, 12 * Mathf.Min(3, lastHealth - current), 1f);
             }
         }

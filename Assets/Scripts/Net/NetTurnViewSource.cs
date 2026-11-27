@@ -85,6 +85,27 @@ public class NetTurnViewSource : TurnViewSource
         if (channel != null) channel.RestartMatch();
     }
 
+    public override bool CanLeaveToMenu => true;
+
+    /// <summary>
+    /// Bağlantıyı keser ve menü sahnesini (bu sahne) baştan yükler. Ağ yöneticisi sahneler arasında taşındığı için önce silinir;
+    /// yeniden yüklenen sahnedeki yenisi kullanılır (bkz. <see cref="NetworkMenu"/>).
+    /// </summary>
+    public override void LeaveToMenu()
+    {
+        string scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene().path;
+        ScreenFader.Run(() =>
+        {
+            NetworkManager manager = NetworkManager.Singleton;
+            if (manager != null)
+            {
+                if (manager.IsListening) manager.Shutdown();
+                Destroy(manager.gameObject);
+            }
+            UnityEngine.SceneManagement.SceneManager.LoadScene(scene);
+        });
+    }
+
     public override string RestartHint
     {
         get

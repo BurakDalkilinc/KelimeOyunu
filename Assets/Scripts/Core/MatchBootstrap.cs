@@ -177,7 +177,7 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
         }
         else cooldown.TryUse();
         foreach (ShoveHit hit in shoveHits) TryApplyKnockback(shoveStates[hit.Index].Id, hit.Push);
-        ShoveEffect.Spawn(shovePositions[shoverIndex], config.shoveRange);
+        ShoveEffect.Spawn(shovePositions[shoverIndex], config.shoveRange, facing);
         return true;
     }
 

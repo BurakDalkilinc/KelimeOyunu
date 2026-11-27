@@ -109,6 +109,15 @@ public class AudioService : MonoBehaviour
     /// </summary>
     public bool Play(string id, float volume = 1f, float cooldown = -1f)
     {
+        float variation = config.audioPitchVariation;
+        return PlayPitched(id, volume, cooldown, 1f + (float)(pitchRandom.NextDouble() * 2.0 - 1.0) * variation);
+    }
+
+    /// <summary>Efekti verilen perdeyle çalar (rastgele perde oynaması yok); ör. sayacın son saniyelerindeki kalın "tik".</summary>
+    /// <param name="gateKey">Bekleme süresinin sayıldığı ad (boşsa sesin adı). Vuruş katmanları aynı dosyayı farklı perdeyle çalarken
+    /// birbirini engellemesin diye ayrı ad verir.</param>
+    public bool PlayPitched(string id, float volume, float cooldown, float pitch, string gateKey = null)
+    {
         AudioClip clip = library.Get(id);
         if (clip == null) return false;
 
@@ -121,11 +130,10 @@ public class AudioService : MonoBehaviour
         }
 
         float wait = cooldown >= 0f ? cooldown : config.audioSameSoundCooldown;
-        if (free == null || !gate.TryPlay(id, Time.unscaledTime, wait, playing)) return false;
+        if (free == null || !gate.TryPlay(string.IsNullOrEmpty(gateKey) ? id : gateKey, Time.unscaledTime, wait, playing)) return false;
 
-        float variation = config.audioPitchVariation;
         free.clip = clip;
-        free.pitch = 1f + (float)(pitchRandom.NextDouble() * 2.0 - 1.0) * variation;
+        free.pitch = pitch;
         free.volume = Mathf.Clamp01(volume) * SfxVolume;
         free.Play();
 
@@ -133,6 +141,9 @@ public class AudioService : MonoBehaviour
         PlayedCount++;
         return true;
     }
+
+    /// <summary>0..1 arası rastgele sayı (yalnızca ses perdesi için; oyun mantığının rastgeleliğine karışmaz).</summary>
+    public float NextPitchRandom() => (float)pitchRandom.NextDouble();
 
     /// <summary>Oynanan kelimenin sesi (etiketlerden; bilinmeyen kelimede null verilir).</summary>
     public void PlayForWord(WordEntry word) => Play(Rules.ForWord(word));

@@ -55,11 +55,13 @@ public static class Gore
 
     /// <summary>
     /// Karakteri parçalara ayırır: <paramref name="source"/> resmi 2 sütun x 3 satır parçaya kesilir, her parça
-    /// merkezden dışarı savrulur ve arkasında kan izi bırakır. Bir de büyük kan sıçraması olur.
+    /// merkezden dışarı savrulur ve arkasında kan izi bırakır. Bir de büyük kan sıçraması olur. <paramref name="power"/> 1'den büyükse
+    /// (eleme anı) daha çok kan, daha hızlı savrulan parçalar.
     /// </summary>
-    public static void Explode(Sprite source, Vector2 at, float worldSize, Color tint)
+    public static void Explode(Sprite source, Vector2 at, float worldSize, Color tint, float power = 1f)
     {
-        Splash(at, 45, 1.3f);
+        power = Mathf.Max(1f, power);
+        Splash(at, Mathf.RoundToInt(45 * power), 1.3f * Mathf.Sqrt(power));
         if (source == null) return;
 
         Rect rect = source.textureRect;
@@ -78,7 +80,7 @@ public static class Gore
             Vector2 offset = new Vector2((cx + 0.5f) / columns - 0.5f, (cy + 0.5f) / rows - 0.5f) * worldSize;
             Vector2 dir = (offset.sqrMagnitude > 0.0001f ? offset.normalized : Random.insideUnitCircle.normalized)
                           + Random.insideUnitCircle * 0.6f;
-            GibPiece.Spawn(piece, at + offset, dir.normalized * Random.Range(2f, 4.5f), Random.Range(5f, 9f), scale, tint);
+            GibPiece.Spawn(piece, at + offset, dir.normalized * Random.Range(2f, 4.5f) * power, Random.Range(5f, 9f) * Mathf.Sqrt(power), scale, tint);
         }
     }
 

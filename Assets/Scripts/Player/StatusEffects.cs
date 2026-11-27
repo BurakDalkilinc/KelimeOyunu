@@ -123,11 +123,17 @@ public class StatusEffects
         shieldTimeLeft = Mathf.Max(HasShield ? shieldTimeLeft : 0f, seconds);
     }
 
+    /// <summary>
+    /// Kalkanın bu maçta kaç vuruşu engellediği (hiç azalmaz). Yalnızca görüntü için: artınca karakterin üstünde "BLOK" çıkar.
+    /// </summary>
+    public int ShieldBlocks { get; private set; }
+
     /// <summary>Kalkan varsa bir hasarı engeller (hakkı bir azalır) ve true döner; yoksa false.</summary>
     public bool TryAbsorbHit()
     {
         if (!HasShield) return false;
 
+        ShieldBlocks++;
         shieldCharges--;
         if (shieldCharges <= 0)
         {

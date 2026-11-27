@@ -165,6 +165,26 @@
     {"key": "steam.connecting_host", "value": "Connecting to the host..."},
     {"key": "steam.client_failed", "value": "Couldn't start the connection."},
     {"key": "steam.join_error", "value": "Join error: {0}"},
-    {"key": "steam.left", "value": "You left the lobby."}
+    {"key": "steam.left", "value": "You left the lobby."},
+    {"key": "menu.solo", "value": "Play solo"},
+    {"key": "menu.multiplayer", "value": "Multiplayer"},
+    {"key": "menu.book", "value": "Book"},
+    {"key": "menu.quit", "value": "Quit"},
+    {"key": "menu.back", "value": "< Back"},
+    {"key": "menu.lan_host", "value": "Host on local network"},
+    {"key": "menu.lan_join", "value": "Join on local network"},
+    {"key": "menu.advanced_closed", "value": "Advanced (+)"},
+    {"key": "menu.advanced_open", "value": "Advanced (-)"},
+    {"key": "banner.ready", "value": "READY!"},
+    {"key": "banner.your_turn", "value": "YOUR TURN!"},
+    {"key": "typing.hint_time", "value": "Type a word and press Enter  ·  {0}"},
+    {"key": "match.you_won", "value": "YOU WON!"},
+    {"key": "match.stat_turns", "value": "Turns played: {0}"},
+    {"key": "match.stat_players", "value": "Players: {0}"},
+    {"key": "match.play_again", "value": "Play again"},
+    {"key": "match.main_menu", "value": "Main menu"},
+    {"key": "settings.screen_shake", "value": "Screen shake"},
+    {"key": "settings.screen_shake_strength", "value": "Shake strength"},
+    {"key": "hit.block", "value": "BLOCK"}
   ]
 }

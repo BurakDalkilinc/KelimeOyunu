@@ -18,6 +18,12 @@ public class SpriteStack : MonoBehaviour
     float alpha = 1f;
     float worldPixel = Pixel; // Resmin bir pikselinin dünyadaki boyu (büyütülmüş araçta daha büyük)
 
+    /// <summary>Dilimlerin çizicileri (vuruş parlaması malzemeyi geçici değiştirir); kurulmadıysa boş.</summary>
+    public System.Collections.Generic.IReadOnlyList<SpriteRenderer> Layers => layers ?? System.Array.Empty<SpriteRenderer>();
+
+    /// <summary>Son verilen renk (<see cref="SetTint"/>).</summary>
+    public Color Tint => tint;
+
     /// <summary>Dünyadaki yönü (derece, 0 = sağa). Dilimler bu açıyla döner; yığın ekranda hep yukarı doğru yükselir.</summary>
     public float Angle { get; set; }
 

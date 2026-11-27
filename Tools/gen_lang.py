@@ -192,6 +192,27 @@ ROWS = [
     ("steam.client_failed", "Bağlantı başlatılamadı.", "Couldn't start the connection."),
     ("steam.join_error", "Katılma hatası: {0}", "Join error: {0}"),
     ("steam.left", "Lobiden ayrıldın.", "You left the lobby."),
+    # Arayüz cilası: ana menü, duyurular, maç sonu
+    ("menu.solo", "Tek kişilik oyna", "Play solo"),
+    ("menu.multiplayer", "Çok oyunculu", "Multiplayer"),
+    ("menu.book", "Defter", "Book"),
+    ("menu.quit", "Çıkış", "Quit"),
+    ("menu.back", "< Geri", "< Back"),
+    ("menu.lan_host", "Yerel ağda kur (host)", "Host on local network"),
+    ("menu.lan_join", "Yerel ağda katıl", "Join on local network"),
+    ("menu.advanced_closed", "Gelişmiş (+)", "Advanced (+)"),
+    ("menu.advanced_open", "Gelişmiş (-)", "Advanced (-)"),
+    ("banner.ready", "HAZIR!", "READY!"),
+    ("banner.your_turn", "SIRA SENDE!", "YOUR TURN!"),
+    ("typing.hint_time", "Bir kelime yaz ve Enter'a bas  ·  {0}", "Type a word and press Enter  ·  {0}"),
+    ("match.you_won", "KAZANDIN!", "YOU WON!"),
+    ("match.stat_turns", "Oynanan tur: {0}", "Turns played: {0}"),
+    ("match.stat_players", "Oyuncu sayısı: {0}", "Players: {0}"),
+    ("match.play_again", "Tekrar oyna", "Play again"),
+    ("match.main_menu", "Ana menü", "Main menu"),
+    ("settings.screen_shake", "Ekran sarsıntısı", "Screen shake"),
+    ("settings.screen_shake_strength", "Sarsıntı şiddeti", "Shake strength"),
+    ("hit.block", "BLOK", "BLOCK"),
 ]
 
 

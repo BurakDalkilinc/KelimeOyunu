@@ -31,6 +31,12 @@ public static class SettingsService
     /// <summary>İsim etiketleri gösterilsin mi (oyuncunun tercihi)?</summary>
     public static bool ShowNameTags => Current.showNameTags;
 
+    /// <summary>Ekran sarsıntısı çarpanı (kapalıysa 0, açıksa şiddet 0..1); kamera sarsıntısı ve itmesi bununla çarpılır.</summary>
+    public static float ScreenShakeScale => HitFeelMath.ShakeScale(Current.screenShake, Current.screenShakeStrength);
+
+    /// <summary>Ekran parlamalarının çarpanı: sarsıntı kapalıyken yumuşar (bkz. <see cref="GameConfig.reducedScreenFlashFactor"/>).</summary>
+    public static float ScreenFlashScale => HitFeelMath.ScreenFlashScale(Current.screenShake, GameConfigLoader.Get().reducedScreenFlashFactor);
+
     /// <summary>Kayıt dosyasının tam yolu.</summary>
     public static string FilePath => Path.Combine(Application.persistentDataPath, GameConfigLoader.Get().settingsFileName);
 
