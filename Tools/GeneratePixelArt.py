@@ -4,6 +4,8 @@ KelimeOyunu: kodla piksel sanat üretici.
 Her sprite 16x16 pikseldir (Unity'de 16 PPU = 1 birim). Ortak palet ve otomatik siyah kenar çizgisi kullanılır.
 Hareketli sprite'lar için ikinci bir kare (dosyaadi_b.png) de üretilir: aynı çizimin 1 piksel aşağı kaymış hâli.
 Yaratıkların saldırı karesi (dosyaadi_atk.png): aynı çizime ATTACK_POSES'taki poz uygulanır (ağız açık, pençe kalkık).
+Hazırlık karesi (dosyaadi_atk0.png): WINDUP_POSES'taki kurulma pozu (çömelme, kol/silah geride, ağız kapalı).
+Vuruş izi efektleri: fx_<claw|bite|slash|punch|stomp|hit>_0..3.png (4 kare, düz sprite).
 
 Çalıştırma (proje klasöründen):
     python Tools/GeneratePixelArt.py
@@ -2866,6 +2868,385 @@ ATTACK_POSES = {
 }
 
 
+# ---------------- Hazırlık kareleri (<ad>_atk0) ----------------
+# Vuruştan hemen önceki "kurulma" pozu: gövde çöker (üst yarı 1 piksel aşağı), kol/pençe/silah geriye-dışa çekilir,
+# ağız kapanır, kaşlar çatılır. Saldırı karesiyle (_atk) zıt hisseder: önce toplanır, sonra atılır. Aynı tuval ve voxel
+# katman sayısı. Pozu olmayan yaratığa genel çömelme (_recoil) verilir.
+def _crouch(c, n=1):
+    """Üst yarı n piksel aşağı çöker (kafa geride, gövde gerilmiş)."""
+    _move(c, 0, 0, c.w - 1, c.h // 2 - 1, 0, n, mirror=False)
+
+
+def _recoil(c):
+    """Genel hazırlık pozu: çömelme."""
+    _crouch(c)
+
+
+def _tilt(c, x0, y0, x1, y1, grip_y, k=0.4, dy=0):
+    """Kutudaki silahı tutma noktası (grip_y) etrafında dışa (sağa) yatırır: üst uç geriye savrulmuş gibi."""
+    moved = []
+    for yy in range(y0, y1 + 1):
+        for xx in range(x0, x1 + 1):
+            if 0 <= xx < c.w and 0 <= yy < c.h and c.px[yy][xx] is not None:
+                moved.append((xx + int(round((grip_y - yy) * k)), yy + dy, c.px[yy][xx]))
+                c.px[yy][xx] = None
+    for xx, yy, col in moved:
+        c.set(xx, yy, col)
+
+
+def _brows(c, x, y_, col=K):
+    """Çatık kaş: gözün üstüne 2 piksel (aynalı)."""
+    c.sym_set(x, y_, col)
+    c.sym_set(x + 1, y_, col)
+
+
+def _paw_back(c):
+    """Yer tepen hayvan: ön ayak kalkar, arkasında toz."""
+    _move(c, 2, 12, 5, 15, 0, -1, mirror=False)
+    c.set(1, 15, g); c.set(0, 15, w)
+
+
+def _pose0_godzilla(c):
+    c.rect(12, 7, 14, 7, l)                         # ağız kapanır
+    _move(c, 11, 9, 14, 10, -2, 1, mirror=False)    # pençe geri çekilir
+    _move(c, 9, 0, 15, 7, -1, 1, mirror=False)      # kafa geriye-aşağı
+    _move(c, 2, 11, 6, 15, 0, -1, mirror=False)     # kuyruk kalkar
+
+
+def _pose0_ninja(c):
+    _crouch(c)
+    c.rect(11, 10, 12, 11, INK)                     # kol omuz üstünde
+    c.set(13, 9, y); c.set(12, 10, y)               # kabza
+    for xx, yy in ((13, 8), (14, 7), (14, 6), (15, 5), (15, 4)):   # kılıç geriye-yukarı yatık
+        c.set(xx, yy, w)
+    c.set(14, 8, W)
+
+
+def _pose0_bulut(c):
+    c.recolor(g, G); c.recolor(w, g); c.recolor(W, w)   # bulut kararır, yük toplar
+    c.erase_rect(0, 11, 15, 15)
+    _crouch(c)
+    c.set(5, 11, Y); c.set(10, 11, Y); c.set(8, 12, y)  # şimşek öncesi kıvılcım
+
+
+def _pose0_timsah(c):
+    c.rect(3, 3, 12, 6, L)                          # çene kapanır
+    c.rect(4, 6, 11, 6, K)
+    for x in (4, 7, 10):
+        c.set(x, 6, W)
+    _crouch(c)
+
+
+def _pose0_piranha(c):
+    for x in range(2, 8):
+        c.set(x, 8, g); c.set(x, 10, R)
+    c.rect(2, 9, 7, 9, K)
+    c.set(2, 9, W); c.set(7, 9, W)
+    _crouch(c)
+
+
+def _pose0_kopekbaligi(c):
+    for x in range(1, 7):
+        c.set(x, 9, g); c.set(x, 11, w)
+    c.rect(1, 10, 6, 10, K)
+    _crouch(c)
+
+
+def _pose0_su_aygiri(c):
+    c.rect(3, 5, 12, 8, g); c.rect(3, 9, 12, 9, p)  # dev ağız kapanır
+    c.rect(4, 7, 11, 7, p)
+    c.sym_set(5, 8, W)
+    c.sym_set(6, 4, K)
+    _crouch(c)
+
+
+def _pose0_panda(c):
+    c.erase_rect(12, 6, 12, 13)
+    _move(c, 1, 8, 3, 12, -1, -1)
+    c.rect(14, 2, 14, 8, L); c.set(14, 4, l)        # bambu geriye kalkık
+    _crouch(c)
+
+
+def _pose0_yilan(c):
+    c.erase_rect(13, 5, 15, 5)                      # dil içeride
+    _move(c, 8, 2, 15, 7, -1, 1, mirror=False)      # baş geriye çekilir
+    _crouch(c, 1)                                   # boyun S yayı sıkışır
+
+
+WINDUP_POSES = {
+    "zombi": lambda c: (_move(c, 2, 8, 4, 9, -1, 1), c.set(6, 8, K), c.set(9, 8, K), _crouch(c)),
+    "ari": lambda c: (_move(c, 1, 3, 3, 7, 0, 1), c.erase_rect(7, 14, 8, 14), _crouch(c)),
+    "fare": lambda c: (_brows(c, 5, 6, G), _crouch(c)),
+    "kurt": lambda c: (c.sym_set(6, 8, w), _brows(c, 5, 3, G), _move(c, 2, 0, 5, 2, -1, 1), _crouch(c)),
+    "bulut": _pose0_bulut,
+    "kaplumbaga": lambda c: _move(c, 11, 8, 15, 11, -2, 0, mirror=False),
+    "ejderha": lambda c: (_move(c, 0, 3, 4, 11, 0, 1), c.sym_set(6, 7, O), _crouch(c)),
+    "unknown": _recoil,
+    "godzilla": _pose0_godzilla,
+    "kingkong": lambda c: (_move(c, 1, 9, 2, 14, -1, -1), _brows(c, 5, 3), _crouch(c)),
+    "robot": lambda c: (_move(c, 2, 7, 3, 12, -1, 1), c.sym_set(6, 3, O), c.rect(6, 10, 9, 10, O), _crouch(c)),
+    "yeti": lambda c: (_move(c, 1, 9, 2, 13, -1, -1), _brows(c, 5, 4, G), _crouch(c)),
+    "orumcek": lambda c: (_move(c, 0, 1, 4, 5, 1, 1), _crouch(c)),
+    "tepegoz": lambda c: (_tilt(c, 12, 6, 13, 12, 12, 0.35), c.rect(6, 3, 9, 3, p), c.set(6, 8, p), c.set(9, 8, p), _crouch(c)),
+    "aslan": lambda c: (_move(c, 2, 9, 3, 12, -1, -1), c.sym_set(6, 4, n), _crouch(c)),
+    "yilan": _pose0_yilan,
+    "hayalet": lambda c: (c.ellipse(7.5, 9.5, 1.0, 1.2, W), c.rect(7, 9, 8, 9, K), c.sym_set(4, 5, K), _crouch(c)),
+    "yarasa": lambda c: (_move(c, 0, 5, 6, 11, 0, 1), c.sym_set(7, 10, p), _crouch(c)),
+    "karinca": lambda c: _move(c, 0, 5, 5, 11, 1, 0, mirror=False),
+    "boga": _paw_back,
+    "ninja": _pose0_ninja,
+    "kopek": lambda c: (c.set(7, 9, N), c.set(8, 9, N), c.sym_set(6, 4, n), _crouch(c)),
+    "kedi": lambda c: (_move(c, 3, 1, 6, 3, -1, 1), c.sym_rect(5, 6, 6, 6, Y), _crouch(c)),
+    "timsah": _pose0_timsah,
+    "ayi": lambda c: (_move(c, 1, 9, 2, 12, -1, -1), c.sym_set(6, 3, K), _crouch(c)),
+    "iskelet": lambda c: (_move(c, 2, 9, 3, 10, -1, 1), c.sym_set(6, 5, R), _crouch(c)),
+    "cadi": lambda c: (_tilt(c, 12, 8, 12, 15, 15, 0.3), c.set(14, 7, P), _crouch(c)),
+    "korsan": lambda c: (_tilt(c, 13, 9, 13, 14, 14, 0.4), c.set(12, 14, S), _crouch(c)),
+    "kartal": lambda c: (_move(c, 0, 6, 6, 12, 0, 1), _crouch(c)),
+    "akrep": lambda c: (_move(c, 0, 7, 3, 9, 0, 1), _crouch(c)),
+    "hamamboecegi": _recoil,
+    "piranha": _pose0_piranha,
+    "kraken": lambda c: (_move(c, 1, 9, 3, 14, -1, 0), c.sym_rect(5, 4, 6, 4, P), _crouch(c)),
+    "tavuk": lambda c: (_move(c, 6, 1, 13, 8, -1, 0, mirror=False), _crouch(c)),
+    "at": lambda c: (_move(c, 8, 0, 15, 9, -1, 1, mirror=False), _move(c, 2, 12, 4, 15, 0, -1, mirror=False)),
+    "inek": _paw_back,
+    "domuz": lambda c: (_brows(c, 4, 5, s), _paw_back(c)),
+    "keci": _paw_back,
+    "tavsan": lambda c: (_move(c, 5, 0, 6, 2, -1, 1), _crouch(c)),
+    "kurbaga": lambda c: _crouch(c, 2),
+    "kertenkele": lambda c: (c.set(15, 7, None), _move(c, 10, 4, 15, 9, -1, 1, mirror=False)),
+    "kopekbaligi": _pose0_kopekbaligi,
+    "karga": lambda c: (_move(c, 0, 7, 6, 12, 0, 1), _crouch(c)),
+    "guvercin": lambda c: (_move(c, 1, 8, 3, 11, -1, 1), _crouch(c)),
+    "palyaco": lambda c: (c.rect(5, 8, 10, 8, W), c.rect(6, 8, 9, 8, R), _brows(c, 5, 4), _crouch(c)),
+    "asker": lambda c: (_tilt(c, 12, 8, 13, 13, 13, 0.3), _crouch(c)),
+    "polis": lambda c: (c.rect(12, 11, 12, 14, INK), c.set(12, 10, S), _crouch(c)),
+    "uzayli": lambda c: (_move(c, 3, 11, 4, 12, -1, 1), c.set(7, 0, W), _crouch(c)),
+    "goblin": lambda c: (_tilt(c, 11, 9, 11, 14, 14, 0.5), c.set(7, 9, K), _crouch(c)),
+    "balina": lambda c: (c.erase_rect(8, 0, 10, 3), _crouch(c)),
+    "minotor": lambda c: (_move(c, 11, 6, 14, 14, 1, 2, mirror=False), c.sym_set(2, 9, w), _crouch(c)),
+    "medusa": lambda c: (c.sym_set(6, 5, L), c.sym_set(6, 6, l), _crouch(c)),
+    "golem": lambda c: (_move(c, 1, 7, 3, 12, -1, 1), c.rect(6, 9, 9, 10, B), _crouch(c)),
+    "gargoyle": lambda c: (_move(c, 0, 3, 5, 12, 0, 1), c.sym_set(6, 8, g), _crouch(c)),
+    "fil": lambda c: (c.erase_rect(7, 14, 8, 15), c.sym_set(6, 6, G), _crouch(c)),
+    "mamut": lambda c: (c.erase_rect(7, 13, 8, 14), c.sym_set(6, 4, n), _crouch(c)),
+    "cakal": lambda c: (_brows(c, 5, 4, N), _move(c, 3, 0, 6, 3, -1, 1), _crouch(c)),
+    "sirtlan": lambda c: (c.set(7, 7, K), c.set(9, 7, K), _brows(c, 5, 4, N), _crouch(c)),
+    "penguen": lambda c: (_move(c, 1, 8, 2, 11, -1, 1), _crouch(c)),
+    "sumuklu": lambda c: (c.erase_rect(0, 6, 5, 9), c.set(2, 10, s), c.set(4, 10, s), c.set(2, 9, K), c.set(4, 9, K)),
+    "solucan": lambda c: _move(c, 8, 3, 13, 8, -1, 2, mirror=False),
+    "denizanasi": lambda c: (c.erase_rect(0, 14, 15, 15), _crouch(c, 2)),
+    "pterodaktil": lambda c: (_move(c, 0, 6, 6, 10, 0, 1), _crouch(c)),
+    "hirsiz": lambda c: (_move(c, 10, 9, 15, 14, 1, 1, mirror=False), _crouch(c)),
+    "tilki": lambda c: (_brows(c, 5, 5, r), _move(c, 3, 0, 6, 3, -1, 1), _crouch(c)),
+    "baykus": lambda c: (c.rect(4, 5, 7, 5, N), c.rect(8, 5, 11, 5, N), _crouch(c)),
+    "sincap": lambda c: (_move(c, 3, 11, 7, 13, -1, 1, mirror=False), _crouch(c)),
+    "yengec": lambda c: (_move(c, 0, 4, 2, 6, 0, 2), _crouch(c)),
+    "deve": lambda c: (_move(c, 10, 0, 15, 5, -1, 1, mirror=False), c.set(13, 4, w)),
+    "kanguru": lambda c: (_move(c, 2, 7, 4, 9, -1, 1), _crouch(c)),
+    "panda": _pose0_panda,
+    "kirpi": _recoil,
+    "viking": lambda c: (_move(c, 12, 6, 14, 14, 1, 1, mirror=False), _crouch(c)),
+    "gladyator": lambda c: (_move(c, 0, 7, 4, 13, 1, -1, mirror=False), _tilt(c, 13, 6, 13, 13, 13, 0.3), _crouch(c)),
+    "sumocu": lambda c: _crouch(c, 2),
+    "boksor": lambda c: (_move(c, 0, 5, 4, 9, 1, -1), _crouch(c)),
+    "futbolcu": lambda c: (_move(c, 9, 14, 10, 15, 1, -1, mirror=False), _crouch(c)),
+    "asci": lambda c: (_move(c, 12, 6, 14, 13, 1, 1, mirror=False), _crouch(c)),
+    "maymun": lambda c: (_move(c, 3, 8, 4, 14, -1, -1), _crouch(c)),
+    "papagan": lambda c: (_move(c, 0, 6, 6, 12, 0, 1), _crouch(c)),
+    "su_aygiri": _pose0_su_aygiri,
+    "peri": lambda c: (c.set(11, 9, S), c.rect(12, 10, 13, 10, y), c.set(14, 11, Y), _crouch(c)),
+    "kovboy": lambda c: (_move(c, 12, 11, 13, 12, 0, 1, mirror=False), c.set(12, 11, S), _crouch(c)),
+}
+
+
+# ---------------- Vuruş izi efektleri (fx_<tür>_0..3) ----------------
+# Hedefin üstünde oynayan 4 karelik kısa animasyon. Düz sprite (voxel yok), kenar çizgisi yok: parıltı gibi görünsün.
+def _fx_line(c, pts, col):
+    for xx, yy in pts:
+        c.set(xx, yy, col)
+
+
+def _seg(x0, y0, x1, y1):
+    """İki nokta arası piksel listesi."""
+    n_ = max(abs(x1 - x0), abs(y1 - y0))
+    return [(int(round(x0 + (x1 - x0) * t / n_)), int(round(y0 + (y1 - y0) * t / n_))) for t in range(n_ + 1)]
+
+
+def make_fx_claw(frame):
+    """3 çapraz pençe izi: beliriyor -> parlıyor -> soluyor."""
+    c = Canvas()
+    for i, (sx, sy) in enumerate(((7, 1), (10, 2), (13, 3))):
+        seg = _seg(sx, sy, sx - 6, sy + 11)
+        n_ = len(seg)
+        if frame == 0:
+            part = seg[:n_ // 2]
+            _fx_line(c, [(x + 1, y_) for x, y_ in part], Y)
+            _fx_line(c, part, W)
+        elif frame == 1:
+            _fx_line(c, [(x + 1, y_) for x, y_ in seg], Y)
+            _fx_line(c, seg, W)
+            _fx_line(c, [seg[0], seg[-1]], R)
+            c.set(seg[-1][0] + 1, seg[-1][1], r)
+        elif frame == 2:
+            _fx_line(c, [(x + 1, y_) for x, y_ in seg[2:-2]], O)
+            _fx_line(c, seg[1:-1], Y)
+            _fx_line(c, [seg[1], seg[-2]], R)
+        else:
+            _fx_line(c, [p_ for j, p_ in enumerate(seg[2:-2]) if (j + i) % 3 != 0], r)
+            _fx_line(c, [seg[n_ // 2]], O)
+    return c
+
+
+def _teeth_row(c, y_, down, col_gum, shift=0):
+    """Diş sırası: down=True üst çene (dişler aşağı bakar)."""
+    c.rect(1, y_, 14, y_, col_gum)
+    tip = 1 if down else -1
+    for x in range(2 + shift, 14, 3):
+        c.rect(x, y_ + tip, x + 1, y_ + tip, W)
+        c.set(x + (0 if down else 1), y_ + 2 * tip, w if down else W)
+
+
+def make_fx_bite(frame):
+    """Üst ve alt diş sırası kapanıyor, sonunda küçük kıvılcım."""
+    c = Canvas()
+    if frame < 3:
+        gap = (5, 3, 1)[frame]
+        top, bot = 7 - gap, 8 + gap
+        c.rect(2, top + 1, 13, bot - 1, INK)        # koyu ağız içi
+        if gap > 2:
+            c.rect(3, top + 2, 12, bot - 2, p)
+        _teeth_row(c, top, True, r)
+        _teeth_row(c, bot, False, r, 1)
+        c.rect(2, top - 1, 13, top - 1, R); c.rect(2, bot + 1, 13, bot + 1, R)
+    if frame >= 2:
+        for xx, yy in ((7, 2), (8, 1), (12, 3), (3, 13), (13, 13), (8, 14)):
+            c.set(xx, yy, Y if frame == 2 else O)
+        c.set(8, 2, W); c.set(13, 12, W)
+    if frame == 3:
+        c.rect(3, 7, 12, 8, INK)                    # kapanmış çene izi
+        for x in (4, 7, 10):
+            c.set(x, 7, W); c.set(x + 1, 8, W)
+    return c
+
+
+def make_fx_slash(frame):
+    """Tek kavisli kılıç kesiği, soldan sağa."""
+    c = Canvas()
+    seen = []
+    for t in range(0, 41):
+        a = math.radians(160 - t * 3.5)            # 160 -> 20 derece
+        p_ = (int(round(8 + 8.5 * math.cos(a))), int(round(14 - 9.5 * math.sin(a))))
+        if p_ not in seen:
+            seen.append(p_)
+    n_ = len(seen)
+    a0, a1 = {0: (0, n_ * 2 // 5), 1: (0, n_ * 4 // 5), 2: (n_ // 4, n_), 3: (n_ * 3 // 5, n_)}[frame]
+    for i in range(a0, a1):
+        x, y_ = seen[i]
+        head = (i - a0) / max(1, a1 - a0 - 1)       # 0 = kuyruk, 1 = uç
+        if frame == 3:
+            if i % 2 == 0:
+                c.set(x, y_, B if head < 0.5 else C)
+            continue
+        c.set(x, y_, W if head > 0.4 else C)
+        if 0.25 < head < 0.95:
+            c.set(x, y_ + 1, C if head > 0.5 else B)
+            if (frame == 1 and 0.35 < head < 0.9) or (frame == 2 and 0.45 < head < 0.8):
+                c.set(x, y_ + 2, B)
+    if frame in (1, 2):
+        x, y_ = seen[a1 - 1]
+        c.set(x + 1, y_, W); c.set(x, y_ - 1, C)
+    return c
+
+
+def _star(c, cx, cy, r_out, r_in, points, col, rot=0.0):
+    pts = []
+    for i in range(points * 2):
+        a = rot + math.pi * i / points
+        rad = r_out if i % 2 == 0 else r_in
+        pts.append((cx + rad * math.cos(a), cy + rad * math.sin(a)))
+    c.poly(pts, col)
+
+
+def make_fx_punch(frame):
+    """Yumruk darbesi yıldızı: büyüyüp söner (sarı-turuncu)."""
+    c = Canvas()
+    cx = cy = 8.0
+    if frame == 0:
+        _star(c, cx, cy, 3.6, 1.6, 4, Y, 0.4)
+        c.ellipse(7.5, 7.5, 1.0, 1.0, W)
+    elif frame == 1:
+        _star(c, cx, cy, 7.6, 3.4, 7, O, 0.2)
+        _star(c, cx, cy, 5.6, 2.6, 7, Y, 0.2)
+        c.ellipse(7.5, 7.5, 1.8, 1.8, W)
+    elif frame == 2:
+        _star(c, cx, cy, 8.4, 4.0, 7, r, 0.5)
+        _star(c, cx, cy, 7.4, 3.4, 7, O, 0.5)
+        _star(c, cx, cy, 5.2, 2.4, 7, Y, 0.5)
+        c.erase_ellipse(7.5, 7.5, 2.2, 2.2)
+    else:
+        for i in range(7):
+            a = 0.5 + 2 * math.pi * i / 7
+            c.set(int(round(7.5 + 6.6 * math.cos(a))), int(round(7.5 + 6.6 * math.sin(a))), O)
+            c.set(int(round(7.5 + 5.4 * math.cos(a))), int(round(7.5 + 5.4 * math.sin(a))), r)
+    return c
+
+
+def make_fx_stomp(frame):
+    """Dev adımı: yer çatlağı ve genişleyen toz halkası (kahverengi-gri)."""
+    c = Canvas()
+    crack = [(7, 10), (8, 10), (6, 10), (9, 11), (5, 11), (10, 11), (4, 11), (11, 10), (3, 12), (12, 11),
+             (7, 9), (9, 12), (6, 8), (10, 13), (5, 12)]
+    reach = (5, 15, 15, 15)[frame]
+    rx, ry = (2.5, 5.0, 6.8, 7.6)[frame], (1.4, 2.6, 3.4, 3.8)[frame]
+    ring_c = (s, s, g, w)[frame]
+    for a10 in range(0, 360, 12):                  # toz halkası (yerde yatık elips)
+        if frame == 3 and (a10 // 12) % 2:
+            continue
+        a = math.radians(a10)
+        x, y_ = int(round(7.5 + rx * math.cos(a))), int(round(10.5 + ry * math.sin(a)))
+        c.set(x, y_, ring_c)
+        if frame in (1, 2):
+            c.set(x, y_ - 1 if y_ < 10 else y_ + 1, g if frame == 2 else N)
+    if frame == 0:
+        c.ellipse(7.5, 10.5, 2.0, 1.0, s)
+    col = (n, INK, INK, G)[frame]
+    for xx, yy in crack[:reach]:
+        c.set(xx, yy, col)
+    if frame in (1, 2):                             # havaya fırlayan toprak parçaları
+        for xx, yy in ((3, 5), (12, 4), (8, 3) if frame == 2 else (9, 6)):
+            c.set(xx, yy, N); c.set(xx + 1, yy + 1, n)
+    return c
+
+
+def make_fx_hit(frame):
+    """Genel küçük darbe kıvılcımı."""
+    c = Canvas()
+    if frame == 0:
+        c.rect(7, 7, 8, 8, W)
+        c.set(7, 6, Y); c.set(8, 9, Y); c.set(6, 8, Y); c.set(9, 7, Y)
+    elif frame == 1:
+        c.rect(7, 3, 8, 12, Y); c.rect(3, 7, 12, 8, Y)
+        c.rect(7, 5, 8, 10, W); c.rect(5, 7, 10, 8, W)
+        for d in (2, 3):
+            c.set(7 - d, 7 - d, O); c.set(8 + d, 7 - d, O); c.set(7 - d, 8 + d, O); c.set(8 + d, 8 + d, O)
+    elif frame == 2:
+        for d in range(3, 6):
+            col = Y if d < 5 else O
+            c.set(7 - d, 7 - d, col); c.set(8 + d, 7 - d, col); c.set(7 - d, 8 + d, col); c.set(8 + d, 8 + d, col)
+        for xx, yy in ((7, 1), (8, 1), (7, 14), (8, 14), (1, 7), (1, 8), (14, 7), (14, 8)):
+            c.set(xx, yy, Y)
+        c.set(7, 7, W); c.set(8, 8, W)
+    else:
+        for xx, yy in ((1, 1), (14, 1), (1, 14), (14, 14), (7, 0), (15, 8), (0, 7), (8, 15)):
+            c.set(xx, yy, O if (xx + yy) % 2 else r)
+    return c
+
+
+FX = {"claw": make_fx_claw, "bite": make_fx_bite, "slash": make_fx_slash,
+      "punch": make_fx_punch, "stomp": make_fx_stomp, "hit": make_fx_hit}
+
+
 # ================= Sprite stacking (katmanlı 3D piksel) =================
 # Her nesne yukarıdan görünen yatay dilimlerdir (0 = en alt). Hepsi aynı tuval boyunda, ortak merkezli.
 # Araçlar 0 derecede +x yönüne (sağa) bakar; oyunda gittiği yöne döndürülür.
@@ -3250,8 +3631,13 @@ def main():
     attack_frames = [name for name in animated if name != "char"]
     for name in attack_frames:
         draw_attack(animated[name], ATTACK_POSES.get(name, _lunge)).save(name + "_atk")
+        draw_attack(animated[name], WINDUP_POSES.get(name, _recoil)).save(name + "_atk0")
     for name, fn in static.items():
         fn().save(name)
+    # Vuruş izi efektleri: her tür 4 kare (fx_<tür>_0..3), düz sprite.
+    for kind, fn in FX.items():
+        for frame in range(4):
+            fn(frame).save("fx_%s_%d" % (kind, frame))
     stacks = {"araba": make_araba_stack, "motor": make_motor_stack, "char": make_char_stack,
               "tank": make_tank_stack, "kamyon": make_kamyon_stack, "bisiklet": make_bisiklet_stack, "kaykay": make_kaykay_stack,
               "otobus": make_otobus_stack, "traktor": make_traktor_stack, "buldozer": make_buldozer_stack, "go_kart": make_go_kart_stack,
@@ -3278,8 +3664,9 @@ def main():
         save_stack(voxelize(cv), name)
         save_stack(voxelize(cv.shifted(1)), name + "_b")
         save_stack(voxelize(draw_attack(fn, ATTACK_POSES.get(name, _lunge))), name + "_atk")
-        voxels += 3
-    print("Üretildi:", len(animated) * 2 + len(attack_frames) + len(static), "PNG ->", OUT, "+", len(stacks) + voxels, "katmanlı nesne ->", STACK_OUT)
+        save_stack(voxelize(draw_attack(fn, WINDUP_POSES.get(name, _recoil))), name + "_atk0")
+        voxels += 4
+    print("Üretildi:", len(animated) * 2 + len(attack_frames) * 2 + len(static) + len(FX) * 4, "PNG ->", OUT, "+", len(stacks) + voxels, "katmanlı nesne ->", STACK_OUT)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "defaultEffect": "fx_hit",
+  "giantEffect": "fx_stomp",
+  "rules": [
+    { "tag": "boss", "effect": "fx_stomp" },
+    { "tag": "weapon", "effect": "fx_slash" },
+    { "tag": "melee", "effect": "fx_slash" },
+    { "tag": "predator", "effect": "fx_bite" },
+    { "tag": "undead", "effect": "fx_claw" },
+    { "tag": "knockback", "effect": "fx_punch" }
+  ]
+}

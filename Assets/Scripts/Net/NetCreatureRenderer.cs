@@ -29,6 +29,7 @@ public class NetCreatureRenderer : MonoBehaviour
     readonly Dictionary<int, View> views = new Dictionary<int, View>();
     readonly HashSet<int> seen = new HashSet<int>();
     readonly List<int> toRemove = new List<int>();
+    readonly List<Vector2> victimPositions = new List<Vector2>();
     int appliedVersion = -1;
 
     void Update()
@@ -108,7 +109,9 @@ public class NetCreatureRenderer : MonoBehaviour
             body.AddComponent<SpriteAnimator>().SetFrames(frames);
             view.Body.color = Color.white;
             ExtrudedSpriteVisual.Attach(body, CreatureSpriteScale.IsGiant(s.Radius) ? 3 : 4); // 3D piksel kalınlık (boss zaten 3 kat büyük)
-            CreatureAttackAnimator.Attach(body, () => view.Last.Attacks, CreatureSpriteScale.IsGiant(s.Radius)); // Saldırı animasyonu
+            bool giant = CreatureSpriteScale.IsGiant(s.Radius);
+            CreatureAttackAnimator.Attach(body, () => view.Last.Attacks, giant, () => NearestVictim(view),
+                                          AttackMarkEffect.EffectFor(word, giant)); // Saldırı animasyonu + etiketten vuruş izi
         }
         else
         {
@@ -141,6 +144,27 @@ public class NetCreatureRenderer : MonoBehaviour
 
         if (!string.IsNullOrEmpty(s.Label)) view.Label = BuildLabel(view.Root.transform, CreatureLabel.Resolve(s.Label, word), s.Radius);
         return view;
+    }
+
+    /// <summary>
+    /// İstemci yaratığın kime vurduğunu bilmez: yaratığa en yakın, yeterince yakın, hayattaki karakter hedef sayılır
+    /// (atılma yönü ve vuruş izinin yeri için; yalnızca görüntü). Başkasının görünmez karakteri aranmaz, yeri belli olmasın.
+    /// </summary>
+    Vector2? NearestVictim(View view)
+    {
+        if (view.Root == null) return null;
+        GameConfig config = GameConfigLoader.Get();
+        float reach = view.Last.Radius + config.playerRadius + config.attackMarkTargetSearchMargin;
+        int local = channel != null ? channel.LocalPlayerId : -1;
+
+        victimPositions.Clear();
+        foreach (NetworkPlayer avatar in NetworkPlayer.All)
+        {
+            if (avatar == null || avatar.IsGhost) continue;
+            if ((avatar.Status & StatusFlags.Stealth) != 0 && avatar.PlayerId != local) continue;
+            victimPositions.Add(avatar.transform.position);
+        }
+        return AttackTargetFinder.Nearest(view.Root.transform.position, victimPositions, reach);
     }
 
     static void RefreshLabel(View view)

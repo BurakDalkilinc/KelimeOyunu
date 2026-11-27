@@ -172,6 +172,40 @@ public class GameConfig : ScriptableObject
     [Tooltip("Açıksa kovalayan yaratıklar tek kişiyi vurup kaybolmaz: hep en yakındakine geçer, süresi bitene kadar herkesi avlar.")]
     public bool creaturesHuntEveryone = true;
 
+    [Header("Yaratık saldırı animasyonu (yalnızca görüntü; hasar zamanı kuraldadır)")]
+    [Tooltip("Hazırlık (kurulma) süresi: yaratık geri çekilip ezilir, 'ad_atk0' karesi gösterilir (sn). Hasar olay anında işlendiği için kısa tutulur.")]
+    [Min(0f)] public float creatureAttackWindupSeconds = 0.12f;
+    [Tooltip("Devlerin (boss) hazırlık süresi (sn).")]
+    [Min(0f)] public float creatureAttackGiantWindupSeconds = 0.25f;
+    [Tooltip("Vuruş süresi: hedefe atılma + uzama, 'ad_atk' karesi; sonunda darbe izi çıkar (sn).")]
+    [Min(0.01f)] public float creatureAttackStrikeSeconds = 0.08f;
+    [Tooltip("Toparlanma süresi: yaratık yerine döner (sn).")]
+    [Min(0.01f)] public float creatureAttackRecoverSeconds = 0.25f;
+    [Tooltip("Saldırı karesi ('ad_atk') toparlanmanın bu kadarı boyunca da görünür kalır (0 = yalnızca vuruşta).")]
+    [Range(0f, 1f)] public float creatureAttackFrameRecoverFraction = 0.4f;
+    [Tooltip("Normal yaratığın hedefe atılma mesafesi (birim).")]
+    [Min(0f)] public float creatureAttackLunge = 0.3f;
+    [Tooltip("Devin hedefe atılma mesafesi (birim).")]
+    [Min(0f)] public float creatureAttackGiantLunge = 0.75f;
+    [Tooltip("Hazırlıkta geri çekilme, atılma mesafesinin bu kadarı.")]
+    [Range(0f, 1f)] public float creatureAttackPullBack = 0.35f;
+    [Tooltip("Hazırlıkta ezilme (yanlara genişleyip basıklaşma) oranı.")]
+    [Range(0f, 0.5f)] public float creatureAttackSquash = 0.15f;
+    [Tooltip("Vuruşta uzama/büyüme oranı.")]
+    [Range(0f, 0.5f)] public float creatureAttackStretch = 0.2f;
+
+    [Header("Vuruş izi (pençe, ısırık, kesik...)")]
+    [Tooltip("Etiket → vuruş izi eşlemesi (Resources altındaki JSON, uzantısız).")]
+    public string attackFxPath = "Data/attack_fx";
+    [Tooltip("Vuruş izinin her karesinin süresi (sn).")]
+    [Min(0.01f)] public float attackMarkFrameSeconds = 0.05f;
+    [Tooltip("Vuruş izinin boyu, yaratığın sprite boyuna göre kat.")]
+    [Min(0.1f)] public float attackMarkScale = 1f;
+    [Tooltip("Hedef bilinmiyorsa iz, saldırı yönünde yaratığın bu kadar önünde çıkar (birim; devde sprite boyuyla çarpılır).")]
+    [Min(0f)] public float attackMarkForwardOffset = 0.6f;
+    [Tooltip("Ağda istemci, vuruş anında yaratığa bu kadar yakın (yaratık + oyuncu yarıçapına ek, birim) en yakın karakteri hedef sayar.")]
+    [Min(0f)] public float attackMarkTargetSearchMargin = 0.6f;
+
     [Tooltip("Ateşten hasar alan karakterin yanma (alev görüntüsü) süresi (sn).")]
     [Min(0f)] public float burnSeconds = 2.5f;
 
