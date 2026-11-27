@@ -53,7 +53,7 @@ public class NameTagView : MonoBehaviour
         if (root == null) Build();
         if (!root.activeSelf) root.SetActive(true);
 
-        string text = NameTagRules.Shorten(info.Name, config.nameTagMaxLength);
+        string text = NameTagRules.Label(info, Loc.T("nametag.bot_badge"), config.nameTagMaxLength);
         if (text != shownText)
         {
             shownText = text;
@@ -61,7 +61,8 @@ public class NameTagView : MonoBehaviour
             foreach (TextMesh edge in outline) edge.text = text;
         }
 
-        Color color = NameTagRules.ColorFor(info, config.nameTagOwnColor, config.nameTagOtherColor, config.nameTagFaintAlpha);
+        Color color = NameTagRules.ColorFor(info, config.nameTagOwnColor, config.nameTagOtherColor, config.onlineBotNameColor,
+                                            config.nameTagFaintAlpha);
         main.color = color;
         Color edgeColor = config.nameTagOutlineColor;
         edgeColor.a *= color.a;

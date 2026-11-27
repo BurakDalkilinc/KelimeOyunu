@@ -50,6 +50,7 @@ public class CreatureView : MonoBehaviour
             // Öldürülen boss parçalara ayrılır (süresi bitip giden değil).
             if (Model.IsBoss && Model.BossHealth <= 0 && bodyRenderer != null)
                 Gore.Explode(bodyRenderer.sprite, Model.Position, bodyRenderer.bounds.size.x, bodyRenderer.color);
+            else CreatureFx.Vanished(Model.Position, Model.Radius, Model.IsProjectile, Model.IsStrike); // Süresi bitince puf
             Destroy(gameObject);
         }
     }

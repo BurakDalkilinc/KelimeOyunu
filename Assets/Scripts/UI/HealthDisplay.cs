@@ -6,6 +6,7 @@ using UnityEngine.UI;
 /// Yalnızca gösterir; can hesabı <see cref="Health"/> sınıfındadır. Oyuncu ağda maç başlayınca belli olur,
 /// bu yüzden her karede okunur. Vuruş hissi: yerel oyuncu vurulunca yazı kısa süre sallanıp kırmızı yanar, can düşükken
 /// kalp atışıyla kırmızıya nabız atar (zamanlama <see cref="HitFeelDirector"/>'de).
+/// Sol üst piksel gösterge (<see cref="PlayerHud"/>) açıkken gizlenir; o zaman can kalplerle gösterilir. Yedek olarak durur.
 /// </summary>
 public class HealthDisplay : MonoBehaviour
 {
@@ -33,6 +34,9 @@ public class HealthDisplay : MonoBehaviour
     void Update()
     {
         if (runner == null || label == null) return;
+        // Piksel gösterge (PlayerHud) açıkken eski düz yazı gizlenir; sahne dosyası değişmez.
+        label.enabled = !PlayerHud.IsShowing;
+        if (!label.enabled) return;
 
         PlayerState player = runner.LocalPlayer;
         if (player == null)

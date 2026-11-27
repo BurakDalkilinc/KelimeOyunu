@@ -39,6 +39,7 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
         turns.WordPlayed += OnWordPlayed;
         bootstrap.CreatureSource = Models;
         bootstrap.SpawnCreature = SpawnProjectile;
+        SpellBus.PlayerPosition = id => bootstrap.TryGetPosition(id, out Vector2 at) ? at : (Vector2?)null; // Koruma büyüsü yazana uçar
         DangerVignette.Attach(gameObject, LocalPosition, () => runner.LocalPlayer != null ? runner.LocalPlayer.Id : -1, Sense); // Korku ipuçları
     }
 
@@ -165,6 +166,7 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
         var view = go.AddComponent<CreatureView>();
         view.Initialize(model, config, bootstrap, arena, new System.Random(random.Next()), color, label);
         creatures.Add(view);
+        SpellBus.CreatureAppeared(model.Word != null ? model.Word.id : string.Empty, go.transform); // Kelime büyüsünün harfleri buraya uçar
     }
 
     void LateUpdate()

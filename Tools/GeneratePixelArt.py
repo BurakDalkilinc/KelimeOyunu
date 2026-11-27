@@ -3247,6 +3247,706 @@ FX = {"claw": make_fx_claw, "bite": make_fx_bite, "slash": make_fx_slash,
       "punch": make_fx_punch, "stomp": make_fx_stomp, "hit": make_fx_hit}
 
 
+
+# ================= Arayüz: yazı kutusu =================
+# Steam kapsülündeki yazı kutusunun (Tools/GenerateStoreArt.py, make_textbox / make_die) oyun içi hâli, aynı renk ve oranlar:
+# beyaz iç, ince koyu (K) dış hat (köşeleri boş = 1 px yuvarlak), içte 2. satırda açık mavi (C) parıltı, altta 2 satır gri (w)
+# derinlik; altında kutu genişliğinde ince INK yuva içinde sarı-turuncu sayaç; krem/beyaz zar, kırmızı noktalar.
+# Kutuların çevresinde 1 px saydam pay var: renkli sürümlerin (hot/bad/ok) dış parıltısı oraya çizilir, boyları aynı kalır.
+# 9-slice sınırları (sol, alt, sağ, üst; piksel) UI_BORDERS'ta. Unity spriteBorder = (x=sol, y=alt, z=sağ, w=üst).
+# Yarı saydam parıltılar: renk (r, g, b, a) dörtlüsü verilirse ACanvas alfa ile kaydeder (yeni renk değil, paletin saydamı).
+UI_BORDERS = {
+    "ui_typebox": (4, 4, 4, 4), "ui_typebox_hot": (4, 4, 4, 4),
+    "ui_typebox_bad": (4, 4, 4, 4), "ui_typebox_ok": (4, 4, 4, 4),
+    "ui_timer_bg": (2, 2, 2, 2), "ui_timer_fill": (1, 0, 1, 0), "ui_timer_fill_gold": (1, 0, 1, 0),
+}
+TEAL = _mix(B, L, 0.4)                                       # turkuaz (mavi + yeşil karışımı)
+TEAL_LT = _mix(C, L, 0.2)
+
+
+class ACanvas(Canvas):
+    """Alfa destekli tuval: renk dörtlü ise dördüncü değer saydamlıktır (0-255)."""
+
+    def save(self, name):
+        os.makedirs(OUT, exist_ok=True)
+        img = Image.new("RGBA", (self.w, self.h), (0, 0, 0, 0))
+        for yy in range(self.h):
+            for xx in range(self.w):
+                c = self.px[yy][xx]
+                if c is None:
+                    continue
+                a = c[3] if len(c) > 3 else 255
+                if a > 0:
+                    img.putpixel((xx, yy), (c[0], c[1], c[2], int(a)))
+        img.save(os.path.join(OUT, name + ".png"))
+
+
+def _a(col, alpha):
+    return (col[0], col[1], col[2], int(alpha))
+
+
+def _halo(c, col):
+    """Dolu piksellerin dışına 1 piksellik hale; çapraz komşulara yarı saydamı."""
+    src = [row[:] for row in c.px]
+    for yy in range(c.h):
+        for xx in range(c.w):
+            if src[yy][xx] is not None:
+                continue
+
+            def filled(dirs):
+                return any(0 <= xx + dx < c.w and 0 <= yy + dy < c.h and src[yy + dy][xx + dx] is not None
+                           for dx, dy in dirs)
+            if filled(((1, 0), (-1, 0), (0, 1), (0, -1))):
+                c.px[yy][xx] = col
+            elif len(col) > 3 and filled(((1, 1), (-1, 1), (1, -1), (-1, -1))):
+                c.px[yy][xx] = _a(col, col[3] // 2)
+
+
+def _fade(c, alpha):
+    """Tüm pikselleri verilen saydamlık oranına indirir (sönme kareleri)."""
+    for yy in range(c.h):
+        for xx in range(c.w):
+            p_ = c.px[yy][xx]
+            if p_ is not None:
+                a0 = p_[3] if len(p_) > 3 else 255
+                c.px[yy][xx] = _a(p_, a0 * alpha / 255.0)
+
+
+def _ring(c, cx, cy, rx, ry, th, col, keep=None):
+    """Elips halka (kalınlık th piksel). keep(açı) False dönerse o kısım çizilmez (kesik halka, ön/arka yarı)."""
+    irx, iry = rx - th, ry - th
+    for yy in range(c.h):
+        for xx in range(c.w):
+            dx, dy = xx - cx, yy - cy
+            if (dx / rx) ** 2 + (dy / ry) ** 2 > 1.0:
+                continue
+            if irx > 0 and iry > 0 and (dx / irx) ** 2 + (dy / iry) ** 2 <= 1.0:
+                continue
+            if keep is not None and not keep(math.atan2(dy / ry, dx / rx)):
+                continue
+            c.px[yy][xx] = col
+
+
+def _plus(c, x, y_, core, arm):
+    c.set(x, y_, core)
+    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        c.set(x + dx, y_ + dy, arm)
+
+
+def _k_outline(c):
+    """Kenar çizgisi (Canvas.outline gibi 4 komşulu, köşeler boş kalır) ama saldırı pozu kancası olmadan."""
+    _halo(c, K)
+
+
+def make_ui_typebox(rim=None, glow=None):
+    """50x20 yazı kutusu (store art make_textbox'ın kutusu, 1 px saydam payla).
+    rim: hattın hemen içindeki vurgu halkası (sıra sende / kabul / hata), glow: pay alanındaki dış parıltı."""
+    c = ACanvas(50, 20)
+    x0, y0, x1, y1 = 2, 2, 47, 17                                 # beyaz yüz (store: rect(1, 1, wd, ht, W))
+    c.rect(x0, y0, x1, y1, W)
+    c.rect(x0, y1 - 1, x1, y1, w)                                 # alt 2 satır derinlik (store: w)
+    c.rect(x0 + 1, y0 + 1, x1 - 1, y0 + 1, C)                     # üstte açık mavi parıltı (store: rect(2, 2, wd-1, 2, C))
+    if rim is not None:
+        main, top, bot = rim
+        c.rect(x0, y0, x1, y0, top)
+        c.rect(x0, y0, x0, y1, main)
+        c.rect(x1, y0, x1, y1, main)
+        c.rect(x0, y1, x1, y1, bot)
+    _k_outline(c)                                                 # ince koyu dış hat, köşeler boş
+    if glow is not None:
+        _halo(c, glow)
+    return c
+
+
+def make_ui_typebox_hot():
+    return make_ui_typebox(rim=(Y, _mix(Y, W, 0.55), y), glow=_a(Y, 170))
+
+
+def make_ui_typebox_bad():
+    return make_ui_typebox(rim=(R, _mix(R, PINK, 0.6), r), glow=_a(R, 150))
+
+
+def make_ui_typebox_ok():
+    return make_ui_typebox(rim=(L, _mix(L, W, 0.4), l), glow=_a(L, 150))
+
+
+def make_ui_timer_bg():
+    """40x6 sayaç yuvası (store: kutu altında INK çubuk + K hat, köşeler boş)."""
+    c = ACanvas(40, 6)
+    c.rect(1, 1, 38, 4, INK)
+    _k_outline(c)
+    return c
+
+
+def make_ui_timer_fill():
+    """8x2 dolgu, yuvanın içine 1 px içeriden oturur (store: 2 satır). Beyaz: kod renklendirir; alt satır biraz koyu."""
+    c = ACanvas(8, 2)
+    c.rect(0, 0, 7, 0, W)
+    c.rect(0, 1, 7, 1, _mix(W, w, 0.6))
+    return c
+
+
+def make_ui_timer_fill_gold():
+    """8x2 dolgu, store art renkleriyle birebir: üst satır Y, alt satır O (renklendirmeden kullanmak için)."""
+    c = ACanvas(8, 2)
+    c.rect(0, 0, 7, 0, Y)
+    c.rect(0, 1, 7, 1, O)
+    return c
+
+
+def make_ui_caret(frame):
+    """2x8 imleç (store: 2 genişlik, kutu yüksekliğinin yarısı): 0 = tam siyah, 1 = sönük."""
+    c = ACanvas(2, 8)
+    c.rect(0, 0, 1, 7, K if frame == 0 else _a(INK, 110))
+    return c
+
+
+_PIPS = {1: [(0, 0)], 2: [(-1, -1), (1, 1)], 3: [(-1, -1), (0, 0), (1, 1)],
+         4: [(-1, -1), (1, -1), (-1, 1), (1, 1)], 5: [(-1, -1), (1, -1), (0, 0), (-1, 1), (1, 1)],
+         6: [(-1, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (1, 1)]}
+
+
+def make_ui_die(face):
+    """12x13 zar (store art make_die, size=10): beyaz yüz, altta w/g kalınlık, 2x2 kırmızı noktalar (sağ altı koyu)."""
+    c = ACanvas(12, 13)
+    s_ = 10
+    c.rect(1, 1, s_, s_, W)
+    c.rect(1, s_ - 1, s_, s_ + 1, w)                              # alt yüzey (kalınlık)
+    c.rect(2, s_, s_ - 1, s_ + 1, g)
+    c.rect(1, s_, 1, s_, w); c.rect(s_, s_, s_, s_, w)
+    for xx, yy in ((1, 1), (s_, 1), (1, s_ + 1), (s_, s_ + 1)):
+        c.px[yy][xx] = None                                       # yuvarlak köşe
+    cxy, step = (s_ + 1) / 2.0, (s_ - 4) / 3.0                  # store art make_die nokta yerleşimi
+    for dx, dy in _PIPS[face]:
+        px_ = int(round(cxy + dx * step - 0.5))
+        py_ = int(round(cxy - 1 + dy * step - 0.5))
+        if face == 6:
+            py_ = 4 + dy * 3                                      # 6'da sütunlar bitişmesin: 1 px aralıklı satırlar
+        c.rect(px_, py_, px_ + 1, py_ + 1, R)
+        c.set(px_ + 1, py_ + 1, r)
+    _k_outline(c)
+    return c
+
+
+def make_ui_die_roll(frame):
+    """Dönen zar 12x13: yana yatmış / köşesi üstünde / takla atarken basık / ters yatmış (4 kare), bulanık iz ile."""
+    c = ACanvas(12, 13)
+    cx, cy = 5.5, 5.5
+
+    def square(ang, hs, col):
+        pts = []
+        for k in range(4):
+            a = ang + math.pi / 4 + k * math.pi / 2
+            pts.append((cx + 0.5 + hs * math.sqrt(2) * math.cos(a), cy + 0.5 + hs * math.sqrt(2) * math.sin(a)))
+        c.poly(pts, col)
+
+    def dot(ang, dx, dy, col=R):
+        ca, sa = math.cos(ang), math.sin(ang)
+        c.set(int(round(cx + dx * ca - dy * sa)), int(round(cy + dx * sa + dy * ca)), col)
+
+    if frame == 2:                                                # takla: üst yüz basık, ön yüz görünür
+        c.rect(1, 3, 10, 5, W)
+        c.rect(1, 6, 10, 9, w)
+        c.rect(2, 8, 9, 9, g)
+        for xx in (3, 7):
+            c.rect(xx, 4, xx + 1, 4, R)
+        c.rect(5, 7, 6, 7, r)
+        for xx, yy in ((1, 3), (10, 3), (1, 9), (10, 9)):
+            c.px[yy][xx] = None
+        _k_outline(c)
+        for xx in range(1, 11, 3):                                # dikey hız izi
+            c.set(xx, 0, _a(w, 120)); c.set(xx + 1, 12, _a(w, 120))
+        return c
+    ang, hs, face = {0: (math.radians(20), 3.6, 3), 1: (math.radians(45), 3.4, 5), 3: (math.radians(-25), 3.6, 2)}[frame]
+    square(ang, hs, W)
+    pips = {3: [(-1.9, -1.9), (0, 0), (1.9, 1.9)], 5: [(-1.9, -1.9), (1.9, -1.9), (0, 0), (-1.9, 1.9), (1.9, 1.9)],
+            2: [(-1.9, -1.9), (1.9, 1.9)]}[face]
+    for dx, dy in pips:
+        dot(ang, dx, dy)
+    for xx in range(12):                                          # alt kenarda kalınlık
+        for yy in range(11, 0, -1):
+            if c.px[yy][xx] is not None:
+                if c.px[yy - 1][xx] is not None:
+                    c.set(xx, yy + 1, w)
+                break
+    _k_outline(c)
+    trail = _a(w, 130)                                            # dönüş yönünde bulanık iz
+    src = [row[:] for row in c.px]
+    for yy in range(13):
+        for xx in range(12):
+            if src[yy][xx] is None and (xx + yy) % 2 == 0:
+                if (xx + 1 < 12 and src[yy][xx + 1] == K) or (yy > 0 and src[yy - 1][xx] == K):
+                    c.px[yy][xx] = trail
+    return c
+
+
+def make_ui_key_spark(frame):
+    """8x8 tuş kıvılcımı: merkezden açılır, köşelere savrulup söner (beyaz-sarı)."""
+    c = ACanvas(8, 8)
+    if frame == 0:
+        c.rect(3, 3, 4, 4, W)
+        for xx, yy in ((3, 2), (4, 2), (3, 5), (4, 5), (2, 3), (2, 4), (5, 3), (5, 4)):
+            c.set(xx, yy, Y)
+    elif frame == 1:
+        c.rect(3, 3, 4, 4, W)
+        for k in (1, 2):
+            for xx, yy in ((3, 3 - k), (4, 4 + k), (3 - k, 4), (4 + k, 3)):
+                c.set(xx, yy, Y if k == 1 else W)
+        for xx, yy in ((1, 1), (6, 1), (1, 6), (6, 6)):
+            c.set(xx, yy, Y)
+    elif frame == 2:
+        for xx, yy in ((3, 0), (7, 3), (4, 7), (0, 4)):
+            c.set(xx, yy, W)
+        for xx, yy in ((0, 0), (7, 0), (0, 7), (7, 7)):
+            c.set(xx, yy, Y)
+        for xx, yy in ((1, 1), (6, 1), (1, 6), (6, 6)):
+            c.set(xx, yy, _a(y, 200))
+    else:
+        for xx, yy in ((0, 0), (7, 0), (0, 7), (7, 7)):
+            c.set(xx, yy, _a(y, 140))
+        for xx, yy in ((3, 0), (7, 3), (4, 7), (0, 4)):
+            c.set(xx, yy, _a(Y, 90))
+    return c
+
+
+# ================= Efekt: kelime büyüsü =================
+# Kelime yazılıp kabul edildiğinde oynayan düz sprite'lar (voxel yok, saydam arka plan).
+_RUNES = [((0, 0), (1, 0), (1, 1)), ((0, 1), (1, 0), (2, 1)), ((0, 0), (0, 1), (1, 1)),
+          ((0, 0), (2, 0), (1, 1)), ((1, 0), (0, 1), (1, 1)), ((0, 0), (1, 1), (2, 0))]
+
+
+def _runes(c, cx, cy, rx, ry, count, rot, col, hi):
+    for i in range(count):
+        a = rot + 2 * math.pi * i / count
+        bx, by = int(round(cx + rx * math.cos(a))) - 1, int(round(cy + ry * math.sin(a)))
+        glyph = _RUNES[i % len(_RUNES)]
+        for j, (gx, gy) in enumerate(glyph):
+            c.set(bx + gx, by + gy, hi if j == 0 else col)
+
+
+def make_fx_summon(frame):
+    """24x24 büyü çemberi: yerde halka açılır, rünler döner, ışık sütunu yükselir, söner (mor-turkuaz-beyaz)."""
+    c = ACanvas(24, 24)
+    cx, cy = 11.5, 17.5
+    front = (lambda a: math.sin(a) >= 0)
+    back = (lambda a: math.sin(a) < 0)
+    if frame == 0:
+        c.ellipse(cx, cy, 3.0, 1.4, _a(P, 120))
+        _ring(c, cx, cy, 4.0, 2.0, 1.0, P)
+        c.rect(11, 17, 12, 17, W)
+        for xx, yy in ((9, 13), (14, 12)):
+            c.set(xx, yy, _a(C, 200))
+        return c
+    if frame == 1:
+        c.ellipse(cx, cy, 7.0, 3.2, _a(p, 130))
+        _ring(c, cx, cy, 8.0, 3.8, 1.1, P)
+        _ring(c, cx, cy, 5.5, 2.5, 1.0, TEAL, keep=lambda a: int((a + math.pi) / (math.pi / 4)) % 2 == 0)
+        c.ellipse(cx, cy, 2.0, 0.9, _a(C, 220))
+        c.rect(11, 17, 12, 17, W)
+        _runes(c, cx, cy - 0.5, 6.8, 3.0, 4, 0.3, TEAL_LT, W)
+        for xx, yy in ((6, 12), (16, 11), (11, 9)):
+            _plus(c, xx, yy, W, _a(C, 150))
+        return c
+    rot = {2: 0.0, 3: 0.52, 4: 1.05, 5: 1.4}[frame]
+    disc_a = {2: 150, 3: 160, 4: 130, 5: 70}[frame]
+    c.ellipse(cx, cy, 11.0, 5.2, _a(p, disc_a))
+    if frame == 5:
+        _ring(c, cx, cy, 11.5, 5.6, 1.0, _a(P, 170), keep=lambda a: int((a + math.pi) / (math.pi / 6)) % 2 == 0)
+        _ring(c, cx, cy, 8.0, 3.6, 1.0, _a(TEAL, 110), keep=lambda a: int((a + math.pi + rot) / (math.pi / 4)) % 2 == 0)
+        for xx, yy, col in ((5, 9, _a(C, 170)), (17, 6, _a(TEAL_LT, 150)), (11, 3, _a(W, 140)), (14, 11, _a(C, 120))):
+            c.set(xx, yy, col)
+        return c
+    dash = (lambda a, r0=rot: int((a + math.pi + r0) / (math.pi / 5)) % 2 == 0)
+    # arka yarı (sütunun arkasında kalır)
+    _ring(c, cx, cy, 11.5, 5.6, 1.3, P, keep=back)
+    _ring(c, cx, cy, 8.3, 3.8, 1.0, TEAL, keep=lambda a: back(a) and dash(a))
+    _runes(c, cx, cy - 0.5, 10.0, 4.6, 6, rot, TEAL_LT, W)
+    if frame in (3, 4):                                           # ışık sütunu
+        half = 3 if frame == 3 else 2
+        for yy in range(0, 18):
+            fade = min(1.0, (yy + 1) / 5.0)
+            for xx in range(12 - half - 1, 12 + half + 1):
+                d = abs(xx + 0.5 - 12)
+                if d > half + 0.5:
+                    continue
+                if d < 1.0:
+                    col = _a(W, 235 * fade)
+                elif d < half - 0.4:
+                    col = _a(C, 200 * fade)
+                else:
+                    col = _a(TEAL_LT, 140 * fade)
+                if frame == 4:
+                    col = _a(col, col[3] * 0.7)
+                c.set(xx, yy, col)
+        c.ellipse(cx, cy, half + 2.0, 1.6, _a(W, 230))
+    else:
+        c.ellipse(cx, cy, 3.0, 1.3, _a(C, 230))
+        c.rect(11, 17, 12, 17, W)
+    # ön yarı
+    _ring(c, cx, cy, 11.5, 5.6, 1.3, P, keep=front)
+    _ring(c, cx, cy, 11.5, 5.6, 0.6, _mix(P, PINK, 0.5), keep=lambda a: front(a) and abs(math.cos(a)) < 0.5)
+    _ring(c, cx, cy, 8.3, 3.8, 1.0, TEAL, keep=lambda a: front(a) and dash(a))
+    sparks = {2: ((4, 10), (19, 9), (11, 6)), 3: ((5, 7), (18, 5), (8, 2), (16, 13)),
+              4: ((6, 3), (18, 1), (4, 12), (19, 10))}[frame]
+    for xx, yy in sparks:
+        _plus(c, xx, yy, W, _a(TEAL_LT, 170))
+    return c
+
+
+def make_fx_letter_trail(frame):
+    """6x6 uçan harf izi: beyaz çekirdekli sarı parıltı, küçülüp söner."""
+    c = ACanvas(6, 6)
+    if frame == 0:
+        for xx, yy in ((2, 1), (3, 1), (1, 2), (1, 3), (4, 2), (4, 3), (2, 4), (3, 4)):
+            c.set(xx, yy, Y)
+        c.rect(2, 2, 3, 3, W)
+        for xx, yy in ((2, 0), (5, 2), (3, 5), (0, 3)):
+            c.set(xx, yy, _a(Y, 120))
+    elif frame == 1:
+        c.rect(2, 2, 3, 3, Y)
+        c.set(2, 2, W)
+        for xx, yy in ((2, 1), (4, 2), (3, 4), (1, 3)):
+            c.set(xx, yy, _a(Y, 150))
+    elif frame == 2:
+        c.set(2, 2, Y); c.set(3, 3, _a(y, 200))
+        c.set(3, 2, _a(Y, 110)); c.set(2, 3, _a(Y, 110))
+    else:
+        c.set(3, 3, _a(y, 120))
+    return c
+
+
+def make_fx_word_burst(frame):
+    """20x20 kelime kabul patlaması: altın-beyaz yıldız açılır, ışınlara ve kıvılcımlara dağılır."""
+    c = ACanvas(20, 20)
+    cx = cy = 9.5
+    if frame == 0:
+        _star(c, cx + 0.5, cy + 0.5, 4.5, 1.8, 4, Y, 0.0)
+        c.ellipse(cx, cy, 1.4, 1.4, W)
+    elif frame == 1:
+        _star(c, cx + 0.5, cy + 0.5, 9.2, 3.8, 8, y, 0.2)
+        _star(c, cx + 0.5, cy + 0.5, 7.4, 3.0, 8, Y, 0.2)
+        c.ellipse(cx, cy, 2.4, 2.4, W)
+    elif frame == 2:
+        _star(c, cx + 0.5, cy + 0.5, 9.8, 4.6, 8, y, 0.6)
+        _star(c, cx + 0.5, cy + 0.5, 8.4, 3.8, 8, Y, 0.6)
+        c.erase_ellipse(cx, cy, 3.2, 3.2)
+        _ring(c, cx, cy, 4.2, 4.2, 1.0, W)
+    elif frame == 3:
+        for i in range(8):
+            a = 0.6 + 2 * math.pi * i / 8
+            for rr in (5.5, 6.5, 7.5, 8.5):
+                col = W if rr > 8 else (Y if rr > 6 else _a(y, 200))
+                c.set(int(round(cx + rr * math.cos(a))), int(round(cy + rr * math.sin(a))), col)
+        for xx, yy in ((4, 4), (15, 5), (5, 15), (14, 14)):
+            _plus(c, xx, yy, W, Y)
+    else:
+        for i in range(8):
+            a = 0.6 + 2 * math.pi * i / 8
+            c.set(int(round(cx + 9.2 * math.cos(a))), int(round(cy + 9.2 * math.sin(a))), _a(Y, 170))
+        for xx, yy in ((3, 3), (16, 4), (4, 16), (15, 15)):
+            _plus(c, xx, yy, _a(W, 200), _a(y, 110))
+    return c
+
+
+_POOF = {
+    0: [(7.5, 9.0, 2.6), (5.2, 10.2, 1.9), (9.8, 10.2, 1.9)],
+    1: [(7.5, 7.5, 3.6), (4.5, 9.5, 2.8), (10.5, 9.5, 2.8), (7.5, 11.0, 2.6)],
+    2: [(7.5, 6.2, 4.0), (3.6, 9.0, 3.1), (11.4, 9.0, 3.1), (5.8, 12.0, 2.6), (9.4, 12.0, 2.6)],
+    3: [(3.2, 3.8, 2.3), (11.8, 3.6, 2.3), (2.6, 11.4, 2.0), (12.6, 11.6, 2.0), (7.5, 7.5, 1.8)],
+    4: [(2.0, 2.0, 1.3), (13.0, 1.6, 1.3), (1.4, 13.0, 1.2), (13.8, 13.4, 1.2), (7.5, 4.0, 1.0)],
+}
+
+
+def make_fx_poof(frame):
+    """16x16 duman pufu: bulut toplar şişer, dağılıp söner (gri-beyaz, gri kenar)."""
+    c = ACanvas(16, 16)
+    blobs = _POOF[frame]
+    for bx, by, br in blobs:
+        c.ellipse(bx, by, br, br, w)
+    src = [row[:] for row in c.px]
+    for yy in range(15):                                          # alt kenar gölgesi
+        for xx in range(16):
+            if src[yy][xx] is not None and src[yy + 1][xx] is None:
+                c.px[yy][xx] = g
+    for bx, by, br in blobs:
+        if br > 1.5:
+            c.ellipse(bx - 0.6, by - 0.8, br * 0.55, br * 0.55, W)
+    if frame == 2:
+        c.erase_ellipse(7.5, 9.5, 1.3, 1.0)                      # ortası açılmaya başlar
+    if frame <= 3:
+        _halo(c, G)
+    if frame == 3:
+        _fade(c, 190)
+    elif frame == 4:
+        _fade(c, 130)
+    return c
+
+
+def make_fx_threat_warn(frame):
+    """16x16 kırmızı uyarı üçgeni, dikey eksende dönüyor (tam -> yan -> kenar -> yan) ve nabız gibi parlıyor."""
+    c = ACanvas(16, 16)
+    sx = (1.0, 0.75, 0.22, 0.75)[frame]
+    mx = 8.0
+    c.poly([(mx, 0.6), (mx + 7.2 * sx, 14.0), (mx - 7.2 * sx, 14.0)], R)
+    if sx > 0.4:
+        c.poly([(mx, 3.6), (mx + 5.0 * sx, 12.6), (mx - 5.0 * sx, 12.6)], Y)
+        c.rect(7, 5, 8, 8, K)                                     # ünlem
+        c.rect(7, 10, 8, 11, K)
+        if frame != 0:
+            side = 1 if frame == 1 else -1                        # dönerken karanlıkta kalan yarı
+            for yy in range(16):
+                for xx in range(16):
+                    if c.px[yy][xx] == R and (xx + 0.5 - mx) * side > 0:
+                        c.px[yy][xx] = r
+    else:
+        for yy in range(16):
+            for xx in range(16):
+                if c.px[yy][xx] == R and xx + 0.5 > mx:
+                    c.px[yy][xx] = r
+    for xx in range(16):                                          # taban gölgesi
+        if c.px[13][xx] == R:
+            c.px[13][xx] = r
+    _k_outline(c)
+    if frame == 0:
+        _halo(c, _a(R, 170))
+    elif frame == 3:
+        _halo(c, _a(O, 110))
+    return c
+
+
+def typebox_fx_sprites():
+    """Yazı kutusu arayüzü ve kelime büyüsü efektleri: ad -> çizim fonksiyonu."""
+    out = {"ui_typebox": make_ui_typebox, "ui_typebox_hot": make_ui_typebox_hot,
+           "ui_typebox_bad": make_ui_typebox_bad, "ui_typebox_ok": make_ui_typebox_ok,
+           "ui_timer_bg": make_ui_timer_bg, "ui_timer_fill": make_ui_timer_fill,
+           "ui_timer_fill_gold": make_ui_timer_fill_gold}
+    for i in range(2):
+        out["ui_caret_%d" % i] = (lambda f=i: make_ui_caret(f))
+    for i in range(1, 7):
+        out["ui_die_%d" % i] = (lambda f=i: make_ui_die(f))
+    for i in range(4):
+        out["ui_die_roll_%d" % i] = (lambda f=i: make_ui_die_roll(f))
+        out["ui_key_spark_%d" % i] = (lambda f=i: make_ui_key_spark(f))
+        out["fx_letter_trail_%d" % i] = (lambda f=i: make_fx_letter_trail(f))
+        out["fx_threat_warn_%d" % i] = (lambda f=i: make_fx_threat_warn(f))
+    for i in range(6):
+        out["fx_summon_%d" % i] = (lambda f=i: make_fx_summon(f))
+    for i in range(5):
+        out["fx_word_burst_%d" % i] = (lambda f=i: make_fx_word_burst(f))
+        out["fx_poof_%d" % i] = (lambda f=i: make_fx_poof(f))
+    return out
+
+
+
+# ================= Arayüz: HUD (can, itiş, durumlar) =================
+# Sol üstteki düz yazılar yerine simgeler. Tümü düz sprite, ince K kenar; panel ve tuş 9-slice (UI_BORDERS).
+UI_BORDERS.update({"ui_hud_panel": (4, 4, 4, 4), "ui_key_space": (3, 4, 3, 2)})
+HUD_BG = _mix(INK, p, 0.25)                                  # store art koyu mor-INK tonu
+
+
+def _heart_fill():
+    """12x11 kalp gövdesi (kenar çizgisiz): iki lob + sivri alt."""
+    c = ACanvas(12, 11)
+    c.ellipse(3.5, 3.3, 2.6, 2.4, R)
+    c.ellipse(7.5, 3.3, 2.6, 2.4, R)
+    c.poly([(1.0, 3.8), (11.0, 3.8), (6.0, 9.6)], R)
+    return c
+
+
+def _heart_shade(c, body, dark, hi, hi2):
+    for yy in range(c.h):
+        for xx in range(c.w):
+            if c.px[yy][xx] is None:
+                continue
+            below = yy + 1 >= c.h or c.px[yy + 1][xx] is None
+            right = xx + 1 >= c.w or c.px[yy][xx + 1] is None
+            c.px[yy][xx] = dark if (below or right) and xx > 3 else body
+    c.set(2, 2, hi); c.set(3, 2, hi2); c.set(2, 3, hi2)
+
+
+def make_ui_heart(kind):
+    """Kalp: full = parlak kırmızı, empty = koyu gri, half = sol yarı dolu."""
+    c = _heart_fill()
+    if kind == "full":
+        _heart_shade(c, R, r, W, PINK)
+    else:
+        _heart_shade(c, INK, _mix(INK, K, 0.5), G, G)
+        if kind == "half":
+            full = _heart_fill()
+            _heart_shade(full, R, r, W, PINK)
+            for yy in range(c.h):
+                for xx in range(6):
+                    if full.px[yy][xx] is not None:
+                        c.px[yy][xx] = full.px[yy][xx]
+    _k_outline(c)
+    return c
+
+
+_CRACK = [6, 6, 5, 6, 7, 6, 5, 6, 6, 6, 6]                     # her satırda kırığın x'i (sol yarı x < değer)
+
+
+def make_ui_heart_break(frame):
+    """Kalp kırılır: çatlak + parlama, iki yarı ayrılır, düşer, söner (4 kare, 12x11)."""
+    base = _heart_fill()
+    _heart_shade(base, R, r, W, PINK)
+    c = ACanvas(12, 11)
+    if frame == 0:
+        c.px = [row[:] for row in base.px]
+        for yy, cx_ in enumerate(_CRACK):
+            if c.px[yy][cx_] is not None:
+                c.px[yy][cx_] = W if yy < 4 else K
+        _k_outline(c)
+        return c
+    dx, dy, rot_drop = {1: (1, 0, 1), 2: (2, 1, 2), 3: (2, 2, 2)}[frame]
+    for yy in range(11):
+        for xx in range(12):
+            col = base.px[yy][xx]
+            if col is None:
+                continue
+            left = xx < _CRACK[yy]
+            if xx == _CRACK[yy]:
+                continue
+            # yarılar dışa ve aşağı kayar; dış kenarları biraz daha düşer (devrilme hissi)
+            ox = -dx if left else dx
+            oy = dy + (rot_drop if (left and xx < 3) or (not left and xx > 8) else 0) // 2
+            c.set(xx + ox, yy + oy, col)
+    # küçük parçalar
+    shards = {1: ((6, 0, W), (5, 10, R)), 2: ((6, 1, R), (1, 1, PINK), (10, 0, R)), 3: ((6, 3, r), (0, 2, r))}[frame]
+    for xx, yy, col in shards:
+        c.set(xx, yy, col)
+    _k_outline(c)
+    if frame == 3:
+        _fade(c, 120)
+    return c
+
+
+def make_ui_hud_panel():
+    """16x16 yarı saydam koyu panel: K hat, mor-INK kenar halkası (üstü açık, altı koyu), köşelerde altın perçin."""
+    c = ACanvas(16, 16)
+    c.rect(1, 1, 14, 14, _mix(HUD_BG, G, 0.25))
+    c.rect(2, 1, 13, 1, _mix(HUD_BG, g, 0.35))
+    c.rect(1, 14, 14, 14, _mix(HUD_BG, K, 0.5))
+    c.rect(14, 2, 14, 13, _mix(HUD_BG, K, 0.3))
+    c.rect(2, 2, 13, 13, _a(HUD_BG, 185))
+    for xx, yy in ((2, 2), (13, 2), (2, 13), (13, 13)):
+        c.set(xx, yy, y)
+    _k_outline(c)
+    return c
+
+
+def make_ui_icon_shove(gray=False):
+    """12x12 itiş simgesi: iki kalın sağ ok (>>). gray=True: bekleme süresindeki gri sürüm."""
+    c = ACanvas(12, 12)
+    body, top, dark = (g, w, G) if gray else (O, Y, r)
+    for x0 in (1.0, 5.0):
+        c.poly([(x0, 1.5), (x0 + 2.6, 1.5), (x0 + 5.8, 6.0), (x0 + 2.6, 10.5), (x0, 10.5), (x0 + 3.2, 6.0)], body)
+    for yy in range(12):
+        for xx in range(12):
+            if c.px[yy][xx] is not None:
+                if yy < 5:
+                    c.px[yy][xx] = top
+                elif yy > 7:
+                    c.px[yy][xx] = dark
+    _k_outline(c)
+    return c
+
+
+def make_ui_status(kind):
+    """10x10 durum simgeleri; içerik 1..8 piksel, ince K kenar."""
+    c = ACanvas(10, 10)
+    if kind == "shield":
+        c.poly([(1, 1), (9, 1), (9, 5.2), (5, 9.2), (1, 5.2)], B)
+        c.poly([(1, 1), (5, 1), (5, 9.2), (1, 5.2)], C)
+        c.rect(2, 2, 2, 4, W)
+        c.rect(5, 1, 8, 1, b)
+    elif kind == "stealth":
+        c.ellipse(4.5, 5.0, 4.2, 2.8, W)                           # yarı kapalı göz
+        c.ellipse(4.5, 5.4, 1.7, 1.9, p)
+        c.rect(4, 5, 5, 6, K)
+        for xx in range(10):
+            for yy in range(0, 5):
+                if c.px[yy][xx] is not None:
+                    c.px[yy][xx] = g
+        c.rect(1, 4, 8, 4, G)
+    elif kind == "slow":
+        c.ellipse(5.0, 4.0, 3.2, 3.2, s)
+        c.ellipse(5.0, 4.0, 1.6, 1.6, N)
+        c.set(5, 4, s)
+        c.rect(1, 7, 8, 8, Y)
+        c.rect(1, 8, 8, 8, y)
+        c.rect(1, 5, 2, 6, Y)
+        c.set(1, 3, Y)
+    elif kind == "burn":
+        c.poly([(5, 0.5), (8.6, 5.0), (8.0, 8.4), (5, 9.4), (2.0, 8.4), (1.4, 5.0), (3.0, 3.6), (3.6, 5.0)], O)
+        c.poly([(5.2, 3.5), (7.0, 6.5), (6.4, 8.6), (3.6, 8.6), (3.2, 6.8)], Y)
+        c.rect(4, 7, 5, 8, W)
+        c.set(8, 6, r); c.set(7, 8, r)
+    elif kind == "fly":
+        for i, (x0, y0, ln) in enumerate(((1, 2, 7), (1, 4, 6), (1, 6, 4))):
+            c.rect(x0, y0, x0 + ln, y0 + 1, W if i == 0 else w)
+        c.rect(1, 2, 1, 8, w)
+        c.rect(1, 7, 3, 8, g)
+        c.set(8, 2, w); c.set(7, 4, g); c.set(5, 6, g)
+    elif kind == "disguise":
+        c.poly([(0.6, 3.0), (9.4, 3.0), (9.0, 6.4), (6.0, 7.2), (5.0, 6.0), (4.0, 7.2), (1.0, 6.4)], P)
+        c.rect(1, 3, 8, 3, PINK)
+        c.rect(2, 4, 3, 5, None)
+        c.rect(6, 4, 7, 5, None)
+        c.set(4, 6, p); c.set(5, 6, p)
+    elif kind == "weapon":
+        for i in range(6):                                         # 2 px kalın çapraz bıçak
+            c.set(3 + i, 6 - i, W); c.set(4 + i, 6 - i, w)
+        c.set(8, 1, W); c.set(9, 0, None)
+        c.rect(1, 5, 3, 5, y); c.rect(3, 6, 3, 8, y)                # balçak
+        c.rect(1, 7, 2, 8, N)                                      # kabza
+    elif kind == "vehicle":
+        c.ellipse(4.5, 4.5, 4.0, 4.0, INK)
+        c.ellipse(4.5, 4.5, 2.4, 2.4, g)
+        c.ellipse(4.5, 4.5, 1.0, 1.0, W)
+        c.set(2, 2, G); c.set(7, 7, G); c.set(7, 2, G); c.set(2, 7, G)
+        c.rect(2, 0, 7, 0, None)
+        c.set(3, 1, G); c.set(6, 1, G)
+    elif kind == "pull":
+        c.rect(1, 1, 3, 6, R); c.rect(6, 1, 8, 6, R)               # mıknatıs U
+        c.rect(1, 6, 8, 8, R)
+        c.rect(4, 7, 5, 8, r)
+        c.erase_rect(4, 1, 5, 6)
+        c.rect(1, 1, 3, 2, W); c.rect(6, 1, 8, 2, W)               # uçlar
+        c.rect(1, 8, 8, 8, r)
+    _k_outline(c)
+    return c
+
+
+def make_ui_key_space():
+    """24x9 boşluk tuşu kapağı (metinsiz; kod üstüne yazar): açık yüz, altta 2 satır kalınlık."""
+    c = ACanvas(24, 9)
+    c.rect(1, 1, 22, 5, _mix(W, w, 0.35))
+    c.rect(2, 1, 21, 1, W)
+    c.rect(1, 6, 22, 6, g)
+    c.rect(1, 7, 22, 7, G)
+    c.rect(1, 5, 22, 5, _mix(W, w, 0.7))
+    for xx, yy in ((1, 1), (22, 1), (1, 7), (22, 7)):
+        c.px[yy][xx] = None
+    _k_outline(c)
+    return c
+
+
+STATUS_KINDS = ("shield", "stealth", "slow", "burn", "fly", "disguise", "weapon", "vehicle", "pull")
+
+
+def hud_sprites():
+    """HUD simgeleri: ad -> çizim fonksiyonu."""
+    out = {"ui_heart_full": lambda: make_ui_heart("full"), "ui_heart_empty": lambda: make_ui_heart("empty"),
+           "ui_heart_half": lambda: make_ui_heart("half"), "ui_hud_panel": make_ui_hud_panel,
+           "ui_icon_shove": make_ui_icon_shove, "ui_icon_shove_cd": lambda: make_ui_icon_shove(True),
+           "ui_key_space": make_ui_key_space}
+    for i in range(4):
+        out["ui_heart_break_%d" % i] = (lambda f=i: make_ui_heart_break(f))
+    for k_ in STATUS_KINDS:
+        out["ui_status_" + k_] = (lambda k2=k_: make_ui_status(k2))
+    return out
+
+
 # ================= Sprite stacking (katmanlı 3D piksel) =================
 # Her nesne yukarıdan görünen yatay dilimlerdir (0 = en alt). Hepsi aynı tuval boyunda, ortak merkezli.
 # Araçlar 0 derecede +x yönüne (sağa) bakar; oyunda gittiği yöne döndürülür.
@@ -3619,6 +4319,9 @@ def main():
         "ui_card_frame_locked_plain": lambda: make_ui_card_frame_locked(False),
         "ui_icon_book": make_ui_icon_book, "ui_icon_lock": make_ui_icon_lock,
     }
+    # Arayüz: yazı kutusu + HUD, Efekt: kelime büyüsü
+    static.update(typebox_fx_sprites())
+    static.update(hud_sprites())
     # Ev girişleri: iki karelik kapı/paspas tek parça çizilir, sol/sağ olarak kaydedilir.
     for theme in ("koy", "kar", "col"):
         for kind, fn in (("door", make_t_door), ("doormat", make_t_doormat)):

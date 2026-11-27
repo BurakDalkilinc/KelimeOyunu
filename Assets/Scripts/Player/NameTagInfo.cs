@@ -18,4 +18,7 @@ public struct NameTagInfo
 
     /// <summary>Görünmezlik ya da kılık (karton kutu, çalı...) etkin mi?</summary>
     public bool IsStealthed;
+
+    /// <summary>Adın yanında bot rozeti ("[BOT]") ve bot rengi olsun mu? Yalnızca ağ maçında botlar için (bkz. <see cref="NameTagRules.ShowsBotBadge"/>).</summary>
+    public bool ShowBotBadge;
 }

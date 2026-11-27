@@ -73,6 +73,18 @@ public class MatchRunner : TurnViewSource
         return ShoveCooldown.Describe(bootstrap.GetShoveCooldownLeft(local.Id));
     }
 
+    /// <summary>Gösterge: yerel oyuncunun canı ve etkileri (taban), itiş beklemesi ve seçilme şansı.</summary>
+    public override void FillHud(HudSnapshot hud)
+    {
+        base.FillHud(hud);
+        PlayerState local = LocalPlayer;
+        if (local == null || !local.IsAlive) return;
+
+        hud.ShowShove = true;
+        hud.ShoveLeft = bootstrap.GetShoveCooldownLeft(local.Id);
+        hud.ChanceText = DescribeChance();
+    }
+
     public override void SubmitWord(string text, Action<SubmitStatus> onResult)
     {
         SubmitStatus status = Turns.SubmitWord(Turns.Writer.Id, text);

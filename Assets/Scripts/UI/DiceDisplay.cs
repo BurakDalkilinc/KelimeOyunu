@@ -157,7 +157,12 @@ public class DiceDisplay : MonoBehaviour
             : 1f;
         float angle = Easing.OutCubic(progress) * config.uiDiceSpinTurns * 360f;
         die.rectTransform.localEulerAngles = new Vector3(0f, 0f, -angle);
-        die.sprite = DieFaces.Get(Mathf.Max(0, lastIndex) % 6 + 1, config.uiDiceColor, config.uiDicePipColor);
+        // Dönerken ui_die_roll kareleri (yoksa isimle değişen yüz), durunca yazı kutusundaki sol zarla aynı yüz.
+        Sprite rollFrame = phase == TurnPhase.Dice
+            ? UiSprites.FrameAt("ui_die_roll", Time.unscaledTime, 1f / Mathf.Max(1f, config.typeBoxDieRollFps), true)
+            : null;
+        int face = phase == TurnPhase.Dice ? Mathf.Max(0, lastIndex) % 6 + 1 : DieFaces.LandedFace(turns.TurnNumber, 0);
+        die.sprite = rollFrame != null ? rollFrame : DieFaces.SpriteFor(face, config.uiDiceColor, config.uiDicePipColor);
 
         // Yazının solunda dursun (yazı genişliği isimle değişir).
         float half = Mathf.Min(label.preferredWidth, label.rectTransform.rect.width) * 0.5f;
@@ -174,6 +179,7 @@ public class DiceDisplay : MonoBehaviour
         rect.sizeDelta = new Vector2(config.uiDiceSize, config.uiDiceSize);
         die = go.AddComponent<Image>();
         die.raycastTarget = false;
+        die.preserveAspect = true;
         die.enabled = false;
     }
 }

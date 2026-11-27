@@ -91,6 +91,7 @@ public class NetTurnPanel : MonoBehaviour
     /// <summary>Sol altta bu bilgisayardaki oyuncunun canı; elendiyse hayalet uyarısı.</summary>
     void DrawHealth()
     {
+        if (PlayerHud.IsShowing) return; // Sol üst gösterge canı zaten çiziyor; çifte gösterme olmasın
         var manager = NetworkManager.Singleton;
         if (manager == null || manager.LocalClient == null || manager.LocalClient.PlayerObject == null) return;
 

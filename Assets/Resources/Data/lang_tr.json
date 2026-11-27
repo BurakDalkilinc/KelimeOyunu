@@ -185,6 +185,11 @@
     {"key": "match.main_menu", "value": "Ana menü"},
     {"key": "settings.screen_shake", "value": "Ekran sarsıntısı"},
     {"key": "settings.screen_shake_strength", "value": "Sarsıntı şiddeti"},
-    {"key": "hit.block", "value": "BLOK"}
+    {"key": "hit.block", "value": "BLOK"},
+    {"key": "nametag.bot_badge", "value": "[BOT]"},
+    {"key": "hud.ghost", "value": "HAYALET"},
+    {"key": "hud.key_space", "value": "BOŞLUK"},
+    {"key": "typing.writing_other", "value": "{0} yazıyor"},
+    {"key": "typing.rolling", "value": "Zar atılıyor"}
   ]
 }

@@ -73,6 +73,34 @@ public class NetTurnViewSource : TurnViewSource
         return ShoveCooldown.Describe(mine.ShoveLeft);
     }
 
+    /// <summary>
+    /// Gösterge: can, ölüm ve etkiler karakterden (istemci süreleri bilmez, simgeler süresiz), itiş beklemesi karakterin
+    /// ağdan gelen değerinden, seçilme şansı istemcide sayılır.
+    /// </summary>
+    public override void FillHud(HudSnapshot hud)
+    {
+        hud.Clear();
+        var manager = NetworkManager.Singleton;
+        if (manager == null || manager.LocalClient == null || manager.LocalClient.PlayerObject == null) return;
+
+        NetworkPlayer mine = manager.LocalClient.PlayerObject.GetComponent<NetworkPlayer>();
+        if (mine == null || channel == null || !channel.MatchActive) return;
+
+        int starting = channel.Config != null ? channel.Config.startingHealth : mine.Health;
+        hud.HasPlayer = true;
+        hud.Alive = !mine.IsGhost;
+        hud.Health = mine.Health;
+        hud.MaxHealth = Mathf.Max(starting, mine.Health);
+        if (!hud.Alive) return;
+
+        StatusFlags flags = mine.Status;
+        HudStatusCollector.Collect(flags, hud.Statuses);
+        hud.Armed = (flags & StatusFlags.Weapon) != 0;
+        hud.ShowShove = true;
+        hud.ShoveLeft = mine.ShoveLeft;
+        hud.ChanceText = DescribeChance(mine.PlayerId);
+    }
+
     public override void SubmitWord(string text, Action<SubmitStatus> onResult)
     {
         channel.SubmitWord(text, onResult);

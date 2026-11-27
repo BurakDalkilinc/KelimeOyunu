@@ -10,6 +10,9 @@ public class ShoveDisplay : MonoBehaviour
     void Update()
     {
         if (runner == null || label == null) return;
+        // Piksel gösterge (PlayerHud) açıkken eski düz yazı gizlenir; sahne dosyası değişmez.
+        label.enabled = !PlayerHud.IsShowing;
+        if (!label.enabled) return;
         label.text = runner.DescribeShove();
     }
 }

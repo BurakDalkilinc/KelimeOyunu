@@ -34,7 +34,16 @@ public class NetCreatureRenderer : MonoBehaviour
 
     void OnEnable()
     {
+        SpellBus.PlayerPosition = PlayerPosition; // Koruma büyüsü yazana uçar
         DangerVignette.Attach(gameObject, LocalPosition, () => channel != null ? channel.LocalPlayerId : -1, Sense); // Korku ipuçları
+    }
+
+    /// <summary>Numarası verilen oyuncunun karakterinin yeri; bulunamazsa null.</summary>
+    static Vector2? PlayerPosition(int playerId)
+    {
+        foreach (NetworkPlayer avatar in NetworkPlayer.All)
+            if (avatar != null && avatar.PlayerId == playerId) return avatar.transform.position;
+        return null;
     }
 
     /// <summary>Bu bilgisayardaki oyuncunun karakterinin yeri; yoksa ya da hayaletse null.</summary>
@@ -97,6 +106,7 @@ public class NetCreatureRenderer : MonoBehaviour
                 view = Build(snapshot);
                 views[snapshot.Id] = view;
                 view.Root.transform.position = new Vector3(snapshot.X, snapshot.Y, 0f); // İlk karede kayarak gelmesin
+                SpellBus.CreatureAppeared(snapshot.WordId, view.Root.transform);        // Kelime büyüsünün harfleri buraya uçar
             }
 
             view.Last = snapshot;
@@ -110,6 +120,9 @@ public class NetCreatureRenderer : MonoBehaviour
 
         foreach (int id in toRemove)
         {
+            View gone = views[id];
+            if (gone.Root != null) // Süresi bitip kaybolurken puf (boss canı bittiyse parçalanma ayrıca)
+                CreatureFx.Vanished(gone.Root.transform.position, gone.Last.Radius, false, gone.Last.Kind == CreatureKind.Strike);
             Destroy(views[id].Root);
             views.Remove(id);
         }

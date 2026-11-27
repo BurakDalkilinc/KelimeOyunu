@@ -264,6 +264,7 @@ public class NetworkPlayer : NetworkBehaviour
 
     /// <summary>
     /// İsim etiketinin bilgisi: ad host'un gönderdiği kadrodan (lobi adı), kadro henüz gelmediyse "Bot N" / "Oyuncu N".
+    /// Botların adının yanında "[BOT]" rozeti ve gri renk olur (ağda botlar gizlenmez).
     /// Kendi karakterin sarı; başkasının hayaleti çizilmediği için adı da görünmez; görünmezlik/kılıkta ad gizlenir.
     /// </summary>
     NameTagInfo NameTag()
@@ -280,6 +281,7 @@ public class NetworkPlayer : NetworkBehaviour
             IsAlive = !IsGhost,
             BodyShown = spriteRenderer != null && spriteRenderer.enabled,
             IsStealthed = (Status & StatusFlags.Stealth) != 0 || !disguiseSprite.Value.IsEmpty,
+            ShowBotBadge = NameTagRules.ShowsBotBadge(isBot.Value, true, config != null && config.onlineBotTagEnabled), // Ağda bot açıkça belli olsun
         };
     }
 

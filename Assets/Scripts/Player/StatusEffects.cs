@@ -45,6 +45,9 @@ public class StatusEffects
     /// <summary>Kalkanın bitmesine kalan süre (sn).</summary>
     public float ShieldTimeLeft => HasShield ? shieldTimeLeft : 0f;
 
+    /// <summary>Kalkanın daha kaç vuruşu engelleyeceği (kalkan yoksa 0). Göstergedeki küçük sayı rozeti.</summary>
+    public int ShieldCharges => HasShield ? shieldCharges : 0;
+
     /// <summary>Görünmez mi? (Saldırı kelimesinin hedefi seçilemez.)</summary>
     public bool IsStealthed => stealthTimeLeft > 0f;
 

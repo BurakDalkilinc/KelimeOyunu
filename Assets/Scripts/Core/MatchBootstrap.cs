@@ -313,8 +313,10 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
         var states = new List<PlayerState>();
         var humanState = new PlayerState(0, Loc.T("player.you"), config.startingHealth); // "Sen" / "You": maç başındaki dilde
         states.Add(humanState);
+        // Tek kişilikte botlar gerçek oyuncu gibi takma ad alır (maç tohumundan, tekrarsız, senin adınla çakışmaz).
+        List<string> botNames = BotNameGenerator.ForSinglePlayer(config, config.botCount, Random.Next(), new[] { humanState.Name });
         for (int i = 1; i <= config.botCount; i++)
-            states.Add(new PlayerState(i, "Bot " + i, config.startingHealth, isBot: true));
+            states.Add(new PlayerState(i, botNames[i - 1], config.startingHealth, isBot: true));
 
         Match = new MatchState(states);
         player.Bind(humanState);

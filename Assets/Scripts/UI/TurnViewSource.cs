@@ -28,6 +28,31 @@ public abstract class TurnViewSource : MonoBehaviour
     public abstract string DescribeShove();
 
     /// <summary>
+    /// Sol üst göstergenin (<see cref="PlayerHud"/>) bilgilerini doldurur. Varsayılan: yerel oyuncunun canı ve etkileri;
+    /// tek kişilik ve ağ kaynakları itiş beklemesini ve seçilme şansını da ekler.
+    /// </summary>
+    public virtual void FillHud(HudSnapshot hud)
+    {
+        hud.Clear();
+        PlayerState local = LocalPlayer;
+        if (local == null) return;
+
+        hud.HasPlayer = true;
+        hud.Alive = local.IsAlive;
+        hud.Health = local.Health.Current;
+        hud.MaxHealth = local.Health.Max;
+        if (!local.IsAlive) return;
+
+        HudStatusCollector.Collect(local.Status, hud.Statuses);
+        hud.Armed = local.Status.HasWeapon;
+        if (hud.Armed)
+        {
+            hud.WeaponShots = local.Status.WeaponShots;
+            hud.WeaponSprite = HudStatusCollector.WeaponSprite(local.Status.Weapon);
+        }
+    }
+
+    /// <summary>
     /// Yazılan kelimeyi gönderir. Sonuç (kabul, uzun, yasaklı, kullanılmış...) hazır olunca <paramref name="onResult"/> çağrılır:
     /// tek kişilikte hemen, ağda host cevap verince.
     /// </summary>

@@ -9,7 +9,7 @@ public static class MatchSummary
     /// <summary>Bir satıra sığacak kelime sayısı (uzun listeler alt satıra geçer).</summary>
     public const int WordsPerLine = 6;
 
-    /// <summary>Başlık: "Kazanan: Bot 3" ya da kimse kalmadıysa "Kazanan yok" (seçili dilde).</summary>
+    /// <summary>Başlık: "Kazanan: KaraKartal" ya da kimse kalmadıysa "Kazanan yok" (seçili dilde).</summary>
     public static string GetTitle(PlayerState winner)
     {
         return winner != null ? Loc.F("match.winner", winner.Name) : Loc.T("match.no_winner");

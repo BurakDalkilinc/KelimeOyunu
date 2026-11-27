@@ -213,6 +213,11 @@ ROWS = [
     ("settings.screen_shake", "Ekran sarsıntısı", "Screen shake"),
     ("settings.screen_shake_strength", "Sarsıntı şiddeti", "Shake strength"),
     ("hit.block", "BLOK", "BLOCK"),
+    ("nametag.bot_badge", "[BOT]", "[BOT]"),
+    ("hud.ghost", "HAYALET", "GHOST"),
+    ("hud.key_space", "BOŞLUK", "SPACE"),
+    ("typing.writing_other", "{0} yazıyor", "{0} is typing"),
+    ("typing.rolling", "Zar atılıyor", "Rolling the dice"),
 ]
 
 

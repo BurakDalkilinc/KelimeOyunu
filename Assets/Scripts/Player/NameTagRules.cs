@@ -29,6 +29,33 @@ public static class NameTagRules
         return color;
     }
 
+    /// <summary>
+    /// İsmin rengi, bot rozetiyle: rozetli (ağ maçındaki) bot <paramref name="botColor"/> (gri) olur, kendi karakterin her zaman
+    /// <paramref name="ownColor"/>. Soluklaşma kuralı <see cref="ColorFor(NameTagInfo, Color, Color, float)"/> ile aynı.
+    /// </summary>
+    public static Color ColorFor(NameTagInfo info, Color ownColor, Color otherColor, Color botColor, float faintAlpha)
+    {
+        Color other = info.ShowBotBadge && !info.IsLocal ? botColor : otherColor;
+        return ColorFor(info, ownColor, other, faintAlpha);
+    }
+
+    /// <summary>
+    /// Bot rozeti gösterilsin mi? Yalnızca ağ maçında (<paramref name="online"/>) ve ayarda açıksa. Tek kişilikte botlar
+    /// takma adla oynar; orada rozet yoktur, oyuncu botla oynadığını görmez.
+    /// </summary>
+    public static bool ShowsBotBadge(bool isBot, bool online, bool badgeEnabled) => isBot && online && badgeEnabled;
+
+    /// <summary>
+    /// Etikette yazacak metin: kısaltılmış ad, rozetliyse arkasında boşluk ve <paramref name="badge"/> ("Bot 3 [BOT]").
+    /// Rozet kısaltmaya girmez; uzun adda ad kısalır, rozet hep görünür.
+    /// </summary>
+    public static string Label(NameTagInfo info, string badge, int maxLength)
+    {
+        string name = Shorten(info.Name, maxLength);
+        if (!info.ShowBotBadge || string.IsNullOrEmpty(badge) || name.Length == 0) return name;
+        return name + " " + badge;
+    }
+
     /// <summary>Uzun adı kısaltır: en çok <paramref name="maxLength"/> harf, kısaltılınca sonu nokta. Boşluklar kırpılır.</summary>
     public static string Shorten(string name, int maxLength)
     {

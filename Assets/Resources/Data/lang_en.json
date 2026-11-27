@@ -185,6 +185,11 @@
     {"key": "match.main_menu", "value": "Main menu"},
     {"key": "settings.screen_shake", "value": "Screen shake"},
     {"key": "settings.screen_shake_strength", "value": "Shake strength"},
-    {"key": "hit.block", "value": "BLOCK"}
+    {"key": "hit.block", "value": "BLOCK"},
+    {"key": "nametag.bot_badge", "value": "[BOT]"},
+    {"key": "hud.ghost", "value": "GHOST"},
+    {"key": "hud.key_space", "value": "SPACE"},
+    {"key": "typing.writing_other", "value": "{0} is typing"},
+    {"key": "typing.rolling", "value": "Rolling the dice"}
   ]
 }

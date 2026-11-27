@@ -918,4 +918,230 @@ public class GameConfig : ScriptableObject
         new Color(1f, 0.85f, 0.2f), new Color(0.95f, 0.3f, 0.3f), new Color(0.35f, 0.8f, 1f),
         new Color(0.5f, 0.95f, 0.45f), new Color(0.9f, 0.5f, 1f),
     };
+
+    // ---- Bot adları: tek kişilikte gerçek oyuncu gibi takma adlar, ağ maçında açıkça "Bot N" + rozet. ----
+
+    [Header("Bot adları")]
+    [Tooltip("Tek kişilik (ağsız) maçta botlar bot_names.json'dan takma ad alsın mı? Kapalıysa \"Bot 1\", \"Bot 2\"...")]
+    public bool singlePlayerFakeBotNames = true;
+    [Tooltip("Takma ad listesinin Resources yolu (uzantısız).")]
+    public string botNamesPath = BotNameGenerator.DefaultResourcePath;
+    [Tooltip("Listedeki bir adın en kısa ve en uzun hali (harf). Bunun dışındakiler kullanılmaz.")]
+    [Min(1)] public int botNameMinLength = 3;
+    [Min(1)] public int botNameMaxLength = 16;
+    [Tooltip("Ağ maçında botların isim etiketinde adın yanında [BOT] rozeti çıksın mı? (Yazı dil dosyasında: nametag.bot_badge.)")]
+    public bool onlineBotTagEnabled = true;
+    [Tooltip("Ağ maçında botların isim etiketi rengi (insanlarınkinden ayrılsın diye gri).")]
+    public Color onlineBotNameColor = new Color(0.68f, 0.7f, 0.74f, 1f);
+
+    [Header("Yazı kutusu")]
+    [Tooltip("Yazı kutusu ölçüleri 'resim pikseli' cinsindendir; ekran yüksekliği bu kadar olunca 1 resim pikseli = 1 ekran pikseli. 1080p'de 4 kat.")]
+    [Min(60f)] public float typeBoxReferenceHeight = 270f;
+    [Tooltip("Kutunun ortasının ekrandaki yüksekliği (0 = tepe, 1 = alt). Steam görselindeki gibi ortanın biraz altında.")]
+    [Range(0.2f, 0.95f)] public float typeBoxCenterY = 0.66f;
+    [Tooltip("Kutunun eni ve boyu (resim pikseli).")]
+    [Min(20f)] public float typeBoxWidthPixels = 118f;
+    [Min(8f)] public float typeBoxHeightPixels = 20f;
+    [Tooltip("Çerçeve resminde 9 dilim kenar payı yoksa kullanılacak pay (resim pikseli).")]
+    [Min(0)] public int typeBoxBorderPixels = 3;
+    [Tooltip("Kutunun içindeki yazının boyu ve sol boşluğu (resim pikseli). Uzun kelimede yazı en çok 'typeBoxMinFontScale' katına küçülür.")]
+    [Min(4f)] public float typeBoxFontPixels = 13f;
+    [Min(0f)] public float typeBoxTextPaddingPixels = 5f;
+    [Range(0.2f, 1f)] public float typeBoxMinFontScale = 0.45f;
+    [Tooltip("Sıra başkasındayken ve zar atılırken kutunun ölçeği ve saydamlığı; hal değişiminde geçiş sertliği.")]
+    [Range(0.3f, 1f)] public float typeBoxWatchScale = 0.72f;
+    [Range(0.1f, 1f)] public float typeBoxWatchAlpha = 0.8f;
+    [Min(0.5f)] public float typeBoxModeSharpness = 14f;
+    [Tooltip("Sıra sendeyken kutunun çevresinde nefes alan parıltı: kalınlık (resim pikseli), renk, hız (Hz).")]
+    [Min(0f)] public float typeBoxGlowPixels = 2f;
+    public Color typeBoxGlowColor = new Color(1f, 0.9f, 0.35f, 0.6f);
+    [Min(0f)] public float typeBoxBreatheSpeed = 0.9f;
+    [Tooltip("Resimler yoksa çizilen kutu: Steam görselindeki gibi beyaz yüz, açık gri alt şerit, açık mavi üst çizgi, koyu kenar.")]
+    public Color typeBoxFaceColor = Color.white;
+    public Color typeBoxShadeColor = new Color(0.78f, 0.82f, 0.86f, 1f);
+    public Color typeBoxHighlightColor = new Color(0.75f, 0.92f, 1f, 1f);
+    public Color typeBoxOutlineColor = new Color(0.1f, 0.11f, 0.17f, 1f);
+    [Tooltip("Yazı renkleri: kendi yazdığın, başkasının 'yazıyor...' yazısı, reddedilen harfler.")]
+    public Color typeBoxTextColor = new Color(0.1f, 0.11f, 0.17f, 1f);
+    public Color typeBoxWatchTextColor = new Color(0.33f, 0.35f, 0.45f, 1f);
+    public Color typeBoxBadTextColor = new Color(0.89f, 0.23f, 0.27f, 1f);
+    [Tooltip("Reddedilen/kabul edilen kelimede kutu kenarı (resim yoksa) bu renge döner.")]
+    public Color typeBoxBadColor = new Color(0.89f, 0.23f, 0.27f, 1f);
+    public Color typeBoxOkColor = new Color(0.3f, 0.85f, 0.4f, 1f);
+    [Tooltip("Kırmızı/yeşil kutu resminin ekranda kaldığı süre (sn).")]
+    [Min(0f)] public float typeBoxResultSeconds = 0.5f;
+    [Tooltip("İmleç: yanıp sönme yarı periyodu (sn) ve kalınlığı (resim pikseli).")]
+    [Min(0.05f)] public float typeBoxCaretBlinkSeconds = 0.45f;
+    [Min(0.5f)] public float typeBoxCaretWidthPixels = 2f;
+    [Tooltip("Sayaç çubuğu: kutuya uzaklığı ve kalınlığı (resim pikseli).")]
+    [Min(0f)] public float typeBoxTimerGapPixels = 2f;
+    [Min(1f)] public float typeBoxTimerHeightPixels = 6f;
+    [Tooltip("Sayaç dolgusunun çerçeveden içeri payı (resim pikseli).")]
+    [Min(0f)] public float typeBoxTimerInsetPixels = 2f;
+    [Tooltip("Sayaç: normalde ui_timer_fill_gold (Steam görselindeki sarı-turuncu); resim yoksa ya da süre azalınca beyaz dolgu bu renklere boyanır: dolu → yeşil, 'YellowAt' oranında sarı, 'RedAt' oranında kırmızı.")]
+    public Color typeBoxTimerGreen = new Color(0.35f, 0.85f, 0.35f, 1f);
+    public Color typeBoxTimerYellow = new Color(0.99f, 0.8f, 0.25f, 1f);
+    public Color typeBoxTimerRed = new Color(0.9f, 0.22f, 0.2f, 1f);
+    [Range(0f, 1f)] public float typeBoxTimerYellowAt = 0.55f;
+    [Range(0f, 1f)] public float typeBoxTimerRedAt = 0.3f;
+    public Color typeBoxTimerBackColor = new Color(0.2f, 0.21f, 0.29f, 1f);
+    [Tooltip("Son saniyelerde (uiCountdownWarnSeconds) sayaç ve kutu titremesi (resim pikseli).")]
+    [Min(0f)] public float typeBoxTimerShakePixels = 1.2f;
+    [Tooltip("Zarlar: boyu, kutu köşesine göre eğikliği (derece), dönerken kare hızı, durunca sıçrama.")]
+    [Min(4f)] public float typeBoxDieSizePixels = 24f;
+    public float typeBoxDieTiltDegrees = 12f;
+    [Min(1f)] public float typeBoxDieRollFps = 16f;
+    [Min(0f)] public float typeBoxDieLandBump = 0.45f;
+    [Min(0f)] public float typeBoxDieLandSeconds = 0.4f;
+    [Tooltip("Tuş kıvılcımı ve zar kıvılcımı: boy (resim pikseli) ve kare süresi (sn).")]
+    [Min(1f)] public float typeBoxSparkSizePixels = 16f;
+    [Min(0.01f)] public float typeBoxSparkFrameSeconds = 0.05f;
+    [Tooltip("Tuş sesinin perdesi harfe göre 1 ± bu kadar, bu kadar basamakta değişir.")]
+    [Range(0f, 0.5f)] public float typeBoxKeyPitchSpread = 0.08f;
+    [Min(1)] public int typeBoxKeyPitchSteps = 5;
+    [Tooltip("Silinen harf: düşüş süresi (sn) ve yerçekimi (resim pikseli/sn²).")]
+    [Min(0.05f)] public float typeBoxFallSeconds = 0.45f;
+    [Min(0f)] public float typeBoxFallGravityPixels = 160f;
+    [Tooltip("Reddedilen kelimede harflerin dağılma mesafesi (resim pikseli) ve süresi (sn).")]
+    [Min(0f)] public float typeBoxScatterPixels = 9f;
+    [Min(0.05f)] public float typeBoxScatterSeconds = 0.5f;
+    [Tooltip("Kabulde kutudan çıkan patlama: boy (resim pikseli), kare süresi (sn).")]
+    [Min(1f)] public float typeBoxBurstSizePixels = 60f;
+    [Min(0.01f)] public float typeBoxBurstFrameSeconds = 0.06f;
+    [Tooltip("'X yazıyor...' noktalarının değişme aralığı (sn).")]
+    [Min(0.05f)] public float typeBoxDotsPeriodSeconds = 0.35f;
+    [Tooltip("Kutunun çevresinde süzülen beyaz parıltılar: sayı, yayılma (resim pikseli), hız (Hz).")]
+    [Min(0)] public int typeBoxSparkleCount = 9;
+    [Min(0f)] public float typeBoxSparkleSpreadPixels = 26f;
+    [Min(0f)] public float typeBoxSparkleSpeed = 0.35f;
+    [Tooltip("Kutunun üstündeki ipucu ve hata yazısının boyu (resim pikseli).")]
+    [Min(3f)] public float typeBoxHintFontPixels = 7f;
+    public Color typeBoxHintColor = new Color(1f, 1f, 1f, 0.85f);
+
+    [Header("Kelime büyüsü")]
+    [Tooltip("Harflerin kutudan sırayla kopma aralığı ve kutunun üstündeki bekleme sırasına yükselme süresi (sn).")]
+    [Min(0f)] public float spellLeaveStagger = 0.045f;
+    [Min(0f)] public float spellRiseSeconds = 0.18f;
+    [Tooltip("Bekleyen harflerin kutunun ne kadar üstünde durduğu ve hafif inip kalkması (resim pikseli, Hz).")]
+    [Min(0f)] public float spellHoverPixels = 16f;
+    [Min(0f)] public float spellHoverBobPixels = 1.5f;
+    [Min(0f)] public float spellHoverBobSpeed = 2.5f;
+    [Tooltip("Hedef belliyken harf uçuş süresi ve sırayla kalkış aralığı (sn). Son harf hedef belli olduktan en geç 'MaxArrive' sn sonra varır.")]
+    [Min(0.01f)] public float spellFlightSeconds = 0.38f;
+    [Min(0f)] public float spellFlightStagger = 0.035f;
+    [Min(0.05f)] public float spellMaxArriveSeconds = 0.5f;
+    [Tooltip("Hedef gelmezse (ör. fareyle hedef seçme sürüyor) harflerin en çok bekleme süresi (sn); hedef seçme süresinden uzun olmalı.")]
+    [Min(0.5f)] public float spellHoverMaxSeconds = 4.5f;
+    [Tooltip("Kelime olayından hemen önce doğan yaratık da bu büyüye sayılır (sn).")]
+    [Min(0f)] public float spellAppearBufferSeconds = 0.6f;
+    [Tooltip("Yayın bükülmesi (yol uzunluğunun katı).")]
+    [Range(0f, 1f)] public float spellArcBend = 0.3f;
+    [Tooltip("Uçan harflerin boyu (resim pikseli), rengi ve kenarı.")]
+    [Min(3f)] public float spellLetterFontPixels = 16f;
+    public Color spellLetterColor = new Color(1f, 0.95f, 0.55f, 1f);
+    public Color spellLetterOutlineColor = new Color(0.1f, 0.11f, 0.17f, 1f);
+    [Tooltip("Harf izi: kaç parça, aralarındaki yol farkı (0..1), boy (resim pikseli), kare süresi (sn).")]
+    [Min(0)] public int spellTrailCount = 4;
+    [Range(0.005f, 0.2f)] public float spellTrailSpacing = 0.045f;
+    [Min(1f)] public float spellTrailSizePixels = 12f;
+    [Min(0.01f)] public float spellTrailFrameSeconds = 0.05f;
+    [Tooltip("Varışta yerde açılan çağırma çemberi: boy (ölçek; 1 = 24 piksellik resim 1,5 birim), kare süresi (sn); resim yoksa bu renkte halka.")]
+    [Min(0.1f)] public float spellSummonSize = 1.6f;
+    [Min(0.01f)] public float spellSummonFrameSeconds = 0.06f;
+    public Color spellSummonColor = new Color(0.75f, 0.92f, 1f, 0.8f);
+    [Tooltip("Son harf varınca: beyaz flaş süresi (sn), ekran flaşı saydamlığı, yerdeki flaş boyu (birim).")]
+    [Min(0f)] public float spellFlashSeconds = 0.16f;
+    [Range(0f, 1f)] public float spellScreenFlashAlpha = 0.2f;
+    [Min(0f)] public float spellWorldFlashSize = 2.6f;
+    [Tooltip("Son harf varınca kamera itmesi (birim) ve sarsıntı (travma 0..1).")]
+    [Min(0f)] public float spellKickDistance = 0.16f;
+    [Range(0f, 1f)] public float spellTrauma = 0.12f;
+    [Tooltip("Hedef kamera dışındaysa harfler ekran kenarının bu kadar içinde söner (resim pikseli).")]
+    [Min(0f)] public float spellEdgeInsetPixels = 10f;
+    [Tooltip("Büyük tehdit: ekran kenarındaki uyarı üçgenleri: süre (sn), sayı, boy (resim pikseli), kare süresi (sn), resim yoksa renk.")]
+    [Min(0f)] public float spellThreatWarnSeconds = 2.6f;
+    [Min(0)] public int spellThreatWarnCount = 10;
+    [Min(2f)] public float spellThreatWarnSizePixels = 16f;
+    [Min(0.01f)] public float spellThreatWarnFrameSeconds = 0.08f;
+    public Color spellThreatWarnColor = new Color(1f, 0.3f, 0.2f, 0.9f);
+    [Tooltip("Yaratık süresi bitip kaybolurken çıkan 'puf': boy (yaratık çapının katı), kare süresi (sn), en küçük yarıçap (birim).")]
+    [Min(0.1f)] public float spellPoofSize = 1.6f;
+    [Min(0.01f)] public float spellPoofFrameSeconds = 0.07f;
+    [Min(0f)] public float spellPoofMinRadius = 0.2f;
+    public Color spellPoofColor = new Color(0.9f, 0.9f, 0.95f, 0.7f);
+
+    // ---- HUD: sol üstteki piksel gösterge (kalpler, itiş, durum simgeleri). Ölçüler resim pikseli; ekranda tam sayı katına büyür. ----
+
+    [Header("HUD")]
+    [Tooltip("Piksel ölçeğinin referans ekran yüksekliği: ekran bunun kaç katıysa (aşağı yuvarlanır) bir resim pikseli o kadar ekran pikseli olur.")]
+    [Min(1)] public int hudReferenceHeight = 240;
+    [Min(1)] public int hudMinScale = 1;
+    [Min(1)] public int hudMaxScale = 6;
+    [Tooltip("Panelin ekran kenarına uzaklığı, iç boşluğu ve satır aralığı (resim pikseli).")]
+    [Min(0)] public int hudMargin = 4;
+    [Min(0)] public int hudPadding = 5;
+    [Min(0)] public int hudRowGap = 3;
+    [Tooltip("ui_hud_panel resminin 9 dilim kenarı (resim pikseli).")]
+    [Min(0)] public int hudPanelBorder = 4;
+    public Color hudPanelFallbackColor = new Color(0.08f, 0.07f, 0.12f, 0.78f);
+    public Color hudPanelFallbackEdge = new Color(0.55f, 0.5f, 0.42f, 0.9f);
+
+    [Tooltip("Kalp boyu, aralığı, bir kalbin kaç can olduğu (2 ise yarım kalp çıkar), bir satırdaki en çok kalp.")]
+    [Min(4)] public int hudHeartSize = 12;
+    [Min(0)] public int hudHeartGap = 2;
+    [Min(1)] public int hudHealthPerHeart = 1;
+    [Min(1)] public int hudHeartsPerRow = 10;
+    [Tooltip("Kaybedilen kalbin kırılma kareleri (ui_heart_break_0..3) süresi; ardından parçaların düşme süresi.")]
+    [Min(0.01f)] public float hudHeartBreakSeconds = 0.36f;
+    [Min(0f)] public float hudHeartShardSeconds = 0.6f;
+    [Min(0)] public int hudHeartShardCount = 4;
+    [Min(1)] public int hudHeartShardSize = 3;
+    [Tooltip("Parçaların fırlama hızı ve yerçekimi (resim pikseli / sn).")]
+    [Min(0f)] public float hudHeartShardSpeed = 45f;
+    [Min(0f)] public float hudHeartShardGravity = 260f;
+    [Tooltip("Can artınca kalbin büyüyerek dolma süresi.")]
+    [Min(0.01f)] public float hudHeartFillSeconds = 0.35f;
+    [Tooltip("Düşük canda son kalbin atışta büyüme oranı (kalp atışı HitFeelDirector.LowHealthPulse'tan).")]
+    [Min(0f)] public float hudLowHealthBeatScale = 0.3f;
+    public Color hudHeartFullColor = new Color(0.9f, 0.15f, 0.2f, 1f);
+    public Color hudHeartEmptyColor = new Color(0.22f, 0.18f, 0.24f, 1f);
+
+    [Tooltip("İtiş simgesinin boyu, durum simgelerinin boyu, aralık, altlarındaki süre çubuğunun kalınlığı.")]
+    [Min(4)] public int hudIconSize = 12;
+    [Min(4)] public int hudStatusIconSize = 10;
+    [Min(0)] public int hudIconGap = 3;
+    [Min(1)] public int hudBarHeight = 2;
+    [Tooltip("ui_key_space tuş kapağının 9 dilim kenarları (sol/sağ, üst, alt), yüksekliği ve yazının yanlardaki boşluğu.")]
+    [Min(0)] public int hudKeyCapBorder = 3;
+    [Min(0)] public int hudKeyCapBorderTop = 2;
+    [Min(0)] public int hudKeyCapBorderBottom = 4;
+    [Min(4)] public int hudKeyCapHeight = 12;
+    [Min(0)] public int hudKeyCapPadding = 3;
+    [Tooltip("İtiş hazır olunca simgenin parlayıp büyümesi (\"pop\").")]
+    [Min(0.01f)] public float hudShoveReadyPopSeconds = 0.3f;
+    [Min(0f)] public float hudShoveReadyPopScale = 0.35f;
+    [Tooltip("Bekleyen simgenin rengi (ui_icon_shove_cd yoksa normal simge bu renge boyanır).")]
+    public Color hudCooldownTint = new Color(0.45f, 0.45f, 0.5f, 1f);
+    public Color hudBarBackColor = new Color(0f, 0f, 0f, 0.6f);
+    public Color hudBarFillColor = new Color(0.95f, 0.85f, 0.35f, 1f);
+    public Color hudBarWarnColor = new Color(1f, 0.3f, 0.25f, 1f);
+    public Color hudReadyColor = new Color(0.55f, 1f, 0.55f, 1f);
+
+    [Tooltip("Etkinin bitmesine bu kadar saniye kala simge yanıp söner; saniyede kaç kez.")]
+    [Min(0f)] public float hudStatusWarnSeconds = 2f;
+    [Min(0f)] public float hudStatusBlinkHz = 4f;
+    [Tooltip("Sayı rozetinin rengi (kalkan bloğu, silah atışı).")]
+    public Color hudBadgeColor = new Color(0.12f, 0.1f, 0.16f, 0.95f);
+    public Color hudTextColor = new Color(1f, 0.97f, 0.9f, 1f);
+    public Color hudDimTextColor = new Color(0.75f, 0.78f, 0.9f, 1f);
+    public Color hudGhostColor = new Color(0.75f, 0.85f, 1f, 0.85f);
+    [Tooltip("Simge resmi yoksa çizilecek düz kare renkleri, HudStatusKind sırasıyla: kalkan, silah, araç, uçma, kılık, görünmezlik, yanma, yavaş, çekilme.")]
+    public Color[] hudStatusFallbackColors =
+    {
+        new Color(0.45f, 0.9f, 1f), new Color(0.85f, 0.85f, 0.85f), new Color(0.95f, 0.6f, 0.2f),
+        new Color(1f, 1f, 0.7f), new Color(0.4f, 0.75f, 0.3f), new Color(0.6f, 0.6f, 0.75f),
+        new Color(1f, 0.45f, 0.1f), new Color(0.4f, 0.55f, 1f), new Color(0.8f, 0.4f, 1f),
+    };
+    [Tooltip("Küçük yazıların (saniye, rozet, seçilme şansı) ölçek düşüşü: küçük yazı = piksel ölçeği eksi bu (en az 1).")]
+    [Min(0)] public int hudSmallTextScaleDrop = 1;
 }

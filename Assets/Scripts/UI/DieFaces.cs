@@ -34,6 +34,29 @@ public static class DieFaces
         }
     }
 
+    /// <summary>
+    /// Zar durunca görünen yüz (1-6). Zar oyunda yalnızca kimin yazacağını seçer; bu sayı süstür. Tur numarasından ve zarın
+    /// sırasından (0 = sol/üst zar, 1 = sağ zar) hesaplanır: maçın rastgele sayı üretecine dokunmaz, her ekranda aynı çıkar.
+    /// </summary>
+    public static int LandedFace(int turnNumber, int side)
+    {
+        unchecked
+        {
+            int hash = turnNumber * 7919 + side * 104729 + 13;
+            hash ^= hash >> 7;
+            hash *= 31;
+            return ((hash % 6) + 6) % 6 + 1;
+        }
+    }
+
+    /// <summary>Zar yüzü: varsa Resources/Sprites/ui_die_N resmi, yoksa kodla çizilen yüz.</summary>
+    public static Sprite SpriteFor(int face, Color body, Color pip)
+    {
+        face = ((face - 1) % 6 + 6) % 6 + 1;
+        Sprite art = UiSprites.Get("ui_die_" + face);
+        return art != null ? art : Get(face, body, pip);
+    }
+
     /// <summary>Yüzün resmi (renk değişirse yeniden üretilir).</summary>
     public static Sprite Get(int face, Color body, Color pip)
     {
