@@ -139,7 +139,7 @@ public class GameConfig : ScriptableObject
     [Tooltip("Kalıcı yaratığın (ör. zombi) aynı oyuncuya iki vuruşu arasındaki bekleme (sn).")]
     [Min(0.1f)] public float creatureHitCooldownSeconds = 1f;
     [Tooltip("Yaratık, hedefinden en az bu kadar uzakta doğar (birim).")]
-    [Min(0f)] public float creatureSpawnMinDistance = 6f;
+    [Min(0f)] public float creatureSpawnMinDistance = 4.5f;
     [Tooltip("Bilinmeyen kelimenin zararsız '???' yaratığının hızı.")]
     [Min(0f)] public float unknownCreatureSpeed = 1.5f;
 
@@ -171,6 +171,76 @@ public class GameConfig : ScriptableObject
 
     [Tooltip("Açıksa kovalayan yaratıklar tek kişiyi vurup kaybolmaz: hep en yakındakine geçer, süresi bitene kadar herkesi avlar.")]
     public bool creaturesHuntEveryone = true;
+
+    [Header("Yaratık tehlikesi (hedefli saldırı yaratıkları; global tehditlere uygulanmaz)")]
+    [Tooltip("Kovalayan yaratığın hızı kelimenin hızının bu katıdır (1 = kelimedeki değer).")]
+    [Min(0f)] public float creatureSpeedMultiplier = 1.25f;
+    [Tooltip("\"slow\" etiketli yaratığın hızı en az oyuncu hızının bu katı olur (0 = alt sınır yok).")]
+    [Range(0f, 1f)] public float creatureSlowMinSpeedFraction = 0.55f;
+    [Tooltip("\"slow\" etiketli yaratığın hızı en çok oyuncu hızının bu katı olur: yavaşlar hep oyuncudan yavaş kalır.")]
+    [Range(0.1f, 1f)] public float creatureSlowMaxSpeedFraction = 0.9f;
+    [Tooltip("Çarpandan sonra hız en çok oyuncu hızının bu katı olur (kelimedeki hızın altına inmez; 0 = sınır yok).")]
+    [Min(0f)] public float creatureMaxSpeedFraction = 1.4f;
+    [Tooltip("Kovalayan yaratığın ömrü kelimenin süresinin bu katıdır.")]
+    [Min(0.1f)] public float creatureDurationMultiplier = 1.4f;
+
+    [Tooltip("Atılma menzili: yaratığın kenarından hedefin merkezine bu kadar yaklaşınca atılmaya hazırlanır (birim, 0 = atılmaz).")]
+    [Min(0f)] public float creaturePounceRange = 2.5f;
+    [Tooltip("Atılmadan önceki hazırlık: yaratık durur, titrer ve kırmızı yanar (sn). Oyuncunun kaçma fırsatı.")]
+    [Min(0f)] public float creaturePounceWindupSeconds = 0.2f;
+    [Tooltip("Atılmanın süresi (sn).")]
+    [Min(0f)] public float creaturePounceSeconds = 0.35f;
+    [Tooltip("Atılırken hız, yaratığın hızının bu katı.")]
+    [Min(1f)] public float creaturePounceSpeedMultiplier = 2.2f;
+    [Tooltip("Atılmadan sonra yeniden atılabilmek için bekleme (sn).")]
+    [Min(0f)] public float creaturePounceCooldownSeconds = 2.5f;
+    [Tooltip("Atılma, hazırlık sonundaki hedef noktasını bu kadar geçebilir (birim). Yana kaçan kurtulur.")]
+    [Min(0f)] public float creaturePounceOvershoot = 0.6f;
+    [Tooltip("Etikete göre ayar çarpanları (atılma menzili, atılma hızı, yürüme hızı, ömür). Birden fazla etiket eşleşirse çarpanlar çarpılır.")]
+    public CreatureTagTuning[] creatureTagTunings =
+    {
+        // Hızlılar zaten oyuncudan hızlı: yürüme hızı ve ömrü az artar, atılmaları biraz uzun.
+        new CreatureTagTuning { tag = "fast", pounceRangeMultiplier = 1.2f, pounceSpeedMultiplier = 1.1f, speedMultiplier = 0.85f, durationMultiplier = 0.75f },
+        // Avcılar vurup geri çekildiği için atılmaları en uzun ve en hızlı olanlar.
+        new CreatureTagTuning { tag = "predator", pounceRangeMultiplier = 1.3f, pounceSpeedMultiplier = 1.15f, speedMultiplier = 1f, durationMultiplier = 1f },
+        // Sürü zaten çok kişi: üyeleri atılmaz, hızı ve ömrü eskisi kadar kalır.
+        new CreatureTagTuning { tag = "swarm", pounceRangeMultiplier = 0f, pounceSpeedMultiplier = 1f, speedMultiplier = 0.8f, durationMultiplier = 0.72f },
+        // Boss zaten uzun yaşar ve dev: ömrü uzamaz, atılması kısa.
+        new CreatureTagTuning { tag = "boss", pounceRangeMultiplier = 0.5f, pounceSpeedMultiplier = 1f, speedMultiplier = 1f, durationMultiplier = 0.72f },
+    };
+
+    [Tooltip("Yaratığın vurduğu oyuncu bu kadar yavaşlar (sendeleme; 1 = yavaşlamaz).")]
+    [Range(0.1f, 1f)] public float creatureHitSlowMultiplier = 0.5f;
+    [Tooltip("Sendeleme süresi (sn, 0 = sendeleme yok).")]
+    [Min(0f)] public float creatureHitSlowSeconds = 0.6f;
+
+    [Tooltip("Hedefine vuramayan (evde, uçuyor, görünmez, önü kapalı) yaratık bu kadar sonra en yakın vurulabilir oyuncuya döner (sn, 0 = dönmez).")]
+    [Min(0f)] public float creatureRetargetSeconds = 1.5f;
+    [Tooltip("Bırakılan hedefe bu kadar süre geri dönülmez (sn); yaratık ikisi arasında gidip gelmesin.")]
+    [Min(0f)] public float creatureRetargetIgnoreSeconds = 3f;
+    [Tooltip("Yaratık istediği adımın bu kadarından azını atabiliyorsa önü kapalı (duvara, eve dayanmış) sayılır.")]
+    [Range(0f, 1f)] public float creatureStuckMoveFraction = 0.25f;
+
+    [Tooltip("Botlar atılma menzilinin bu kadarını da tehlike sayıp erken kaçar (0 = hiç, 1 = tamamı). 1'in altı: botlar kusursuz kaçmasın.")]
+    [Range(0f, 1f)] public float botPounceAwareness = 0.6f;
+
+    [Header("Korku ipuçları (yalnızca görüntü)")]
+    [Tooltip("Yerel oyuncuya bu kadar yakın (birim) tehlikeli yaratık varsa ekran kenarı kırmızı nabız atar.")]
+    [Min(0f)] public float dangerVignetteRange = 3.5f;
+    [Tooltip("Vinyetin en koyu hâli (0-1).")]
+    [Range(0f, 1f)] public float dangerVignetteMaxAlpha = 0.5f;
+    [Tooltip("Vinyetin nabız hızı (saniyede atış).")]
+    [Min(0f)] public float dangerVignettePulseHz = 2.2f;
+    [Tooltip("Vinyet kenarının kalınlığı, ekranın kısa kenarına göre.")]
+    [Range(0.01f, 0.5f)] public float dangerVignetteThickness = 0.14f;
+    [Tooltip("Ekran dışındaki, seni kovalayan yaratığı gösteren okun boyu (piksel, 1080p'de).")]
+    [Min(4f)] public float dangerArrowSize = 34f;
+    [Tooltip("Ok ekran kenarından bu kadar içeride durur (piksel, 1080p'de).")]
+    [Min(0f)] public float dangerArrowEdgeMargin = 26f;
+    [Tooltip("Atılmaya hazırlanan yaratığın parladığı renk.")]
+    public Color creaturePounceTint = new Color(1f, 0.22f, 0.18f, 1f);
+    [Tooltip("Hazırlıkta titreme genliği (birim).")]
+    [Min(0f)] public float creaturePounceTremble = 0.06f;
 
     [Header("Yaratık saldırı animasyonu (yalnızca görüntü; hasar zamanı kuraldadır)")]
     [Tooltip("Hazırlık (kurulma) süresi: yaratık geri çekilip ezilir, 'ad_atk0' karesi gösterilir (sn). Hasar olay anında işlendiği için kısa tutulur.")]

@@ -90,7 +90,8 @@ public class CreatureView : MonoBehaviour
                 ExtrudedSpriteVisual.Attach(body, CreatureSpriteScale.IsGiant(radius) ? 3 : 4); // 3D piksel kalınlık (boss zaten 3 kat büyük)
                 bool giant = CreatureSpriteScale.IsGiant(radius);
                 CreatureAttackAnimator.Attach(body, () => Model.AttackCount, giant, TargetPosition,
-                                              AttackMarkEffect.EffectFor(Model.Word, giant)); // Saldırı animasyonu + etiketten vuruş izi
+                                              AttackMarkEffect.EffectFor(Model.Word, giant), // Saldırı animasyonu + etiketten vuruş izi
+                                              () => Model.IsPounceWindup);                    // Atılma hazırlığında kırmızı yanar
                 return;
             }
 

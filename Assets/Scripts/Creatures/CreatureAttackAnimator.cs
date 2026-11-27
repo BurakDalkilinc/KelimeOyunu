@@ -7,6 +7,7 @@ using UnityEngine;
 /// Devler yürürken her adımda yeri sarsar. Kareler yoksa yalnızca hareket oynar. Süreler <see cref="GameConfig"/>'te,
 /// hesap <see cref="AttackPhase"/>'te. Saldırı sayısını sahibi verir (tek kişilikte modelden, ağda anlık görüntüden).
 /// Yalnızca görüntüdür: hasar kuralda, saldırı olayı anında işlenir (hazırlık bu yüzden kısadır).
+/// Atılmaya hazırlanan yaratık (kuraldaki <see cref="PounceStage.Windup"/>) hazırlık karesinde durur, titrer ve kırmızı yanar.
 /// </summary>
 public class CreatureAttackAnimator : MonoBehaviour
 {
@@ -17,6 +18,10 @@ public class CreatureAttackAnimator : MonoBehaviour
 
     Func<int> attacks;
     Func<Vector2?> targetPosition;
+    Func<bool> pounceWindup;
+    SpriteRenderer bodyRenderer;
+    Color baseColor = Color.white;
+    bool tinted;
     bool giant;
     string markEffect;
     GameConfig config;
@@ -40,8 +45,10 @@ public class CreatureAttackAnimator : MonoBehaviour
     /// <summary>Gövdeye bağlar. <paramref name="giant"/> devler için daha uzun hazırlık, güçlü atılma, sarsıntı ve adım sarsıntısı.</summary>
     /// <param name="targetPosition">Biliniyorsa hedefin konumu (atılma yönü, vuruş izinin yeri); yoksa hareket yönü kullanılır.</param>
     /// <param name="markEffect">Vuruş izi efektinin adı (ör. "fx_bite", bkz. <see cref="AttackFxRules"/>); null ise iz çıkmaz.</param>
+    /// <param name="pounceWindup">Yaratık şu an atılmaya hazırlanıyor mu (tek kişilikte modelden, ağda anlık görüntüden)?</param>
     public static CreatureAttackAnimator Attach(GameObject body, Func<int> attackCount, bool giant,
-                                                Func<Vector2?> targetPosition = null, string markEffect = null)
+                                                Func<Vector2?> targetPosition = null, string markEffect = null,
+                                                Func<bool> pounceWindup = null)
     {
         var animator = body.GetComponent<CreatureAttackAnimator>();
         if (animator == null) animator = body.AddComponent<CreatureAttackAnimator>();
@@ -49,6 +56,7 @@ public class CreatureAttackAnimator : MonoBehaviour
         animator.giant = giant;
         animator.targetPosition = targetPosition;
         animator.markEffect = markEffect;
+        animator.pounceWindup = pounceWindup;
         animator.config = GameConfigLoader.Get();
         animator.phase = new AttackPhase(
             giant ? animator.config.creatureAttackGiantWindupSeconds : animator.config.creatureAttackWindupSeconds,
@@ -70,6 +78,8 @@ public class CreatureAttackAnimator : MonoBehaviour
             baseLocalPosition = transform.localPosition;
             baseLocalScale = transform.localScale;
             lastRootPosition = Root.position;
+            bodyRenderer = GetComponent<SpriteRenderer>();
+            if (bodyRenderer != null) baseColor = bodyRenderer.color;
             captured = true;
         }
 
@@ -98,12 +108,41 @@ public class CreatureAttackAnimator : MonoBehaviour
         }
 
         if (giant) offset += Vector3.up * stepBob;
+        offset += PounceWindupVisual();
 
         transform.localPosition = baseLocalPosition + offset;
         transform.localScale = new Vector3(baseLocalScale.x * scale.x, baseLocalScale.y * scale.y, baseLocalScale.z);
     }
 
     Transform Root => transform.parent != null ? transform.parent : transform;
+
+    /// <summary>
+    /// Atılma hazırlığı: hazırlık karesi tutulur, gövde kırmızı nabızla yanar ve titrer (titreme ofsetini döndürür).
+    /// Hazırlık bitince renk eski hâline döner.
+    /// </summary>
+    Vector3 PounceWindupVisual()
+    {
+        bool windup = pounceWindup != null && pounceWindup();
+        if (!windup)
+        {
+            if (tinted && bodyRenderer != null) bodyRenderer.color = baseColor;
+            tinted = false;
+            return Vector3.zero;
+        }
+
+        ResolveFrames();
+        if (frames != null && windupFrame != null) frames.Hold(windupFrame, Mathf.Max(0.05f, Time.deltaTime * 2f));
+
+        if (bodyRenderer != null)
+        {
+            float pulse = 0.65f + 0.35f * Mathf.Sin(Time.time * 40f);
+            bodyRenderer.color = Color.Lerp(baseColor, config.creaturePounceTint, pulse);
+            tinted = true;
+        }
+
+        float amplitude = config.creaturePounceTremble * (giant ? 2f : 1f);
+        return new Vector3(UnityEngine.Random.Range(-amplitude, amplitude), UnityEngine.Random.Range(-amplitude, amplitude) * 0.5f, 0f);
+    }
 
     /// <summary>Hareket yönünü izler (atılma yönü); devler her adımda yeri sarsar.</summary>
     void TrackMovement()

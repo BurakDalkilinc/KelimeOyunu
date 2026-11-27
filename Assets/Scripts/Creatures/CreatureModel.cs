@@ -366,6 +366,73 @@ public class CreatureModel
         return best;
     }
 
+    // ---- Atılma (pounce), sendeletme, hedef değiştirme ----
+    // Değerleri CreatureAggression GameConfig'ten doldurur; varsayılanları "kapalı"dır (eski davranış).
+
+    /// <summary>Atılma menzili: yaratığın kenarından hedefin merkezine bu kadar kalınca atılmaya hazırlanır (birim). 0 = atılmaz.</summary>
+    public float PounceRange { get; set; }
+
+    /// <summary>Atılmadan önce durup titrediği süre (sn).</summary>
+    public float PounceWindupSeconds { get; set; }
+
+    /// <summary>Atılmanın en uzun süresi (sn).</summary>
+    public float PounceSeconds { get; set; }
+
+    /// <summary>Atılırken hızının katı.</summary>
+    public float PounceSpeedMultiplier { get; set; } = 1f;
+
+    /// <summary>Atılma bittikten sonra yeniden atılmak için bekleme (sn).</summary>
+    public float PounceCooldownSeconds { get; set; }
+
+    /// <summary>Atılma, başladığı andaki hedef noktasını en çok bu kadar geçer (birim).</summary>
+    public float PounceOvershoot { get; set; }
+
+    /// <summary>Şu anki atılma aşaması.</summary>
+    public PounceStage Pounce { get; private set; }
+
+    /// <summary>Atılmaya hazırlanıyor mu? (Görüntüde titrer ve kırmızı yanar; ağda da gönderilir.)</summary>
+    public bool IsPounceWindup => !IsFinished && Pounce == PounceStage.Windup;
+
+    /// <summary>Şu an atılıyor mu?</summary>
+    public bool IsLunging => !IsFinished && Pounce == PounceStage.Lunge;
+
+    /// <summary>Vurduğu oyuncuyu sendeletir: hasar işleyince bu çarpanla yavaşlatır (1 = yavaşlatmaz).</summary>
+    public float HitSlowMultiplier { get; set; } = 1f;
+
+    /// <summary>Sendeleme süresi (sn). 0 = sendeletmez.</summary>
+    public float HitSlowSeconds { get; set; }
+
+    /// <summary>
+    /// Hedefine bu kadar süre vuramazsa (uçuyor, korunuyor, görünmez ya da önü duvarla kapalı) en yakın vurulabilir oyuncuya
+    /// döner (sn). 0 = dönmez. <see cref="Locator"/> gerekir.
+    /// </summary>
+    public float RetargetUnreachableSeconds { get; set; }
+
+    /// <summary>Bırakılan hedefe bu kadar süre dönülmez (sn).</summary>
+    public float RetargetIgnoreSeconds { get; set; }
+
+    /// <summary>İstenen adımın bu kadarından azı atılabiliyorsa yaratığın önü kapalı sayılır.</summary>
+    public float StuckMoveFraction { get; set; } = 0.25f;
+
+    float pounceLeft;
+    float pounceCooldownLeft;
+    float pounceTravelLeft;
+    Vector2 pounceDirection;
+    float unreachableFor;
+    PlayerState ignoredTarget;
+    float ignoredLeft;
+
+    /// <summary>Kalan ömrü bu katla çarpar (ör. 1.4 = %40 daha uzun yaşar).</summary>
+    public void ScaleLife(float multiplier)
+    {
+        if (IsFinished) return;
+        LifeLeft *= Mathf.Max(0f, multiplier);
+        if (LifeLeft <= 0f) IsFinished = true;
+    }
+
+    /// <summary>Bu yaratık oyuncuya şu an vuramaz mı? (Uçan oyuncuya yerdeki yaratık, çözüm alanındakine ve maçı kazanana vurulmaz.)</summary>
+    bool CannotHit(PlayerState player) => (player.Status.IsFlying && !IsFlying) || IsProtectedFromThis(player) || player.IsInvulnerable;
+
     /// <summary>İlk vuruşu bu kadar saniye erteler (sürü üyelerini birbirinden ayırmak için).</summary>
     public void DelayFirstHit(float seconds)
     {
@@ -411,6 +478,8 @@ public class CreatureModel
 
         if (hitCooldownLeft > 0f) hitCooldownLeft -= dt;
         if (retreatLeft > 0f) retreatLeft -= dt;
+        if (pounceCooldownLeft > 0f) pounceCooldownLeft -= dt;
+        if (ignoredLeft > 0f && (ignoredLeft -= dt) <= 0f) ignoredTarget = null;
         if (Target == null) return false;
 
         UpdateTarget(Locator);
@@ -425,27 +494,38 @@ public class CreatureModel
         // Sıkılıp giden ya da vurup geri çekilen yaratık hedeften uzaklaşır ve vurmaz.
         if (IsLeaving || IsRetreating)
         {
+            CancelPounce();
             MoveAway(targetPosition, dt);
             return false;
         }
 
         float reach = Radius + targetRadius;
-        MoveToward(targetPosition, reach * 0.8f, dt);
+        bool targetOutOfReach = CannotHit(Target); // Uçan, evdeki (çözüm alanı) ya da maçı kazanan vurulamaz
+
+        Vector2 before = Position;
+        float wanted = Chase(targetPosition, reach, dt, targetOutOfReach);
+        PlayerState chased = Target;
+        TrackReachability(dt, targetOutOfReach || Target.Status.IsStealthed, wanted, (Position - before).magnitude);
+        if (Target != chased) return false; // Yeni hedefin konumu bir sonraki karede gelir
 
         bool touching = (targetPosition - Position).magnitude <= reach;
         bool hasEffect = Damage > 0 || KnockbackDistance > 0f || SlowSeconds > 0f; // Hasarsız ama fırlatan/yavaşlatan da etki eder.
-        bool targetOutOfReach = (Target.Status.IsFlying && !IsFlying) // Uçan oyuncuya yerdeki yaratık vuramaz
-                                || IsProtectedFromThis(Target)        // Evdekine (çözüm alanı) vurulamaz
-                                || Target.IsInvulnerable;             // Maçı kazanan artık vurulmaz
         if (!touching || !hasEffect || hitCooldownLeft > 0f || targetOutOfReach) return false;
 
         AttackCount++;
-        if (Damage > 0) Target.TakeDamage(Damage);
+        if (Damage > 0)
+        {
+            int healthBefore = Target.Health.Current;
+            Target.TakeDamage(Damage);
+            // Sendeleme: hasar gerçekten işlediyse (kalkan yoksa) kısa süre yavaşlar, ikinci vuruş mümkün olur.
+            if (HitSlowSeconds > 0f && Target.Health.Current < healthBefore) Target.Status.ApplySlow(HitSlowMultiplier, HitSlowSeconds);
+        }
         if (SlowSeconds > 0f) Target.Status.ApplySlow(SlowMultiplier, SlowSeconds);
 
         Vector2 push = KnockbackDistance > 0f ? DirectionAway(Position, targetPosition) * KnockbackDistance : Vector2.zero;
         LastHit = new CreatureHit(Target, push);
 
+        if (Pounce == PounceStage.Lunge) EndPounce(); // Atılma vuruşla biter
         hitCooldownLeft = hitCooldownSeconds;
         if (RetreatAfterHitSeconds > 0f) retreatLeft = RetreatAfterHitSeconds;
         if (!Persistent) IsFinished = true;
@@ -618,21 +698,27 @@ public class CreatureModel
     {
         if (Target == null) return;
 
+        // Vuramadığı hedeften dönebilen yaratık (bkz. RetargetUnreachableSeconds) en yakını seçerken vurulabilirlere bakar.
+        bool hittableOnly = RetargetUnreachableSeconds > 0f;
+
         if (!Target.IsAlive)
         {
-            PlayerState next = (RetargetsWhenTargetDies || TargetsNearest) ? NearestAlivePlayer(world) : null;
+            PlayerState next = null;
+            if (RetargetsWhenTargetDies || TargetsNearest)
+                next = (hittableOnly ? NearestAlivePlayer(world, true, ignoredTarget) : null) ?? NearestAlivePlayer(world);
             if (next == null)
             {
                 IsFinished = true;
                 return;
             }
             Target = next;
+            CancelPounce();
             return;
         }
 
         if (!TargetsNearest || world == null) return;
 
-        PlayerState nearest = NearestAlivePlayer(world);
+        PlayerState nearest = NearestAlivePlayer(world, hittableOnly, ignoredTarget);
         if (nearest == null || nearest == Target) return;
         if (!world.TryGetPosition(Target.Id, out Vector2 currentPosition) || !world.TryGetPosition(nearest.Id, out Vector2 nearestPosition)) return;
 
@@ -642,7 +728,13 @@ public class CreatureModel
     }
 
     /// <summary>Konumu bilinen, hayattaki ve görünmez olmayan en yakın oyuncu; yoksa null.</summary>
-    PlayerState NearestAlivePlayer(IPlayerLocator world)
+    PlayerState NearestAlivePlayer(IPlayerLocator world) => NearestAlivePlayer(world, false, null);
+
+    /// <summary>
+    /// Yukarıdakinin aynısı; <paramref name="hittableOnly"/> ise bu yaratığın vuramayacağı oyuncular (uçan, korunan, kazanan)
+    /// atlanır, <paramref name="exclude"/> da seçilmez.
+    /// </summary>
+    PlayerState NearestAlivePlayer(IPlayerLocator world, bool hittableOnly, PlayerState exclude)
     {
         if (world == null) return null;
 
@@ -651,6 +743,7 @@ public class CreatureModel
         foreach (PlayerState player in world.Players)
         {
             if (!player.IsAlive || player.Status.IsStealthed || !world.TryGetPosition(player.Id, out Vector2 position)) continue;
+            if (player == exclude || (hittableOnly && CannotHit(player))) continue;
 
             float distance = (position - Position).magnitude;
             if (distance < bestDistance)
@@ -699,14 +792,103 @@ public class CreatureModel
         Position = Constrain(Position, Position + direction * (Speed * dt));
     }
 
-    /// <summary>Hedefe, ona <paramref name="stopDistance"/> kadar yaklaşana dek ilerler; hedefi aşmaz.</summary>
-    void MoveToward(Vector2 targetPosition, float stopDistance, float dt)
+    /// <summary>
+    /// Kovalama adımı: atılma aşamasına göre durur (hazırlık), hızla düz gider (atılma) ya da hedefe yürür.
+    /// Hedef menzile girince ve bekleme bittiyse hazırlık başlar. Bu karede atmak istediği adımın uzunluğunu döndürür.
+    /// </summary>
+    float Chase(Vector2 targetPosition, float reach, float dt, bool cannotHit)
+    {
+        if (Pounce == PounceStage.Windup)
+        {
+            pounceLeft -= dt;
+            if (pounceLeft <= 0f) StartLunge(targetPosition);
+            return 0f; // Hazırlıkta durur: oyuncunun kaçma fırsatı
+        }
+
+        if (Pounce == PounceStage.Lunge)
+        {
+            float step = Mathf.Min(Speed * PounceSpeedMultiplier * dt, pounceTravelLeft);
+            Position = Constrain(Position, Position + pounceDirection * step);
+            pounceTravelLeft -= step;
+            pounceLeft -= dt;
+            if (pounceLeft <= 0f || pounceTravelLeft <= 0.0001f) EndPounce();
+            return step;
+        }
+
+        float distance = (targetPosition - Position).magnitude;
+        bool canPounce = PounceRange > 0f && PounceSeconds > 0f && pounceCooldownLeft <= 0f
+                         && !cannotHit && !Target.Status.IsStealthed
+                         && distance > reach && distance <= PounceRange + Radius;
+        if (canPounce)
+        {
+            Pounce = PounceStage.Windup;
+            pounceLeft = PounceWindupSeconds;
+            if (pounceLeft <= 0f) StartLunge(targetPosition);
+            return 0f;
+        }
+
+        return MoveToward(targetPosition, reach * 0.8f, dt);
+    }
+
+    /// <summary>Hazırlık bitti: o anki hedef noktasına doğru düz bir atılma başlar (yön kilitlenir, yana kaçan kurtulur).</summary>
+    void StartLunge(Vector2 targetPosition)
+    {
+        Pounce = PounceStage.Lunge;
+        pounceLeft = PounceSeconds;
+        pounceDirection = DirectionAway(Position, targetPosition);
+        pounceTravelLeft = (targetPosition - Position).magnitude + PounceOvershoot;
+    }
+
+    /// <summary>Atılma bitti (süre, yol ya da vuruşla): bekleme başlar.</summary>
+    void EndPounce()
+    {
+        Pounce = PounceStage.None;
+        pounceCooldownLeft = PounceCooldownSeconds;
+    }
+
+    /// <summary>Hazırlık ya da atılma sürüyorsa keser (geri çekilen, hedef değiştiren yaratık).</summary>
+    void CancelPounce()
+    {
+        if (Pounce != PounceStage.None) EndPounce();
+    }
+
+    /// <summary>
+    /// Hedefe vurulamıyorsa (ya da önü kapalı olduğu için yaklaşamıyorsa) süre sayar; süre dolunca en yakın vurulabilir
+    /// başka bir oyuncuya döner ve bıraktığı hedefe bir süre dönmez. Kimse yoksa beklemeye devam eder.
+    /// </summary>
+    void TrackReachability(float dt, bool cannotHit, float wanted, float moved)
+    {
+        if (RetargetUnreachableSeconds <= 0f || Locator == null) return;
+
+        bool stalled = wanted > 0.0001f && moved < wanted * StuckMoveFraction;
+        if (!cannotHit && !stalled)
+        {
+            unreachableFor = 0f;
+            return;
+        }
+
+        unreachableFor += dt;
+        if (unreachableFor < RetargetUnreachableSeconds) return;
+        unreachableFor = 0f;
+
+        PlayerState next = NearestAlivePlayer(Locator, true, Target);
+        if (next == null) return;
+
+        ignoredTarget = Target;
+        ignoredLeft = RetargetIgnoreSeconds;
+        Target = next;
+        CancelPounce();
+    }
+
+    /// <summary>Hedefe, ona <paramref name="stopDistance"/> kadar yaklaşana dek ilerler; hedefi aşmaz. İstenen adım uzunluğunu döndürür.</summary>
+    float MoveToward(Vector2 targetPosition, float stopDistance, float dt)
     {
         float distance = (targetPosition - Position).magnitude;
-        if (distance <= stopDistance) return;
+        if (distance <= stopDistance) return 0f;
 
         float step = Mathf.Min(Speed * dt, distance - stopDistance);
         Position = Constrain(Position, Vector2.MoveTowards(Position, targetPosition, step));
+        return step;
     }
 
     /// <summary>Hedeften hızıyla uzaklaşır. Tam üst üstelerse sağa doğru gider.</summary>

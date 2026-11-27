@@ -32,6 +32,36 @@ public class NetCreatureRenderer : MonoBehaviour
     readonly List<Vector2> victimPositions = new List<Vector2>();
     int appliedVersion = -1;
 
+    void OnEnable()
+    {
+        DangerVignette.Attach(gameObject, LocalPosition, () => channel != null ? channel.LocalPlayerId : -1, Sense); // Korku ipuçları
+    }
+
+    /// <summary>Bu bilgisayardaki oyuncunun karakterinin yeri; yoksa ya da hayaletse null.</summary>
+    Vector2? LocalPosition()
+    {
+        if (channel == null) return null;
+        int local = channel.LocalPlayerId;
+        foreach (NetworkPlayer avatar in NetworkPlayer.All)
+            if (avatar != null && avatar.PlayerId == local) return avatar.IsGhost ? (Vector2?)null : avatar.transform.position;
+        return null;
+    }
+
+    /// <summary>Korku ipuçları için yaratıklar: yer çizilen (kayan) konumdan, durum host'un bayraklarından.</summary>
+    void Sense(List<SensedCreature> into)
+    {
+        foreach (View view in views.Values)
+        {
+            if (view.Root == null) continue;
+            CreatureSnapshot s = view.Last;
+            into.Add(new SensedCreature
+            {
+                Position = view.Root.transform.position, Radius = s.Radius, Harmful = s.IsHarmful,
+                PounceWindup = s.IsPounceWindup, TargetId = s.TargetId,
+            });
+        }
+    }
+
     void Update()
     {
         if (channel == null) return;
@@ -111,7 +141,8 @@ public class NetCreatureRenderer : MonoBehaviour
             ExtrudedSpriteVisual.Attach(body, CreatureSpriteScale.IsGiant(s.Radius) ? 3 : 4); // 3D piksel kalınlık (boss zaten 3 kat büyük)
             bool giant = CreatureSpriteScale.IsGiant(s.Radius);
             CreatureAttackAnimator.Attach(body, () => view.Last.Attacks, giant, () => NearestVictim(view),
-                                          AttackMarkEffect.EffectFor(word, giant)); // Saldırı animasyonu + etiketten vuruş izi
+                                          AttackMarkEffect.EffectFor(word, giant), // Saldırı animasyonu + etiketten vuruş izi
+                                          () => view.Last.IsPounceWindup);        // Atılma hazırlığı host'tan bayrakla gelir
         }
         else
         {

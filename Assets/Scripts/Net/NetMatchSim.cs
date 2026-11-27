@@ -354,7 +354,7 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
             }
 
             // Sıkılıp giden avcı artık tehlike değil; botlar ondan kaçmak zorunda kalmaz.
-            if (model.IsHarmful && !model.IsLeaving) dangers.Add(new DangerZone(model.Position, model.Radius));
+            if (model.IsHarmful && !model.IsLeaving) dangers.Add(CreatureAggression.DangerZoneFor(model, config)); // Atılma menzili de
         }
 
         Terrain?.AppendFireDangers(dangers); // Botlar alevden kaçar
@@ -407,6 +407,10 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
                 Countdown = m.ShowsCountdown && !m.IsSky && m.IsStrike && !m.HasStruck ? Mathf.CeilToInt(m.StrikeWarningLeft) : 0,
                 Label = m.IsBoss ? BossRules.Label(m, m.Word != null ? CreatureLabel.NameToken : "Boss") : creature.Label,
                 Attacks = m.AttackCount,
+                Flags = (m.IsPounceWindup ? CreatureSnapshot.FlagPounceWindup : 0)
+                        | (m.IsLunging ? CreatureSnapshot.FlagLunging : 0)
+                        | (m.IsHarmful && !m.IsLeaving ? CreatureSnapshot.FlagHarmful : 0),
+                TargetId = m.Target != null ? m.Target.Id : -1,
             });
         }
     }

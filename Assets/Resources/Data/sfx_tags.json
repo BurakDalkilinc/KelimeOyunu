@@ -13,6 +13,9 @@
     { "tag": "revive", "sound": "sfx_heal" },
     { "tag": "flying", "sound": "sfx_fly" },
     { "tag": "sky", "sound": "sfx_fly" },
-    { "tag": "escape", "sound": "sfx_fly" }
+    { "tag": "escape", "sound": "sfx_fly" },
+    { "tag": "boss", "sound": "sfx_explosion" },
+    { "tag": "predator", "sound": "sfx_hit" },
+    { "tag": "undead", "sound": "sfx_hit" }
   ]
 }

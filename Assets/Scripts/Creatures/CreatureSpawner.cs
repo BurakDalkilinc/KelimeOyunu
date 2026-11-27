@@ -39,6 +39,30 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
         turns.WordPlayed += OnWordPlayed;
         bootstrap.CreatureSource = Models;
         bootstrap.SpawnCreature = SpawnProjectile;
+        DangerVignette.Attach(gameObject, LocalPosition, () => runner.LocalPlayer != null ? runner.LocalPlayer.Id : -1, Sense); // Korku ipuçları
+    }
+
+    /// <summary>Yerel oyuncunun yeri; elendiyse null (hayalete vinyet çizilmez).</summary>
+    Vector2? LocalPosition()
+    {
+        PlayerState local = runner.LocalPlayer;
+        if (local == null || !local.IsAlive) return null;
+        return bootstrap.TryGetPosition(local.Id, out Vector2 at) ? at : (Vector2?)null;
+    }
+
+    /// <summary>Korku ipuçları için canlı yaratıkların özeti.</summary>
+    void Sense(List<SensedCreature> into)
+    {
+        foreach (CreatureView view in creatures)
+        {
+            if (view == null || view.Model.IsFinished) continue;
+            CreatureModel m = view.Model;
+            into.Add(new SensedCreature
+            {
+                Position = m.Position, Radius = m.Radius, Harmful = m.IsHarmful && !m.IsLeaving,
+                PounceWindup = m.IsPounceWindup, TargetId = m.Target != null ? m.Target.Id : -1,
+            });
+        }
     }
 
     /// <summary>Mermi (silah atışı): yazısız, saldırı rengiyle.</summary>
@@ -160,7 +184,7 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
 
             // Sıkılıp giden avcı artık tehlike değil; botlar ondan kaçmak zorunda kalmaz.
             if (view.Model.IsHarmful && !view.Model.IsLeaving)
-                dangers.Add(new DangerZone(view.Model.Position, view.Model.Radius));
+                dangers.Add(CreatureAggression.DangerZoneFor(view.Model, config)); // Atılma menzilinin bir kısmı da tehlike
         }
 
         // Yanan haritalar da tehlikedir: botlar alevden kaçar.

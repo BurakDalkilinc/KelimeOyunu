@@ -41,6 +41,7 @@ public static class CreatureBuilder
             else if (!model.IsPull) MoveToClearSpot(model, map); // Hedefin üstüne/yanına düşenler ve mıknatıs olduğu yerde kalır
 
             if (config.creaturesHuntEveryone) MakeHunter(model);
+            CreatureAggression.Apply(model, word, config); // Hız/ömür çarpanı, atılma, sendeletme, vuramadığından dönme
             models.Add(model);
         }
 
