@@ -50,4 +50,27 @@ public static class RefugeFinder
 
         return found;
     }
+
+    /// <summary>
+    /// Bu ev, süren bir küresel tehdidin sığınağı mı? Evlere sığınılan ("houses") tehdidin çözüm alanı evin dikdörtgenine değiyorsa
+    /// evet: tehdit sürerken (bitene dek) bu ev yıkılmaz, çözüm haritada kalır.
+    /// </summary>
+    public static bool IsHouseRefuge(IReadOnlyList<GlobalThreat> threats, TerrainMap map, House house)
+    {
+        if (threats == null || map == null) return false;
+
+        Vector2 min = map.CellCenter(house.X, house.Y) - new Vector2(0.5f, 0.5f);
+        Vector2 max = min + new Vector2(house.W, house.H);
+        foreach (GlobalThreat threat in threats)
+        {
+            if (threat == null || threat.Phase == ThreatPhase.Finished) continue;
+            foreach (SafeZone zone in threat.Zones.Zones)
+            {
+                if (zone.Type != SafeZone.HousesType) continue;
+                Vector2 closest = new Vector2(Mathf.Clamp(zone.Position.x, min.x, max.x), Mathf.Clamp(zone.Position.y, min.y, max.y));
+                if ((closest - zone.Position).sqrMagnitude <= zone.Radius * zone.Radius) return true;
+            }
+        }
+        return false;
+    }
 }

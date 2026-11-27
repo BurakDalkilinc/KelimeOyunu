@@ -11,6 +11,9 @@ public class SafeZone
 {
     readonly List<int> occupants = new List<int>();
 
+    /// <summary>Evlere sığınılan tehditlerin çözüm türü (kelimenin "counter.type" değeri).</summary>
+    public const string HousesType = "houses";
+
     /// <summary>Çözümün türü: "shelter", "tower", "cave", "houses".</summary>
     public string Type { get; }
 

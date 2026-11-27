@@ -4,8 +4,9 @@ using UnityEngine;
 /// <summary>
 /// Yaratığın saldırı animasyonu: her vuruşta hedefe doğru atılır, büyür (darbe anı), sonra geri çekilir; vurduğu yerde toz
 /// halkası ve saçılan toprak çıkar, kamera sarsılır (devlerde sert). Devler (boss, King Kong...) yürürken de her adımda yeri
-/// sarsar ve ayaklarından toz kalkar. Saldırı sayısını sahibi verir (tek kişilikte modelden, ağda anlık görüntüden);
-/// yalnızca görüntüdür, kurala dokunmaz.
+/// sarsar ve ayaklarından toz kalkar. Yaratığın "ad_atk" saldırı karesi varsa atılmadan toparlanma bitene kadar o gösterilir
+/// (voxel model kare adından kendi dilimlerini bulur); yoksa yalnızca atılma oynar. Saldırı sayısını sahibi verir (tek
+/// kişilikte modelden, ağda anlık görüntüden); yalnızca görüntüdür, kurala dokunmaz.
 /// </summary>
 public class CreatureAttackAnimator : MonoBehaviour
 {
@@ -26,6 +27,9 @@ public class CreatureAttackAnimator : MonoBehaviour
     Vector2 moveDirection = Vector2.down;
     float stepTimer;
     float stepBob;
+    SpriteAnimator frames;
+    Sprite attackFrame;
+    bool attackFrameResolved;
 
     /// <summary>Gövdeye bağlar. <paramref name="giant"/> devler için daha güçlü atılma, sarsıntı ve adım sarsıntısı.</summary>
     /// <param name="targetPosition">Biliniyorsa hedefin konumu (atılma yönü); yoksa hareket yönü kullanılır (ağda).</param>
@@ -116,6 +120,7 @@ public class CreatureAttackAnimator : MonoBehaviour
     void StartAttack()
     {
         attackTime = 0f;
+        ShowAttackFrame();
         Vector2? target = targetPosition?.Invoke();
         Vector2 toTarget = target.HasValue ? target.Value - (Vector2)Root.position : Vector2.zero;
         attackDirection = toTarget.sqrMagnitude > 0.0001f ? toTarget.normalized
@@ -124,5 +129,18 @@ public class CreatureAttackAnimator : MonoBehaviour
         Vector2 at = (Vector2)Root.position + attackDirection * (giant ? 1.6f : 0.6f);
         ImpactEffect.Spawn(at, giant ? 2.2f : 0.8f);
         CameraShake.Shake(giant ? 0.3f : 0.07f, giant ? 0.35f : 0.15f, Root.position);
+    }
+
+    /// <summary>Saldırı karesi ("ad_atk") varsa atılma + toparlanma süresince onu gösterir; yoksa hiçbir şey değişmez.</summary>
+    void ShowAttackFrame()
+    {
+        if (!attackFrameResolved)
+        {
+            attackFrameResolved = true;
+            frames = GetComponent<SpriteAnimator>();
+            Sprite baseFrame = frames != null ? frames.BaseFrame : null;
+            attackFrame = baseFrame != null ? SpriteLibrary.GetAttackFrame(baseFrame.name) : null;
+        }
+        if (frames != null && attackFrame != null) frames.Hold(attackFrame, LungeSeconds + RecoverSeconds);
     }
 }

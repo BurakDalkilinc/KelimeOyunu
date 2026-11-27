@@ -6,7 +6,8 @@ using UnityEngine;
 /// Haritayı piksel karolarla çizer: her kare için bir sprite, yanan karelerin üstüne animasyonlu alev. Karo değişince (yanıp kömürleşme)
 /// ilgili sprite güncellenir. Zemin, patika ve çatı resimleri haritanın temasından (<see cref="MapTheme"/>) gelir; bir resim henüz
 /// yoksa köy temasındaki karşılığı kullanılır. Evlerin kapısı görünür: kapı karelerinde kapı resmi, önünde paspas, çatıda kapının
-/// üstü açık (çentik) ve kenarında saçak. Hiçbir kural işletmez; tek kişilik sahnede <see cref="MatchBootstrap"/>'ın, ağ maçında
+/// üstü açık (çentik) ve kenarında saçak; kapılar hep güney (ön) duvardadır. Boss bir duvarı yıkınca o karenin çatısı kalkar, toz ve
+/// kırıntı saçılır, kamera sarsılır ve ses çalar. Hiçbir kural işletmez; tek kişilik sahnede <see cref="MatchBootstrap"/>'ın, ağ maçında
 /// host'tan gelen durumun haritasını gösterir.
 /// </summary>
 public class TerrainView : MonoBehaviour
@@ -59,15 +60,11 @@ public class TerrainView : MonoBehaviour
     readonly List<float> roofAlpha = new List<float>();
     readonly List<GameObject> doormats = new List<GameObject>();
 
-    /// <summary>Kapı kareleri (karo sırası → kapının yönü ve hangi yarısı): kapı resmi bu karelere çizilir.</summary>
-    readonly Dictionary<int, DoorTile> doorTiles = new Dictionary<int, DoorTile>();
+    /// <summary>Çatı kiremitleri karo sırasına göre: duvarı yıkılan karenin kiremidi kaldırılır.</summary>
+    readonly Dictionary<int, GameObject> roofCells = new Dictionary<int, GameObject>();
 
-    readonly struct DoorTile
-    {
-        public readonly bool Up;
-        public readonly bool Left;
-        public DoorTile(bool up, bool left) { Up = up; Left = left; }
-    }
+    /// <summary>Kapı kareleri (karo sırası → kapının sol yarısı mı): kapı resmi bu karelere çizilir.</summary>
+    readonly Dictionary<int, bool> doorTiles = new Dictionary<int, bool>();
 
     /// <summary>Sahnedeki etkin harita görünümü (isim etiketleri "çatı altında mı?" sorusunu buna sorar). Yoksa null.</summary>
     public static TerrainView Active { get; private set; }
@@ -136,6 +133,7 @@ public class TerrainView : MonoBehaviour
         map.TileChanged += OnTileChanged;
         map.HousesChanged += RebuildRoofs;
         map.ThemeChanged += OnThemeChanged;
+        map.WallsDemolished += OnWallsDemolished;
         RebuildRoofs();
     }
 
@@ -155,8 +153,10 @@ public class TerrainView : MonoBehaviour
             map.TileChanged -= OnTileChanged;
             map.HousesChanged -= RebuildRoofs;
             map.ThemeChanged -= OnThemeChanged;
+            map.WallsDemolished -= OnWallsDemolished;
         }
         for (int i = transform.childCount - 1; i >= 0; i--) Destroy(transform.GetChild(i).gameObject);
+        roofCells.Clear();
         roofObjects.Clear();
         roofTiles.Clear();
         roofAlpha.Clear();
@@ -172,6 +172,7 @@ public class TerrainView : MonoBehaviour
         map.TileChanged -= OnTileChanged;
         map.HousesChanged -= RebuildRoofs;
         map.ThemeChanged -= OnThemeChanged;
+        map.WallsDemolished -= OnWallsDemolished;
     }
 
     /// <summary>Temanın resmi; yoksa köy temasındaki karşılığı (resim çizilmeden önce de oyun çökmeden çalışsın).</summary>
@@ -199,6 +200,7 @@ public class TerrainView : MonoBehaviour
         roofObjects.Clear();
         roofTiles.Clear();
         roofAlpha.Clear();
+        roofCells.Clear();
         RebuildDoors();
         if (map == null) return;
         MapTheme theme = map.Theme;
@@ -228,6 +230,7 @@ public class TerrainView : MonoBehaviour
                 for (int cx = 0; cx < house.W; cx++)
                 {
                     bool door = house.IsDoorCell(house.X + cx, house.Y + cy);
+                    if (RoofRules.IsBrokenRoofCell(map, house, house.X + cx, house.Y + cy)) continue; // Duvarı yıkılmış: çatı yok
 
                     // Kapının üstü çatısız (çentik); orada yalnızca saçak durur. Saçak resmi yoksa çentik boş kalır.
                     Sprite sprite = door ? awning : roofSprite;
@@ -239,10 +242,9 @@ public class TerrainView : MonoBehaviour
                     SpriteStack stack = SpriteStack.Create(anchor.transform, door ? "saçak katmanları" : "kiremit katmanları",
                         StackLibrary.Extrude(sprite, RoofLayers), RoofOrder, 1f, 1f, 0.7f);
 
-                    // Saçak resminde dolu kısım üstte, alt yarısı saydam. Alt duvardaki kapıda saçak çatının ön kenarına yaslanır, kapı
-                    // altında görünür. Üst duvardaki kapıda da çevrilmez: evin arka (dış) kenarında durur; çevrilseydi kapının görünen
-                    // tek yarısını (çatının arkasında kalan) örterdi.
+                    // Saçak resminde dolu kısım üstte, alt yarısı saydam: çatının ön kenarına yaslanır, kapı altında görünür.
                     renderers.Add(stack);
+                    roofCells[map.Index(house.X + cx, house.Y + cy)] = anchor;
                 }
             }
 
@@ -274,8 +276,8 @@ public class TerrainView : MonoBehaviour
             {
                 int x = house.DoorX + i;
                 bool left = i == 0;
-                if (map.InBounds(x, house.DoorY)) doorTiles[map.Index(x, house.DoorY)] = new DoorTile(house.DoorUp, left);
-                CreateDoormat(x, house.DoorstepY, house.DoorUp, left, theme);
+                if (map.InBounds(x, house.DoorY)) doorTiles[map.Index(x, house.DoorY)] = left;
+                CreateDoormat(x, house.DoorstepY, left, theme);
             }
         }
 
@@ -284,7 +286,7 @@ public class TerrainView : MonoBehaviour
     }
 
     /// <summary>Kapının önüne paspas (zeminin üstüne ayrı resim). Dışarısı yürünemiyorsa (uçurum, lav) ya da resim yoksa konmaz.</summary>
-    void CreateDoormat(int x, int y, bool doorUp, bool left, MapTheme theme)
+    void CreateDoormat(int x, int y, bool left, MapTheme theme)
     {
         if (!map.InBounds(x, y) || !TerrainMap.IsSafeGround(map.At(x, y))) return;
         Sprite sprite = SpriteOr(theme.DoormatSprite(left), MapTheme.Village.DoormatSprite(left));
@@ -294,8 +296,7 @@ public class TerrainView : MonoBehaviour
         go.transform.SetParent(transform, false);
         go.transform.position = map.CellCenter(x, y);
         var sr = go.AddComponent<SpriteRenderer>();
-        sr.sprite = sprite;
-        sr.flipY = doorUp; // Resimde dışarısı altta; üst duvardaki kapıda dışarısı yukarıda
+        sr.sprite = sprite; // Resimde dışarısı altta: kapılar hep güney duvarında
         sr.sortingOrder = DoormatOrder;
         doormats.Add(go);
     }
@@ -323,6 +324,7 @@ public class TerrainView : MonoBehaviour
     void OnTileChanged(int x, int y)
     {
         Refresh(x, y);
+        RemoveBrokenRoofCell(x, y);
 
         // Üstündeki uçurum kenarı sprite'ı komşuya bağlı: alttaki karoyu da tazele.
         if (map.InBounds(x, y - 1)) Refresh(x, y - 1);
@@ -439,17 +441,76 @@ public class TerrainView : MonoBehaviour
     }
 
     /// <summary>
-    /// Kapı karesi hâlâ evin zeminiyse (yanıp kömürleşmediyse) kapı resmiyle çizilir. Resimde içerisi üstte, eşik altta: alt duvardaki
-    /// kapı olduğu gibi, üst duvardaki kapı dikey çevrilerek. Temanın resmi yoksa köyünki, o da yoksa zemin resmi kalır.
+    /// Kapı karesi hâlâ evin zeminiyse (yanıp kömürleşmediyse) kapı resmiyle çizilir. Resimde içerisi üstte, eşik altta (kapılar hep
+    /// güney duvarında). Temanın resmi yoksa köyünki, o da yoksa zemin resmi kalır.
     /// </summary>
     void ApplyDoorSprite(SpriteRenderer sr, int x, int y, TileType type, MapTheme theme)
     {
-        if (!TerrainMap.IsBuiltFloor(type) || !doorTiles.TryGetValue(map.Index(x, y), out DoorTile door)) return;
+        if (!TerrainMap.IsBuiltFloor(type) || !doorTiles.TryGetValue(map.Index(x, y), out bool left)) return;
 
-        Sprite sprite = SpriteOr(theme.DoorSprite(door.Left), MapTheme.Village.DoorSprite(door.Left));
-        if (sprite == null) return;
-        sr.sprite = sprite;
-        sr.flipY = door.Up;
+        Sprite sprite = SpriteOr(theme.DoorSprite(left), MapTheme.Village.DoorSprite(left));
+        if (sprite != null) sr.sprite = sprite;
+    }
+
+    /// <summary>Karenin duvarı yıkıldıysa (ya da yanıp çöktüyse) üstündeki çatı kiremidini kaldırır.</summary>
+    void RemoveBrokenRoofCell(int x, int y)
+    {
+        int index = map.Index(x, y);
+        if (!roofCells.TryGetValue(index, out GameObject anchor)) return;
+
+        int house = map.HouseIndexAt(x, y);
+        if (house >= 0 && !RoofRules.IsBrokenRoofCell(map, map.Houses[house], x, y)) return;
+
+        if (anchor != null) Destroy(anchor);
+        roofCells.Remove(index);
+    }
+
+    /// <summary>
+    /// Boss duvar yıktı: her yıkılan karede (en çok <see cref="GameConfig.houseBreakMaxFxCells"/>) duvarın renginde toz bulutu ve kırıntı,
+    /// bir darbe halkası; tek bir kamera sarsıntısı ve ses (ev çöktüyse daha güçlü sarsıntı ve patlama sesi).
+    /// </summary>
+    void OnWallsDemolished(IReadOnlyList<DemolishedCell> cells, int collapsedHouses)
+    {
+        if (map == null || cells == null || cells.Count == 0) return;
+        GameConfig config = GameConfigLoader.Get();
+
+        // Çok kare birden yıkıldıysa (ev çöktü) eşit aralıklarla seçilen karelerde göster.
+        int shown = Mathf.Min(cells.Count, Mathf.Max(1, config.houseBreakMaxFxCells));
+        Vector2 sum = Vector2.zero;
+        for (int i = 0; i < shown; i++)
+        {
+            DemolishedCell cell = cells[i * cells.Count / shown];
+            Vector2 at = map.CellCenter(cell.X, cell.Y);
+            sum += at;
+            Color color = DebrisColor(cell.Wall);
+
+            FogPuff.Spawn(at, new Color(color.r, color.g, color.b, 0.55f), config.houseBreakDustSize, config.houseBreakDustSeconds);
+            ImpactEffect.Spawn(at, config.houseBreakDustSize * 0.6f, false);
+            for (int d = 0; d < config.houseBreakDebrisPerCell; d++)
+            {
+                Vector2 direction = UnityEngine.Random.insideUnitCircle.normalized;
+                Color tint = Color.Lerp(color, Color.black, UnityEngine.Random.Range(0f, 0.35f));
+                BloodDrop.Spawn(at, direction * UnityEngine.Random.Range(1.5f, 4f), UnityEngine.Random.Range(0.3f, 0.8f),
+                                UnityEngine.Random.Range(3f, 6f), UnityEngine.Random.Range(0.1f, 0.2f), tint, false);
+            }
+        }
+
+        Vector2 center = sum / shown;
+        bool collapsed = collapsedHouses > 0;
+        CameraShake.Shake(collapsed ? config.houseCollapseShakeAmplitude : config.houseBreakShakeAmplitude,
+                          collapsed ? config.houseCollapseShakeSeconds : config.houseBreakShakeSeconds, center);
+        GameAudio.Play(collapsed ? SoundId.Explosion : SoundId.Hit, config.houseBreakVolume, config.audioSameSoundCooldown);
+    }
+
+    /// <summary>Yıkılan duvarın kırıntı rengi: tahta kahverengi, taş gri, kerpiç toprak rengi.</summary>
+    static Color DebrisColor(TileType wall)
+    {
+        switch (wall)
+        {
+            case TileType.StoneWall: return new Color(0.62f, 0.63f, 0.66f);
+            case TileType.AdobeWall: return new Color(0.80f, 0.62f, 0.42f);
+            default: return new Color(0.55f, 0.37f, 0.20f);
+        }
     }
 
     GameObject CreateFlame(int x, int y)
@@ -476,7 +537,6 @@ public class TerrainView : MonoBehaviour
         // Eski animasyonu temizle (lav → kömür gibi bir değişim olursa).
         var old = sr.GetComponent<SpriteAnimator>();
         if (old != null) Destroy(old);
-        sr.flipY = false;
 
         switch (type)
         {

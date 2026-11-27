@@ -49,6 +49,60 @@ public class SpriteLibraryTests
             Assert.IsNotNull(SpriteLibrary.Get(SpriteLibrary.NameFor(word)), word.id);
     }
 
+    [Test]
+    public void AttackFrame_ExistsForCreatures_AndIsMissingForPlayer()
+    {
+        Sprite attack = SpriteLibrary.GetAttackFrame("aslan");
+
+        Assert.IsNotNull(attack);
+        Assert.AreEqual("aslan" + SpriteLibrary.AttackSuffix, attack.name);
+        Assert.AreEqual(SpriteLibrary.Get("aslan").rect.size, attack.rect.size); // Aynı tuval: oyunda boyu değişmez
+        Assert.IsNull(SpriteLibrary.GetAttackFrame("char"));
+        Assert.IsNull(SpriteLibrary.GetAttackFrame(null));
+    }
+
+    [Test]
+    public void EveryAnimatedCreature_HasAttackFrame_WithSameVoxelSliceCount()
+    {
+        var asset = Resources.Load<TextAsset>("Data/words");
+        var db = JsonUtility.FromJson<WordFile>(asset.text);
+
+        foreach (WordEntry word in db.words)
+        {
+            string name = SpriteLibrary.NameFor(word);
+            Sprite[] walk = StackLibrary.Get(name + "_b");
+            if (walk == null) continue; // Hareketli voxel yaratık değil (araç, simge, alan)
+
+            Assert.IsNotNull(SpriteLibrary.GetAttackFrame(name), word.id);
+            Sprite[] attack = StackLibrary.Get(name + SpriteLibrary.AttackSuffix);
+            Assert.IsNotNull(attack, word.id);
+            Assert.AreEqual(StackLibrary.Get(name).Length, attack.Length, word.id); // Dilimler birebir değişebilsin
+        }
+    }
+
+    [Test]
+    public void SpriteAnimator_Hold_ShowsGivenFrameImmediately()
+    {
+        var go = new GameObject("test");
+        try
+        {
+            var renderer = go.AddComponent<SpriteRenderer>();
+            var animator = go.AddComponent<SpriteAnimator>();
+            animator.SetFrames(SpriteLibrary.GetFrames("aslan"));
+            Assert.AreEqual("aslan", animator.BaseFrame.name);
+
+            animator.Hold(SpriteLibrary.GetAttackFrame("aslan"), 0.3f);
+            Assert.AreEqual("aslan" + SpriteLibrary.AttackSuffix, renderer.sprite.name);
+
+            animator.Hold(null, 0.3f); // Saldırı karesi yoksa hiçbir şey değişmez
+            Assert.AreEqual("aslan" + SpriteLibrary.AttackSuffix, renderer.sprite.name);
+        }
+        finally
+        {
+            Object.DestroyImmediate(go);
+        }
+    }
+
     [System.Serializable]
     class WordFile
     {

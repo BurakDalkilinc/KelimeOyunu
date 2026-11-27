@@ -45,6 +45,35 @@ public class HouseTests
     }
 
     [Test]
+    public void Generator_PutsEveryDoorOnTheSouthWall_WithAWalkableDoorstep()
+    {
+        int houses = 0;
+        foreach (MapTheme theme in MapTheme.All)
+        {
+            for (int seed = 1; seed <= 40; seed++)
+            {
+                TerrainMap map = MapGenerator.Generate(34, 19, seed, MapRecipe.For(theme));
+                foreach (House house in map.Houses)
+                {
+                    houses++;
+                    Assert.IsTrue(house.HasDoor);
+                    Assert.IsFalse(house.DoorUp, $"{theme} {seed}: kuzeye (arka cepheye) bakan kapı olmamalı");
+                    Assert.AreEqual(house.Y, house.DoorY, "kapı alt duvarda");
+                    for (int i = 0; i < House.DoorWidth; i++)
+                    {
+                        int x = house.DoorX + i;
+                        Assert.IsTrue(map.InBounds(x, house.DoorstepY), $"{theme} {seed}: eşik haritanın içinde");
+                        Assert.IsTrue(TerrainMap.IsSafeGround(map.At(x, house.DoorstepY)), $"{theme} {seed}: eşik yürünür");
+                        Assert.IsTrue(TerrainMap.IsSafeGround(map.At(x, house.DoorstepY - 1)), $"{theme} {seed}: eşiğin önü de yürünür");
+                        Assert.IsTrue(TerrainMap.IsHouseWall(map.At(x, house.Y + house.H - 1)), "üst (arka) duvar kapısız");
+                    }
+                }
+            }
+        }
+        Assert.Greater(houses, 100);
+    }
+
+    [Test]
     public void Houses_EncodeAndApply_RoundTrip()
     {
         var map = new TerrainMap(34, 19);

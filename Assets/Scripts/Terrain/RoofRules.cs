@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Çatı kuralı: içeride biri (bu bilgisayardaki oyuncu) varsa, ev yanıyorsa ya da yanıp çökmüşse çatı görünmez. Kapı kareleri
-/// çatısızdır (çatıda çentik). Ayrıca bir noktanın görünen bir çatının altında kalıp kalmadığını söyler (isim etiketi bununla gizlenir).
+/// çatısızdır (çatıda çentik); duvarı yıkılmış (boss) ya da yanıp çökmüş kenar karelerinin de çatısı yoktur. Ayrıca bir noktanın görünen bir çatının altında kalıp kalmadığını söyler (isim etiketi bununla gizlenir).
 /// Düz hesap, test edilebilir; çizim <see cref="TerrainView"/>'dadır.
 /// </summary>
 public static class RoofRules
@@ -42,9 +42,18 @@ public static class RoofRules
         Vector2Int cell = map.CellOf(point);
         foreach (House house in map.Houses)
         {
-            if (!house.Contains(cell.x, cell.y) || house.IsDoorCell(cell.x, cell.y)) continue;
+            if (!house.Contains(cell.x, cell.y) || house.IsDoorCell(cell.x, cell.y) || IsBrokenRoofCell(map, house, cell.x, cell.y)) continue;
             if (!ShouldHide(map, house, viewer, isBurning)) return true;
         }
         return false;
+    }
+
+    /// <summary>
+    /// Bu karede çatı kalktı mı? Evin kenarındaki (duvar sırası) kare artık duvar değilse (boss yıktı ya da yanıp çöktü) üstünde çatı
+    /// durmaz. Kapı kareleri zaten çatısızdır; iç kareler çatılıdır.
+    /// </summary>
+    public static bool IsBrokenRoofCell(TerrainMap map, House house, int x, int y)
+    {
+        return map != null && HouseDamage.IsBorder(house, x, y) && !house.IsDoorCell(x, y) && !TerrainMap.IsHouseWall(map.At(x, y));
     }
 }

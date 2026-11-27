@@ -40,6 +40,7 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
 
         foreach (BotController bot in bootstrap.Bots)
             bot.Refuge = this;
+        BindHouseProtection();
 
         banner.text = string.Empty;
         SetFlash(0f);
@@ -57,6 +58,7 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
     {
         if (word == null || word.category != WordEntry.CategoryThreat || word.scope != WordEntry.ScopeGlobal) return;
 
+        BindHouseProtection();
         var threat = new GlobalThreat(word, writer, config, arena, bootstrap, new System.Random(random.Next()), spawner,
                                        bootstrap.Terrain != null ? (System.Func<Vector2, bool>)bootstrap.Terrain.IsBlocked : null);
         threat.Zones.Added += CreateZoneView;
@@ -68,6 +70,13 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
         foreach (SafeZone zone in threat.Zones.Zones) CreateZoneView(zone);
 
         threats.Add(threat);
+    }
+
+    /// <summary>Sığınak evleri tehdit sürerken boss tarafından yıkılmasın (arazi bu soruyu buraya sorar).</summary>
+    void BindHouseProtection()
+    {
+        TerrainSim terrain = bootstrap.Terrain;
+        if (terrain != null) terrain.IsHouseProtected = house => RefugeFinder.IsHouseRefuge(threats, terrain.Map, house);
     }
 
     void Update()

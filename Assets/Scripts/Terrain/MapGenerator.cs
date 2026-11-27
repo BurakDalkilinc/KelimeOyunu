@@ -64,6 +64,9 @@ public static class MapGenerator
     /// <summary>Sokak ve evler arası yürüyüş yolu genişliği (kare). 2: karakterler duvara sürtmeden yan yana geçebilir.</summary>
     const int StreetWidth = 2;
 
+    /// <summary>Kapının önünde yürünebilir tutulan kare sayısı (eşik + bir dışarısı).</summary>
+    const int DoorstepClearance = 2;
+
     /// <summary>Köy alanının kapladığı kutu (kenarlar dahil). Lav ve uçurum buradan uzak durur.</summary>
     struct Box
     {
@@ -121,6 +124,7 @@ public static class MapGenerator
         PlacePools(map, random, recipe.LavaPools, villages, theme.PoolTile);
         PlaceChasms(map, random, recipe.Chasms, villages);
         PlaceCacti(map, random, recipe.Cacti, villages);
+        ClearDoorsteps(map, theme);
 
         return map;
     }
@@ -129,7 +133,8 @@ public static class MapGenerator
 
     /// <summary>
     /// Köy: iki sütun ev (aralarında 2 karelik dikey yol). Büyük köyde iki sıra ev ve aralarında 2 karelik sokak,
-    /// küçük köyde tek sıra ev ve altında sokak vardır. Yollar köyün dışına 2 kare taşar. Evlerin kapısı sokağa bakar.
+    /// küçük köyde tek sıra ev ve altında sokak vardır. Yollar köyün dışına 2 kare taşar. Evlerin kapısı hep güney duvarındadır
+    /// (üst sıra ve tek sıra sokağa, büyük köyün alt sırası köyün dışına bakar).
     /// </summary>
     static void PlaceVillages(TerrainMap map, System.Random random, int count, List<Box> villages, MapTheme theme)
     {
@@ -176,31 +181,32 @@ public static class MapGenerator
             for (int t = 0; t < StreetWidth; t++) SetIfGrass(map, gapX + t, y, floor);
 
         int rightX = gapX + StreetWidth;
-        var houses = new List<(int x, int y, bool doorUp)>();
+        var houses = new List<(int x, int y)>();
         if (big)
         {
-            houses.Add((box.X0, box.Y0, true));                         // Alt sıra: kapı yukarı (sokağa)
-            houses.Add((rightX, box.Y0, true));
-            houses.Add((box.X0, streetY + StreetWidth, false));         // Üst sıra: kapı aşağı
-            houses.Add((rightX, streetY + StreetWidth, false));
+            houses.Add((box.X0, box.Y0));                       // Alt sıra: kapı köyün dışına (güneye) bakar
+            houses.Add((rightX, box.Y0));
+            houses.Add((box.X0, streetY + StreetWidth));         // Üst sıra: kapı sokağa (güneye) bakar
+            houses.Add((rightX, streetY + StreetWidth));
         }
         else
         {
-            houses.Add((box.X0, streetY + StreetWidth, false));         // Tek sıra: sokağın üstünde, kapı aşağı
-            houses.Add((rightX, streetY + StreetWidth, false));
+            houses.Add((box.X0, streetY + StreetWidth));         // Tek sıra: sokağın üstünde, kapı sokağa bakar
+            houses.Add((rightX, streetY + StreetWidth));
         }
 
         // Büyük köyde bir ev eksik olabilir (köyler birbirine benzemesin); en az 3 ev kalır.
         int skip = big && random.Next(3) == 0 ? 1 : -1;
         for (int i = 0; i < houses.Count; i++)
-            if (i != skip) BuildHouse(map, houses[i].x, houses[i].y, houses[i].doorUp, random, theme);
+            if (i != skip) BuildHouse(map, houses[i].x, houses[i].y, random, theme);
     }
 
     /// <summary>
-    /// Ev: çevresi duvar, içi zemin (3×2), sokağa bakan duvarda 2 kare geniş kapı. Duvar ve zemin temadan gelir
-    /// (tahta, taş, kerpiç). Evin yeri ve kapısı haritaya kaydedilir (çatı ve kapı çizimi için).
+    /// Ev: çevresi duvar, içi zemin (3×2), alt (güney) duvarda 2 kare geniş kapı. Kuşbakışı 3/4 görünümde güney evin ön cephesidir:
+    /// kapı, paspas ve saçak hep önde görünür. Duvar ve zemin temadan gelir (tahta, taş, kerpiç). Evin yeri ve kapısı haritaya
+    /// kaydedilir (çatı ve kapı çizimi için).
     /// </summary>
-    static void BuildHouse(TerrainMap map, int x0, int y0, bool doorUp, System.Random random, MapTheme theme)
+    static void BuildHouse(TerrainMap map, int x0, int y0, System.Random random, MapTheme theme)
     {
         for (int y = y0; y < y0 + HouseHeight; y++)
         {
@@ -211,12 +217,34 @@ public static class MapGenerator
             }
         }
 
-        // Kapı: iç mekânın üstündeki/altındaki iki kare (soldan ya da sağdan hizalı). Rastgele sayı çekimi eskisiyle aynı
-        // (tek Next(0, 2)): köy haritası birebir aynı kalır.
-        var house = new House(x0, y0, HouseWidth, HouseHeight, x0 + 1 + random.Next(0, 2), doorUp);
+        // Kapı: iç mekânın altındaki iki kare (soldan ya da sağdan hizalı). Rastgele sayı çekimi eskisiyle aynı (tek Next(0, 2)):
+        // haritanın geri kalanı (evlerin yeri, havuzlar, uçurumlar) değişmez.
+        var house = new House(x0, y0, HouseWidth, HouseHeight, x0 + 1 + random.Next(0, 2), false);
         for (int i = 0; i < House.DoorWidth; i++) map.Set(house.DoorX + i, house.DoorY, theme.FloorTile);
 
         map.AddHouse(house); // Kapısıyla birlikte: çatıda kapının üstü açık kalır, paspas ve saçak çizilir
+    }
+
+    /// <summary>
+    /// Her kapının önü (eşik) ve ondan bir dışarısı yürünebilir olsun: eşik güvenli zemin değilse (havuz, uçurum, kaktüs) temanın
+    /// zeminine çevrilir. Köyün çevresi zaten havuz/uçurumdan uzak tutulur; bu yalnızca güvencedir.
+    /// </summary>
+    static void ClearDoorsteps(TerrainMap map, MapTheme theme)
+    {
+        foreach (House house in map.Houses)
+        {
+            if (!house.HasDoor) continue;
+            for (int i = 0; i < House.DoorWidth; i++)
+            {
+                int x = house.DoorX + i;
+                for (int step = 0; step < DoorstepClearance; step++)
+                {
+                    int y = house.DoorstepY - step;
+                    if (!map.InBounds(x, y) || map.HouseIndexAt(x, y) >= 0) break;
+                    if (!TerrainMap.IsSafeGround(map.At(x, y))) map.Set(x, y, theme.FloorTile);
+                }
+            }
+        }
     }
 
     static void SetIfGrass(TerrainMap map, int x, int y, TileType floor)

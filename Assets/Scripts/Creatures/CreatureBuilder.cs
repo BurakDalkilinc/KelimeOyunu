@@ -10,10 +10,11 @@ public static class CreatureBuilder
 {
     /// <summary>
     /// Saldırı kelimesi için model(ler) kurar. Sürü kelimesi birden fazla model verir; ilki (index 0) etiketi taşır.
-    /// <paramref name="targetPosition"/> hedefin o anki konumudur.
+    /// <paramref name="targetPosition"/> hedefin o anki konumudur. <paramref name="map"/> verilirse yaratık evin içinde, duvarda ya da
+    /// tehlikeli zeminde doğmaz: gövdesinin sığdığı en yakın yere kaydırılır (bkz. <see cref="SpawnPlacement"/>).
     /// </summary>
     public static List<CreatureModel> BuildAttack(WordEntry word, PlayerState target, Vector2 targetPosition,
-                                                  GameConfig config, ArenaBounds arena, System.Random random)
+                                                  GameConfig config, ArenaBounds arena, System.Random random, TerrainMap map = null)
     {
         var models = new List<CreatureModel>();
 
@@ -37,6 +38,7 @@ public static class CreatureBuilder
                     : targetPosition;
                 model.PlaceAt(at);
             }
+            else if (!model.IsPull) MoveToClearSpot(model, map); // Hedefin üstüne/yanına düşenler ve mıknatıs olduğu yerde kalır
 
             if (config.creaturesHuntEveryone) MakeHunter(model);
             models.Add(model);
@@ -60,10 +62,19 @@ public static class CreatureBuilder
     }
 
     /// <summary>Bilinmeyen kelimenin zararsız "???" yaratığı: arenanın rastgele bir yerinde doğar.</summary>
-    public static CreatureModel BuildUnknown(GameConfig config, ArenaBounds arena, System.Random random)
+    public static CreatureModel BuildUnknown(GameConfig config, ArenaBounds arena, System.Random random, TerrainMap map = null)
     {
         Vector2 spawn = ArenaSpawn.PickPoint(arena, Vector2.zero, 0f, random);
-        return CreatureFactory.CreateUnknown(spawn, config, arena);
+        CreatureModel model = CreatureFactory.CreateUnknown(spawn, config, arena);
+        MoveToClearSpot(model, map);
+        return model;
+    }
+
+    /// <summary>Yaratığı gövdesinin sığdığı (ev, duvar, tehlike olmayan) en yakın yere taşır. Harita yoksa bir şey yapmaz.</summary>
+    static void MoveToClearSpot(CreatureModel model, TerrainMap map)
+    {
+        if (map == null || model == null) return;
+        model.PlaceAt(SpawnPlacement.FindClearSpot(map, model.Position, model.Radius));
     }
 
     /// <summary>Sürü üyesinin halka üzerindeki yeri (üyeler eşit aralıkla dizilir).</summary>

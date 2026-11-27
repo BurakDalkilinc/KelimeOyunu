@@ -53,7 +53,8 @@ public enum TileType : byte
 
 /// <summary>
 /// Bir evin kapladığı dikdörtgen (duvarlar dahil, karo cinsinden) ve kapısı. Çatı bu alanın üstüne çizilir; kapı kareleri çatısız kalır.
-/// Kapı, sokağa bakan duvarda (alt ya da üst) <see cref="DoorWidth"/> kare geniş bir boşluktur.
+/// Kapı, alt (güney) duvarda <see cref="DoorWidth"/> kare geniş bir boşluktur: kuşbakışı 3/4 görünümde ön cephe güneydir.
+/// Üst duvardaki kapı (<see cref="DoorUp"/>) yalnızca eski ağ metniyle uyum için okunur; üretici artık hep alt duvara koyar.
 /// </summary>
 public readonly struct House
 {
@@ -132,8 +133,14 @@ public class TerrainMap
     /// <summary>Haritadaki evler (çatı çizimi için).</summary>
     public IReadOnlyList<House> Houses => houses;
 
-    /// <summary>Evlerin listesi değişti (üretimde eklendi, ağdan geldi).</summary>
+    /// <summary>Evlerin listesi değişti (üretimde eklendi, ağdan geldi, boss yıkıp çökertti).</summary>
     public event Action HousesChanged;
+
+    /// <summary>
+    /// Ev duvarları yıkıldı (boss değdi): yıkılan kareler ve bu yıkımda tamamen çöken ev sayısı. Yalnızca görüntü (toz, sarsıntı, ses)
+    /// içindir; karo ve ev değişiklikleri ayrıca <see cref="TileChanged"/> ve <see cref="HousesChanged"/> ile gelir.
+    /// </summary>
+    public event Action<IReadOnlyList<DemolishedCell>, int> WallsDemolished;
 
     MapTheme theme = MapTheme.Village;
 
@@ -174,6 +181,29 @@ public class TerrainMap
     {
         houses.Add(house);
         HousesChanged?.Invoke();
+    }
+
+    /// <summary>Sıradaki evi listeden çıkarır (ev çöktü). Sıra geçersizse bir şey yapmaz.</summary>
+    public void RemoveHouseAt(int index)
+    {
+        if (index < 0 || index >= houses.Count) return;
+        houses.RemoveAt(index);
+        HousesChanged?.Invoke();
+    }
+
+    /// <summary>Karenin içinde olduğu evin sırası; hiçbir evde değilse -1.</summary>
+    public int HouseIndexAt(int x, int y)
+    {
+        for (int i = 0; i < houses.Count; i++)
+            if (houses[i].Contains(x, y)) return i;
+        return -1;
+    }
+
+    /// <summary>Duvar yıkımını görünüme bildirir (bkz. <see cref="WallsDemolished"/>). Liste boşsa bir şey yapmaz.</summary>
+    public void NotifyWallsDemolished(IReadOnlyList<DemolishedCell> cells, int collapsedHouses)
+    {
+        if (cells == null || cells.Count == 0) return;
+        WallsDemolished?.Invoke(cells, collapsedHouses);
     }
 
     /// <summary>

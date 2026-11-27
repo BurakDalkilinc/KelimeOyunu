@@ -1,9 +1,12 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
 /// Ağ maçında haritayı gösterir: host'tan gelen durum metnini (tema, karo türleri ve yanma) yerel bir haritaya uygular ve
 /// <see cref="TerrainView"/> ile çizer. İstemcide yangın ya da hasar hesaplanmaz; yalnızca görüntüdür (kurallar host'tadır).
+/// Boss'un yıktığı duvarlar da bu tam durumla gelir (karo + ev listesi; geç bağlanan da doğru haritayı görür); önceki haritayla
+/// karşılaştırıp (<see cref="HouseDamage.FindDemolished"/>) yıkılan duvarlarda toz/sarsıntı/ses oynatılır.
 /// </summary>
 public class NetTerrainView : MonoBehaviour
 {
@@ -15,6 +18,9 @@ public class NetTerrainView : MonoBehaviour
     bool[] burning;
     int appliedVersion = -1;
     string appliedHouses = null;
+    readonly List<DemolishedCell> wallsBefore = new List<DemolishedCell>();
+    readonly List<House> housesBefore = new List<House>();
+    readonly List<DemolishedCell> demolished = new List<DemolishedCell>();
 
     void Awake()
     {
@@ -57,16 +63,26 @@ public class NetTerrainView : MonoBehaviour
             return;
         }
 
+        // Yıkım efekti için önceki duvarlar ve evler (aynı temada kalınırsa karşılaştırılır).
+        MapTheme theme = MapTheme.FromId(channel.LatestTheme);
+        bool sameTheme = theme == map.Theme;
+        HouseDamage.SnapshotHouseWalls(map, wallsBefore);
+        housesBefore.Clear();
+        housesBefore.AddRange(map.Houses);
+
         // Tema (zemin/çatı resimleri) host'takiyle aynı olsun; değişirse görünüm bütün karoları yeniden çizer.
-        map.Theme = MapTheme.FromId(channel.LatestTheme);
+        map.Theme = theme;
         map.TryApply(text, burning);
 
-        // Evler maç boyunca değişmez; yalnızca farklıysa yeniden kur.
+        // Evler yalnızca farklıysa yeniden kurulur (boss bir evi çökertince listeden çıkar).
         string houses = channel.LatestHouses ?? "";
         if (houses != appliedHouses)
         {
             appliedHouses = houses;
             map.TryApplyHouses(houses);
         }
+
+        if (sameTheme && HouseDamage.FindDemolished(map, wallsBefore, housesBefore, demolished, out int collapsed))
+            map.NotifyWallsDemolished(demolished, collapsed);
     }
 }

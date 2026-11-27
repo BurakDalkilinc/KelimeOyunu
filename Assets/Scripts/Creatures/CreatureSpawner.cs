@@ -112,14 +112,14 @@ public class CreatureSpawner : MonoBehaviour, ICreatureSink
 
         if (!bootstrap.TryGetPosition(target.Id, out Vector2 targetPosition)) return;
 
-        List<CreatureModel> models = CreatureBuilder.BuildAttack(word, target, targetPosition, config, arena, random);
+        List<CreatureModel> models = CreatureBuilder.BuildAttack(word, target, targetPosition, config, arena, random, bootstrap.Terrain?.Map);
         for (int i = 0; i < models.Count; i++)
             Create(models[i], attackColor, models.Count == 1 || i == 0 ? CreatureLabel.NameToken : string.Empty);
     }
 
     void SpawnUnknown()
     {
-        Create(CreatureBuilder.BuildUnknown(config, arena, random), unknownColor, UnknownLabel);
+        Create(CreatureBuilder.BuildUnknown(config, arena, random, bootstrap.Terrain?.Map), unknownColor, UnknownLabel);
     }
 
     /// <summary>Tehdit etkilerinin (ör. meteor yağmuru) yaratık koyması için: saldırı rengiyle sahneye koyar.</summary>

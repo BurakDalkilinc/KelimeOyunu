@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Bir maçın arazisi: harita, yangın, tehlikeler ve engeller bir arada. Yaratıkların (Ateş, Ejderha) tutuşturmasını da buradan yürütür.
+/// Bir maçın arazisi: harita, yangın, tehlikeler ve engeller bir arada. Yaratıkların (Ateş, Ejderha) tutuşturmasını ve boss'ların ev
+/// yıkmasını (<see cref="HouseDamage"/>) da buradan yürütür.
 /// Tek kişilik sahne (<see cref="MatchBootstrap"/>) ve ağ maçı (<see cref="NetMatchSim"/>) aynı sınıfı kullanır.
 /// Düz C# sınıfı, test edilebilir.
 /// </summary>
@@ -12,6 +13,8 @@ public class TerrainSim
     readonly GameConfig config;
     readonly HashSet<CreatureModel> struckAlready = new HashSet<CreatureModel>();
     readonly List<CreatureModel> staleModels = new List<CreatureModel>();
+    readonly List<Vector2Int> bodyCells = new List<Vector2Int>();
+    readonly HouseDamageResult damage = new HouseDamageResult();
 
     public TerrainMap Map { get; }
     public FireSim Fire { get; }
@@ -23,8 +26,17 @@ public class TerrainSim
     /// <summary>Duvar + kaktüs + lav + uçurum + su + kum + yanan karolar: botların kendi isteğiyle yürürken kaçındığı yerler.</summary>
     public IObstacleField AvoidingObstacles { get; }
 
-    /// <summary>Haritada bir şey değişti (karo ya da yanma). Ağ katmanı bunu görünce yeni durumu yayar.</summary>
+    /// <summary>Haritada bir şey değişti (karo, yanma ya da ev listesi). Ağ katmanı bunu görünce yeni durumu yayar.</summary>
     public bool Dirty { get; set; }
+
+    /// <summary>
+    /// Bu ev şu an yıkılamaz mı? Aktif küresel tehdidin sığınağı olan evler (bkz. <see cref="RefugeFinder.IsHouseRefuge"/>) tehdit
+    /// sürerken yıkılmaz: tehdidin çözümü haritada kalmalı. Tehdit yöneticisi bağlar; boşsa hiçbir ev korunmaz.
+    /// </summary>
+    public Func<House, bool> IsHouseProtected { get; set; }
+
+    /// <summary>Boss bir evin duvarını yıktı ya da evi çökertti (sonuç bir sonraki yıkıma kadar geçerlidir).</summary>
+    public event Action<HouseDamageResult> HousesDamaged;
 
     /// <summary>Tohumdan yeni köy haritası üretir (ilk harita).</summary>
     public TerrainSim(GameConfig config, int seed, System.Random random)
@@ -53,6 +65,7 @@ public class TerrainSim
         AvoidingObstacles = new TerrainObstacles(map, Fire, blockHazards: true, pricklyClearance: config.botCactusClearance);
 
         map.TileChanged += (_, __) => Dirty = true;
+        map.HousesChanged += () => Dirty = true;
         Fire.BurnChanged += (_, __) => Dirty = true;
     }
 
@@ -177,14 +190,34 @@ public class TerrainSim
     }
 
     /// <summary>
-    /// Zamanı ilerletir: yangın, yaratıkların tutuşturması ve tehlikelerin hasarı.
+    /// Zamanı ilerletir: boss'ların ev yıkması, yangın, yaratıkların tutuşturması ve tehlikelerin hasarı.
     /// </summary>
     public void Tick(float deltaSeconds, IEnumerable<CreatureModel> creatures, IReadOnlyList<PlayerState> players,
                      Func<int, Vector2?> positionOf, Action<int, Vector2> teleport)
     {
+        DemolishWithCreatures(creatures);
         IgniteFromCreatures(deltaSeconds, creatures);
         Fire.Tick(deltaSeconds);
         Hazards.Tick(deltaSeconds, players, positionOf, teleport);
+    }
+
+    /// <summary>
+    /// Ev yıkan yaratıklar (boss): gövdesinin (yarıçap + <see cref="GameConfig.bossWallBreakReach"/>) değdiği ev duvarları yıkılır,
+    /// oranı aşan ev çöker. Yıkılan duvar yürünür zemin olur; boss bir sonraki adımda oradan geçer. Sığınak evleri korunur.
+    /// </summary>
+    public void DemolishWithCreatures(IEnumerable<CreatureModel> creatures)
+    {
+        if (creatures == null || Map.Houses.Count == 0) return;
+
+        foreach (CreatureModel creature in creatures)
+        {
+            if (!HouseDamage.CanBreakHouses(creature)) continue;
+
+            HouseDamage.CellsUnderBody(Map, creature.Position, creature.Radius + config.bossWallBreakReach, bodyCells);
+            if (HouseDamage.Apply(Map, bodyCells, config.bossHouseCollapseRatio, IsHouseProtected, damage))
+                HousesDamaged?.Invoke(damage);
+            if (Map.Houses.Count == 0) return;
+        }
     }
 
     /// <summary>

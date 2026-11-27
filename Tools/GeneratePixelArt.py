@@ -3,6 +3,7 @@ KelimeOyunu: kodla piksel sanat üretici.
 
 Her sprite 16x16 pikseldir (Unity'de 16 PPU = 1 birim). Ortak palet ve otomatik siyah kenar çizgisi kullanılır.
 Hareketli sprite'lar için ikinci bir kare (dosyaadi_b.png) de üretilir: aynı çizimin 1 piksel aşağı kaymış hâli.
+Yaratıkların saldırı karesi (dosyaadi_atk.png): aynı çizime ATTACK_POSES'taki poz uygulanır (ağız açık, pençe kalkık).
 
 Çalıştırma (proje klasöründen):
     python Tools/GeneratePixelArt.py
@@ -116,6 +117,7 @@ class Canvas:
                     self.px[yy][xx] = new
 
     def outline(self, c=K):
+        _apply_attack_pose(self)            # Saldırı karesi çiziliyorsa poz kenar çizgisinden önce uygulanır
         src = [row[:] for row in self.px]
         for yy in range(self.h):
             for xx in range(self.w):
@@ -217,16 +219,21 @@ def make_fare():
 
 def make_kurt():
     c = Canvas()
-    c.poly([(2, 1), (7, 6), (2, 8)], g)     # kulaklar
-    c.poly([(14, 1), (9, 6), (14, 8)], g)
-    c.poly([(3, 3), (6, 6), (3, 7)], PINK)
-    c.poly([(13, 3), (10, 6), (13, 7)], PINK)
-    c.ellipse(7.5, 9, 5, 4.6, g)            # kafa
-    c.ellipse(7.5, 12, 2.8, 2.2, w)         # burun bölgesi
-    c.sym_set(5, 8, Y)                      # sarı gözler
-    c.sym_set(6, 8, K)
-    c.set(7, 11, K); c.set(8, 11, K)        # burun
-    c.sym_set(6, 13, W)                     # dişler
+    c.poly([(11, 13), (14, 9), (15, 11), (13, 14)], G)   # kuyruk
+    c.set(14, 9, w)
+    c.ellipse(7.5, 11, 4.0, 3.2, g)         # gövde
+    c.ellipse(7.5, 11.5, 1.8, 2.0, w)       # açık renk göğüs
+    c.sym_rect(4, 13, 5, 15, g)             # bacaklar
+    c.sym_set(4, 15, G)
+    c.poly([(3, 0), (6, 3), (3, 5)], g)     # kulaklar
+    c.poly([(12, 0), (9, 3), (12, 5)], g)
+    c.sym_set(4, 2, PINK)
+    c.ellipse(7.5, 5, 3.8, 3.2, g)          # kafa
+    c.ellipse(7.5, 7, 2.0, 1.6, w)          # burun bölgesi
+    c.sym_set(5, 4, Y)                      # sarı gözler
+    c.sym_set(6, 4, K)
+    c.set(7, 6, K); c.set(8, 6, K)          # burun
+    c.sym_set(6, 8, W)                      # dişler
     c.outline()
     return c
 
@@ -457,12 +464,19 @@ def make_tepegoz():
 # ---------------- Kelime paketi 2: kovalayanlar ----------------
 def make_aslan():
     c = Canvas()
-    c.ellipse(7.5, 8, 6.0, 5.6, N)          # yele
-    c.ellipse(7.5, 8.5, 3.8, 3.6, y)        # yüz
-    c.sym_set(6, 7, K)                      # gözler
-    c.rect(7, 9, 8, 9, n)                   # burun
-    c.rect(6, 11, 9, 11, n)                 # ağız
-    c.sym_set(4, 4, y)                      # kulaklar
+    c.poly([(11, 12), (14, 9), (15, 10), (12, 13)], y)   # kuyruk
+    c.rect(13, 7, 14, 8, N)                 # kuyruk püskülü
+    c.ellipse(7.5, 11, 4.2, 3.4, y)         # gövde
+    c.ellipse(7.5, 11.5, 2.2, 2.0, Y)       # açık renk göğüs
+    c.sym_rect(2, 9, 3, 12, y)              # ön pençeler
+    c.sym_set(2, 12, W)
+    c.sym_rect(4, 14, 5, 15, y)             # arka ayaklar
+    c.ellipse(7.5, 5, 4.8, 4.4, N)          # yele
+    c.ellipse(7.5, 5.5, 2.8, 2.6, y)        # yüz
+    c.sym_set(4, 1, y)                      # kulaklar
+    c.sym_set(6, 5, K)                      # gözler
+    c.rect(7, 6, 8, 6, n)                   # burun
+    c.rect(6, 8, 9, 8, n)                   # ağız
     c.outline()
     return c
 
@@ -519,13 +533,18 @@ def make_karinca():
 
 def make_boga():
     c = Canvas()
-    c.ellipse(7.5, 9, 5.0, 4.4, n)          # kafa
-    c.poly([(2, 7), (0, 2), (4, 6)], W)     # boynuzlar
-    c.poly([(13, 7), (15, 2), (11, 6)], W)
-    c.ellipse(7.5, 11.5, 2.8, 2.0, s)       # burun
-    c.sym_set(6, 11, K)                     # burun delikleri
-    c.sym_set(5, 8, R)                      # öfkeli gözler
-    c.set(7, 13, Y); c.set(8, 13, Y)        # halka
+    c.ellipse(7.5, 11, 5.0, 3.6, n)         # iri gövde
+    c.ellipse(7.5, 11, 2.6, 2.2, N)         # göğüs
+    c.sym_rect(3, 13, 4, 15, n)             # bacaklar
+    c.sym_rect(3, 15, 4, 15, K)             # toynaklar
+    c.ellipse(7.5, 5, 3.6, 3.2, n)          # kafa
+    c.sym_rect(2, 3, 3, 4, W)               # boynuzlar (yukarı kıvrık)
+    c.sym_rect(1, 1, 2, 2, W)
+    c.sym_set(1, 0, w)
+    c.ellipse(7.5, 7, 2.2, 1.4, s)          # burun
+    c.sym_set(6, 7, K)                      # burun delikleri
+    c.sym_set(5, 4, R)                      # öfkeli gözler
+    c.set(7, 9, Y); c.set(8, 9, Y)          # halka
     c.outline()
     return c
 
@@ -674,13 +693,17 @@ def make_kedi():
 
 def make_timsah():
     c = Canvas()
-    c.rect(2, 9, 13, 12, l)                 # gövde
-    c.rect(2, 5, 13, 8, L)                  # açık ağız (üst çene)
-    c.rect(3, 7, 12, 8, R)                  # ağız içi
-    for x in range(3, 13, 2):               # dişler
-        c.set(x, 7, W); c.set(x + 1, 8, W)
-    c.sym_set(4, 4, Y); c.sym_set(4, 3, L)  # gözler
-    c.rect(2, 13, 3, 14, l); c.rect(12, 13, 13, 14, l)
+    c.poly([(11, 12), (15, 9), (15, 11), (12, 14)], l)   # kuyruk
+    c.ellipse(7.5, 11.5, 4.4, 3.0, l)       # gövde
+    c.ellipse(7.5, 12, 2.4, 1.8, L)         # açık renk karın
+    c.sym_rect(2, 13, 3, 15, l)             # bacaklar
+    c.sym_set(2, 15, W)
+    c.rect(3, 3, 12, 6, L)                  # açık ağız (üst çene)
+    c.rect(3, 7, 12, 8, l)                  # alt çene
+    c.rect(4, 5, 11, 6, R)                  # ağız içi
+    for x in range(4, 12, 2):               # dişler
+        c.set(x, 5, W); c.set(x + 1, 6, W)
+    c.sym_set(4, 2, Y); c.sym_set(5, 2, L)  # gözler
     c.outline()
     return c
 
@@ -1111,14 +1134,18 @@ def make_fil():
 
 def make_mamut():
     c = Canvas()
-    c.ellipse(7.5, 9, 6.0, 5.0, n)           # tüylü gövde
-    c.ellipse(7.5, 7, 3.4, 3.0, N)
-    c.rect(7, 9, 8, 14, n)                   # hortum
-    c.poly([(5, 10), (2, 13), (2, 15), (4, 12)], W)   # kıvrık dişler
-    c.poly([(10, 10), (13, 13), (13, 15), (11, 12)], W)
-    c.sym_set(6, 7, K)
-    for x in (3, 5, 10, 12):                 # tüyler
-        c.set(x, 4, N)
+    c.ellipse(7.5, 10.5, 6.0, 4.0, n)        # tüylü gövde
+    c.sym_rect(2, 13, 4, 15, n)              # kalın bacaklar
+    c.sym_rect(2, 15, 4, 15, N)
+    c.ellipse(7.5, 5, 3.6, 3.4, N)           # kafa
+    c.ellipse(7.5, 3, 2.2, 1.6, n)           # tüylü tepe
+    c.rect(7, 7, 8, 13, N)                   # hortum
+    c.set(8, 14, N)
+    c.poly([(5, 7), (3, 10), (3, 12), (5, 9)], W)   # kıvrık dişler
+    c.poly([(10, 7), (12, 10), (12, 12), (10, 9)], W)
+    c.sym_set(6, 5, K)
+    for x in (2, 4, 11, 13):                 # tüyler
+        c.set(x, 9, N)
     c.outline()
     return c
 
@@ -1515,17 +1542,17 @@ def make_papagan():
 
 def make_su_aygiri():
     c = Canvas()
-    c.ellipse(7.5, 11, 7.0, 4.2, G)          # iri gövde
+    c.ellipse(7.5, 11.5, 6.0, 3.4, G)        # iri gövde
     c.sym_rect(2, 13, 4, 15, G)              # kalın bacaklar
-    c.sym_rect(3, 1, 4, 2, p)                # küçük kulaklar
-    c.ellipse(7.5, 5, 4.6, 3.4, g)           # kafa
-    c.sym_set(5, 3, W); c.sym_set(5, 4, K)   # gözler
-    c.rect(2, 7, 13, 12, g)                  # geniş ağız
-    c.rect(3, 8, 12, 10, PINK)               # ağız içi
-    c.rect(3, 8, 12, 8, P)
-    c.sym_rect(4, 9, 4, 10, W); c.sym_set(6, 10, W)   # dişler
-    c.sym_set(6, 6, K)                       # burun delikleri
-    c.rect(2, 12, 13, 12, p)                 # çene gölgesi
+    c.sym_rect(3, 0, 4, 1, p)                # küçük kulaklar
+    c.ellipse(7.5, 3.5, 3.8, 2.4, g)         # kafa
+    c.sym_set(5, 2, W); c.sym_set(5, 3, K)   # gözler
+    c.rect(3, 5, 12, 9, g)                   # geniş ağız
+    c.rect(4, 6, 11, 8, PINK)                # ağız içi
+    c.rect(4, 6, 11, 6, P)
+    c.sym_rect(5, 7, 5, 8, W)                # dişler
+    c.sym_set(6, 4, K)                       # burun delikleri
+    c.rect(3, 9, 12, 9, p)                   # çene gölgesi
     c.outline()
     return c
 
@@ -1594,16 +1621,23 @@ def make_cop_kutusu():
 
 def make_ejderha():
     c = Canvas()
-    c.poly([(0, 5), (4, 8), (0, 11)], D)    # kanatlar
-    c.poly([(16, 5), (12, 8), (16, 11)], D)
-    c.poly([(3, 0), (6, 5), (3, 5)], Y)     # boynuzlar
-    c.poly([(13, 0), (10, 5), (13, 5)], Y)
-    c.ellipse(7.5, 9, 5, 4.4, L)            # kafa
-    c.ellipse(7.5, 12, 3.2, 2.2, l)         # burun
-    c.sym_set(5, 8, O)                      # gözler
-    c.sym_set(6, 8, K)
-    c.sym_set(6, 12, K)                     # burun delikleri
-    c.set(7, 14, O); c.set(8, 14, O)        # ateş
+    c.poly([(0, 3), (4, 8), (1, 11)], D)    # kanatlar
+    c.poly([(16, 3), (12, 8), (15, 11)], D)
+    c.poly([(11, 13), (15, 13), (14, 15), (11, 15)], L)   # kuyruk
+    c.set(15, 12, O)
+    c.ellipse(7.5, 11, 4.0, 3.4, L)         # gövde
+    c.ellipse(7.5, 11.5, 2.0, 2.2, Y)       # sarı karın
+    for yy in (10, 12):
+        c.set(7, yy, y); c.set(8, yy, y)
+    c.sym_rect(4, 14, 5, 15, l)             # ayaklar
+    c.sym_set(4, 15, W)                     # pençe
+    c.poly([(4, 0), (6, 3), (4, 3)], Y)     # boynuzlar
+    c.poly([(11, 0), (9, 3), (11, 3)], Y)
+    c.ellipse(7.5, 5, 3.4, 2.8, L)          # kafa
+    c.ellipse(7.5, 7, 2.2, 1.2, l)          # burun
+    c.sym_set(5, 4, O)                      # gözler
+    c.sym_set(6, 4, K)
+    c.sym_set(6, 7, K)                      # burun delikleri
     c.outline()
     return c
 
@@ -2602,6 +2636,236 @@ def make_ui_icon_lock():
     return c
 
 
+# ---------------- Saldırı kareleri (<ad>_atk) ----------------
+# Her yaratığın saldırı pozu kendi çiziminden türetilir: make_<ad>() çalışırken kenar çizgisinden hemen önce poz uygulanır
+# (ağız açılır, pençe/kol/silah kalkar). Aynı tuval, aynı ölçek; voxel modeli de otomatik çıkar. Oyun saldırı anında
+# "<ad>_atk" varsa onu gösterir (CreatureAttackAnimator). Pozu olmayan yaratığa genel "atılma" pozu (_lunge) verilir.
+_attack_pose = None
+
+
+def draw_attack(make_fn, pose):
+    """make_fn'in çizimine, kenar çizgisinden hemen önce saldırı pozunu uygular."""
+    global _attack_pose
+    _attack_pose = pose
+    try:
+        return make_fn()
+    finally:
+        _attack_pose = None
+
+
+def _apply_attack_pose(cv):
+    """Canvas.outline çağırır: saldırı karesi çiziliyorsa poz bir kez uygulanır."""
+    global _attack_pose
+    if _attack_pose is not None:
+        pose, _attack_pose = _attack_pose, None
+        pose(cv)
+
+
+def _move(c, x0, y0, x1, y1, dx, dy, mirror=True):
+    """Dikdörtgendeki pikselleri (dx, dy) kadar taşır; mirror açıksa sağdaki aynası da (dx ters) taşınır."""
+    boxes = [(x0, x1, dx)]
+    if mirror:
+        boxes.append((c.w - 1 - x1, c.w - 1 - x0, -dx))
+    moved = []
+    for bx0, bx1, ddx in boxes:
+        for yy in range(y0, y1 + 1):
+            for xx in range(bx0, bx1 + 1):
+                if 0 <= xx < c.w and 0 <= yy < c.h and c.px[yy][xx] is not None:
+                    moved.append((xx + ddx, yy + dy, c.px[yy][xx]))
+                    c.px[yy][xx] = None
+    for xx, yy, col in moved:
+        c.set(xx, yy, col)
+
+
+def _bite(c, x0, x1, y):
+    """Açık ağız (2 satır): koyu boğaz, kırmızı dil, köşelerde sivri dişler."""
+    c.rect(x0, y, x1, y + 1, K)
+    c.rect(x0 + 1, y + 1, x1 - 1, y + 1, R)
+    c.set(x0, y, W); c.set(x1, y, W)
+    c.set(x0 + 1, y + 1, W); c.set(x1 - 1, y + 1, W)
+
+
+def _claws(c, x, y_):
+    """Kalkmış pençenin ucuna beyaz tırnaklar (aynalı)."""
+    c.sym_set(x, y_, W)
+    c.sym_set(x + 1, y_, W)
+
+
+def _lunge(c):
+    """Genel poz: üst yarı 1 piksel yukarı uzar (gerinip atılma)."""
+    if any(p is not None for p in c.px[0]):
+        return
+    mid = c.h // 2
+    _move(c, 0, 0, c.w - 1, mid - 1, 0, -1, mirror=False)
+    for xx in range(c.w):                   # açılan satırı alttan doldur: gövde kopmasın
+        if c.px[mid - 1][xx] is None and c.px[mid][xx] is not None and c.px[mid - 2][xx] is not None:
+            c.px[mid - 1][xx] = c.px[mid][xx]
+
+
+def _charge(c, puff=w):
+    """Boynuzla hücum: kafa 1 piksel eğilir, burundan buhar çıkar."""
+    _move(c, 0, 0, c.w - 1, 8, 0, 1, mirror=False)
+    c.sym_set(2, 9, puff); c.sym_set(1, 8, puff)
+
+
+def _pose_ejderha(c):
+    _move(c, 0, 3, 4, 11, 0, -2)            # kanatlar kalkar
+    _bite(c, 6, 9, 7)
+    c.rect(6, 9, 9, 9, O); c.rect(7, 10, 8, 10, Y)   # ağızdan ateş
+
+
+def _pose_timsah(c):
+    _move(c, 0, 0, c.w - 1, 4, 0, -1, mirror=False)  # üst çene açılır
+    c.rect(3, 4, 12, 4, L)
+    c.rect(4, 4, 11, 6, R)
+    for x in range(4, 12, 2):
+        c.set(x, 4, W); c.set(x + 1, 6, W)
+
+
+def _pose_godzilla(c):
+    c.rect(11, 6, 14, 7, R)                 # açık çene
+    c.rect(12, 5, 14, 5, W); c.rect(12, 8, 14, 8, W)
+    _move(c, 11, 9, 14, 10, 0, -1, mirror=False)   # pençe kalkar
+
+
+def _pose_fil(c):
+    c.rect(7, 9, 8, 13, g); c.erase_rect(7, 14, 8, 15)  # hortum havaya kalkar
+    c.rect(9, 3, 10, 8, g); c.rect(10, 3, 10, 8, G); c.rect(11, 2, 11, 3, g)
+    c.rect(7, 9, 8, 10, PINK); c.set(7, 10, R)          # açık ağız (borazan)
+
+
+def _pose_mamut(c):
+    c.rect(7, 9, 8, 13, n); c.erase_rect(7, 14, 8, 14)
+    c.rect(9, 3, 10, 8, N); c.rect(11, 2, 11, 3, N)
+    c.rect(7, 8, 8, 9, PINK); c.set(7, 9, R)
+
+
+def _pose_iskelet(c):
+    c.erase_rect(2, 9, 3, 10); c.erase_rect(12, 9, 13, 10)   # kemik kollar kalkar
+    c.sym_rect(2, 6, 3, 8, W); c.sym_set(3, 9, W)
+    c.rect(6, 7, 9, 7, K); c.rect(6, 8, 9, 8, w)             # çene düşer
+
+
+def _pose_bulut(c):
+    c.erase_rect(0, 11, 15, 15)                             # yağmur yerine şimşek
+    c.poly([(8, 10), (5, 13.5), (7.5, 13.5), (6, 16), (10.5, 12), (8, 12), (10, 10)], Y)
+
+
+def _pose_piranha(c):
+    c.rect(1, 8, 7, 10, R)
+    for x in (1, 3, 5, 7):
+        c.set(x, 8, W)
+    for x in (2, 4, 6):
+        c.set(x, 10, W)
+
+
+def _pose_kopekbaligi(c):
+    c.rect(1, 9, 6, 11, R)
+    for x in (1, 3, 5):
+        c.set(x, 9, W)
+    for x in (2, 4, 6):
+        c.set(x, 11, W)
+
+
+def _pose_kirpi(c):
+    for x in range(3, 13, 2):               # dikenler kabarır
+        c.rect(x, 3, x, 4, INK)
+
+
+def _pose_peri(c):
+    c.rect(11, 6, 11, 8, S)                 # kalkan kol ve asa
+    c.rect(12, 3, 12, 6, y)
+    c.rect(12, 2, 14, 2, Y); c.set(13, 1, Y); c.set(13, 3, Y)
+
+
+ATTACK_POSES = {
+    "zombi": lambda c: (_move(c, 2, 8, 4, 9, 0, -2), _bite(c, 6, 9, 8)),
+    "ari": lambda c: (_move(c, 1, 3, 3, 7, 0, -1), c.rect(7, 14, 8, 15, K)),
+    "fare": lambda c: _bite(c, 6, 9, 10),
+    "kurt": lambda c: _bite(c, 6, 9, 8),
+    "bulut": _pose_bulut,
+    "kaplumbaga": lambda c: (_move(c, 11, 7, 15, 12, 1, 0, mirror=False), c.set(15, 10, R)),
+    "ejderha": _pose_ejderha,
+    "unknown": _lunge,
+    "godzilla": _pose_godzilla,
+    "kingkong": lambda c: (_move(c, 1, 9, 2, 14, 0, -5), _bite(c, 6, 9, 7)),
+    "robot": lambda c: (_move(c, 2, 7, 3, 12, 0, -3), c.sym_set(6, 3, Y), c.rect(6, 8, 9, 10, R), c.set(7, 9, Y)),
+    "yeti": lambda c: (_move(c, 1, 9, 2, 13, 0, -4), _claws(c, 1, 4), _bite(c, 6, 9, 7)),
+    "orumcek": lambda c: (_move(c, 0, 1, 4, 5, 0, -1), c.sym_set(6, 8, W), c.sym_set(7, 8, W)),
+    "tepegoz": lambda c: (_move(c, 12, 6, 14, 13, 0, -4, mirror=False), _bite(c, 5, 10, 8)),
+    "aslan": lambda c: (_move(c, 2, 9, 3, 12, 0, -4), _claws(c, 2, 5), _bite(c, 6, 9, 7)),
+    "yilan": lambda c: (c.set(12, 4, W), c.set(12, 5, R), c.set(12, 6, W), c.rect(13, 5, 14, 5, R), c.set(15, 4, R), c.set(15, 6, R)),
+    "hayalet": lambda c: (c.ellipse(7.5, 9.5, 1.6, 2.0, K), c.sym_rect(1, 6, 2, 9, W)),
+    "yarasa": lambda c: (_move(c, 0, 5, 6, 11, 0, -2), _bite(c, 6, 9, 9)),
+    "karinca": lambda c: (c.rect(0, 7, 1, 7, W), c.rect(0, 11, 1, 11, W), c.set(2, 9, R)),
+    "boga": lambda c: _charge(c),
+    "ninja": lambda c: (c.erase_rect(12, 4, 14, 5), c.rect(11, 9, 12, 10, INK), c.rect(12, 2, 13, 8, w), c.rect(11, 8, 14, 8, y)),
+    "kopek": lambda c: _bite(c, 6, 9, 8),
+    "kedi": lambda c: (c.sym_rect(2, 7, 3, 10, G), _claws(c, 2, 6), _bite(c, 6, 9, 9)),
+    "timsah": _pose_timsah,
+    "ayi": lambda c: (_move(c, 1, 9, 2, 12, 0, -5), _claws(c, 1, 3), _bite(c, 6, 9, 7)),
+    "iskelet": _pose_iskelet,
+    "cadi": lambda c: (_move(c, 12, 8, 12, 15, 0, -3, mirror=False), c.set(11, 4, P), c.set(13, 4, P), c.set(12, 3, Y), c.set(8, 10, K)),
+    "korsan": lambda c: (_move(c, 13, 9, 13, 14, 0, -6, mirror=False), c.rect(12, 9, 13, 10, S), c.rect(7, 9, 8, 9, K)),
+    "kartal": lambda c: (_move(c, 0, 6, 6, 12, 0, -2), c.sym_rect(5, 13, 6, 14, y), c.set(8, 7, R)),
+    "akrep": lambda c: (_move(c, 0, 7, 3, 9, 0, -2), c.rect(5, 1, 6, 2, R)),
+    "hamamboecegi": lambda c: (_move(c, 0, 5, 7, 15, -1, 0), c.rect(7, 6, 8, 14, INK)),
+    "piranha": _pose_piranha,
+    "kraken": lambda c: (_move(c, 1, 9, 3, 14, 0, -4), c.rect(7, 8, 8, 8, K)),
+    "tavuk": lambda c: (_move(c, 6, 1, 13, 8, 1, 0, mirror=False), c.set(13, 6, K), c.rect(2, 6, 4, 8, w)),
+    "at": lambda c: (_move(c, 10, 12, 12, 15, 1, -3, mirror=False), c.set(14, 5, R)),
+    "inek": lambda c: _charge(c, g),
+    "domuz": lambda c: (c.rect(6, 10, 9, 11, K), c.rect(7, 11, 8, 11, R), c.sym_set(5, 10, W), c.sym_set(5, 6, R)),
+    "keci": lambda c: _charge(c, g),
+    "tavsan": lambda c: (c.sym_rect(2, 8, 3, 10, W), c.sym_set(2, 7, w), c.rect(7, 9, 8, 10, W), c.sym_set(6, 7, R)),
+    "kurbaga": lambda c: (c.rect(4, 10, 11, 10, K), c.rect(7, 11, 8, 14, PINK), c.rect(6, 14, 9, 15, R)),
+    "kertenkele": lambda c: (_move(c, 10, 4, 15, 9, 0, -1, mirror=False), c.set(14, 8, R), c.set(15, 8, W), c.set(15, 6, R)),
+    "kopekbaligi": _pose_kopekbaligi,
+    "karga": lambda c: (_move(c, 0, 7, 6, 12, 0, -2), c.set(8, 7, R)),
+    "guvercin": lambda c: (_move(c, 1, 8, 3, 11, 0, -3), c.rect(7, 6, 8, 6, R)),
+    "palyaco": lambda c: (c.rect(5, 8, 10, 9, K), c.rect(6, 8, 9, 8, W), c.rect(6, 9, 9, 9, R), c.sym_rect(2, 6, 3, 8, W)),
+    "asker": lambda c: (_move(c, 12, 8, 13, 13, 0, -3, mirror=False), c.rect(12, 3, 13, 4, Y), c.set(12, 2, O), c.set(13, 2, O)),
+    "polis": lambda c: (c.rect(12, 8, 12, 9, S), c.rect(12, 3, 13, 7, INK)),
+    "uzayli": lambda c: (c.erase_rect(3, 11, 4, 12), c.erase_rect(11, 11, 12, 12), c.sym_rect(3, 8, 4, 10, L), c.recolor(K, R)),
+    "goblin": lambda c: (_move(c, 11, 9, 11, 14, 0, -4, mirror=False), c.rect(12, 9, 12, 10, l), _bite(c, 6, 9, 9)),
+    "balina": lambda c: (c.rect(1, 10, 5, 11, K), c.rect(2, 11, 4, 11, R), c.rect(8, 0, 10, 3, C)),
+    "minotor": lambda c: (_move(c, 11, 6, 14, 14, 0, -4, mirror=False), c.sym_set(2, 8, w), c.sym_set(1, 7, w)),
+    "medusa": lambda c: (c.sym_rect(5, 5, 6, 6, Y), c.sym_set(6, 5, W), c.rect(6, 8, 9, 8, K), c.rect(7, 8, 8, 8, R)),
+    "golem": lambda c: (_move(c, 1, 7, 3, 12, 0, -4), c.sym_set(6, 4, R), c.rect(6, 9, 9, 10, O)),
+    "gargoyle": lambda c: (_move(c, 0, 3, 5, 12, 0, -2), _bite(c, 6, 9, 7)),
+    "fil": _pose_fil,
+    "mamut": _pose_mamut,
+    "cakal": lambda c: _bite(c, 6, 9, 8),
+    "sirtlan": lambda c: _bite(c, 6, 9, 7),
+    "penguen": lambda c: (_move(c, 1, 8, 2, 11, 0, -3), c.set(8, 7, R)),
+    "sumuklu": lambda c: (c.set(1, 7, s), c.set(4, 7, s), c.set(1, 6, K), c.set(4, 6, K), c.rect(0, 14, 15, 15, C)),
+    "solucan": lambda c: (_move(c, 8, 3, 13, 8, 0, -1, mirror=False), c.rect(10, 6, 11, 6, K), c.rect(10, 7, 11, 7, R)),
+    "denizanasi": lambda c: c.recolor(P, Y, 9, 15),
+    "pterodaktil": lambda c: (_move(c, 0, 6, 6, 10, 0, -2), c.rect(10, 5, 13, 5, R)),
+    "hirsiz": lambda c: _move(c, 10, 9, 15, 14, 0, -4, mirror=False),
+    "tilki": lambda c: _bite(c, 6, 9, 8),
+    "baykus": lambda c: (c.sym_rect(1, 7, 2, 11, n), c.sym_rect(5, 13, 6, 14, y), c.set(8, 9, R)),
+    "sincap": lambda c: _move(c, 3, 11, 7, 13, 0, -6, mirror=False),
+    "yengec": lambda c: _move(c, 0, 4, 2, 6, 0, -2),
+    "deve": lambda c: (c.set(14, 4, R), c.rect(15, 2, 15, 4, C)),
+    "kanguru": lambda c: _move(c, 2, 7, 4, 9, 1, -2),
+    "panda": lambda c: (_move(c, 1, 8, 3, 12, 0, -4), _claws(c, 1, 4), _bite(c, 6, 9, 7)),
+    "kirpi": _pose_kirpi,
+    "viking": lambda c: (_move(c, 12, 6, 14, 14, 0, -4, mirror=False), c.rect(7, 8, 8, 8, K), c.rect(7, 9, 8, 9, R)),
+    "gladyator": lambda c: (_move(c, 13, 6, 13, 13, 0, -5, mirror=False), c.rect(12, 8, 13, 9, s)),
+    "sumocu": lambda c: (_move(c, 3, 14, 5, 15, -1, -3, mirror=False), c.rect(13, 6, 15, 8, s)),
+    "boksor": lambda c: _move(c, 0, 5, 4, 9, 2, -2, mirror=False),
+    "futbolcu": lambda c: (_move(c, 10, 11, 15, 15, 1, -3, mirror=False), _move(c, 9, 14, 10, 15, 1, -1, mirror=False)),
+    "asci": lambda c: (_move(c, 12, 6, 14, 13, 0, -4, mirror=False), c.rect(7, 8, 8, 8, K)),
+    "maymun": lambda c: (_move(c, 3, 8, 4, 14, 0, -5), _bite(c, 6, 9, 7)),
+    "papagan": lambda c: (_move(c, 0, 6, 6, 12, 0, -2), c.rect(7, 8, 8, 8, R)),
+    "su_aygiri": lambda c: (c.rect(3, 10, 12, 10, g), c.rect(4, 6, 11, 9, PINK), c.rect(4, 6, 11, 6, P), c.rect(5, 9, 10, 9, P),
+                            c.sym_rect(4, 7, 4, 8, W), c.sym_set(6, 7, W), c.rect(3, 11, 12, 11, p)),
+    "peri": _pose_peri,
+    "kovboy": lambda c: (_move(c, 12, 11, 13, 12, 0, -4, mirror=False), c.set(14, 7, Y), c.set(15, 7, O)),
+}
+
+
 # ================= Sprite stacking (katmanlı 3D piksel) =================
 # Her nesne yukarıdan görünen yatay dilimlerdir (0 = en alt). Hepsi aynı tuval boyunda, ortak merkezli.
 # Araçlar 0 derecede +x yönüne (sağa) bakar; oyunda gittiği yöne döndürülür.
@@ -2982,6 +3246,10 @@ def main():
         static["t_awning_" + theme] = (lambda t=theme: make_t_awning(t))
     for name, fn in animated.items():
         save_animated(fn(), name)
+    # Saldırı kareleri: her yaratığın "<ad>_atk" pozu (karakter hariç).
+    attack_frames = [name for name in animated if name != "char"]
+    for name in attack_frames:
+        draw_attack(animated[name], ATTACK_POSES.get(name, _lunge)).save(name + "_atk")
     for name, fn in static.items():
         fn().save(name)
     stacks = {"araba": make_araba_stack, "motor": make_motor_stack, "char": make_char_stack,
@@ -3009,8 +3277,9 @@ def main():
         cv = fn()
         save_stack(voxelize(cv), name)
         save_stack(voxelize(cv.shifted(1)), name + "_b")
-        voxels += 2
-    print("Üretildi:", len(animated) * 2 + len(static), "PNG ->", OUT, "+", len(stacks) + voxels, "katmanlı nesne ->", STACK_OUT)
+        save_stack(voxelize(draw_attack(fn, ATTACK_POSES.get(name, _lunge))), name + "_atk")
+        voxels += 3
+    print("Üretildi:", len(animated) * 2 + len(attack_frames) + len(static), "PNG ->", OUT, "+", len(stacks) + voxels, "katmanlı nesne ->", STACK_OUT)
 
 
 if __name__ == "__main__":

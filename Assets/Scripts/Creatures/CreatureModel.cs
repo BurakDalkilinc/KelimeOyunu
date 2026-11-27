@@ -261,6 +261,9 @@ public class CreatureModel
     public int BossHealth { get; private set; }
     public int BossMaxHealth { get; private set; }
 
+    /// <summary>Yürürken değdiği ev duvarlarını yıkar mı? ("boss" etiketi açar; kural <see cref="HouseDamage"/>'da.)</summary>
+    public bool BreaksHouses { get; set; }
+
     /// <summary>Boss'a en son vuran oyuncu.</summary>
     public PlayerState LastBossHitter { get; private set; }
 

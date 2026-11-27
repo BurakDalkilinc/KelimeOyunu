@@ -211,6 +211,33 @@ public class GameConfig : ScriptableObject
     [Tooltip("Saldıran botun boss'un gövdesine değmeden durduğu boşluk (birim). Vuruş menzili bundan uzun olmalı.")]
     [Min(0f)] public float botBossStandoff = 0.6f;
 
+    [Tooltip("Bir evin duvar karelerinin bu oranından fazlası yıkılınca (boss) ev tamamen çöker: kalan duvarlar ve çatı gider.")]
+    [Range(0f, 1f)] public float bossHouseCollapseRatio = 0.35f;
+
+    [Tooltip("Boss gövdesinin yarıçapına eklenen yıkma payı (birim): duvara yaslanan boss duvarı yıksın (duvar onu bu kadar dışarıda tutar).")]
+    [Min(0f)] public float bossWallBreakReach = 0.25f;
+
+    [Tooltip("Ev duvarı yıkılınca kamera sarsıntısı (güç, sn).")]
+    [Min(0f)] public float houseBreakShakeAmplitude = 0.18f;
+    [Min(0f)] public float houseBreakShakeSeconds = 0.25f;
+
+    [Tooltip("Ev tamamen çökünce kamera sarsıntısı (güç, sn).")]
+    [Min(0f)] public float houseCollapseShakeAmplitude = 0.4f;
+    [Min(0f)] public float houseCollapseShakeSeconds = 0.5f;
+
+    [Tooltip("Yıkılan her duvar karesindeki toz bulutunun büyüklüğü ve kalma süresi (sn).")]
+    [Min(0f)] public float houseBreakDustSize = 1.1f;
+    [Min(0.1f)] public float houseBreakDustSeconds = 1.2f;
+
+    [Tooltip("Yıkılan her duvar karesinden saçılan tahta/taş/kerpiç kırıntısı sayısı.")]
+    [Min(0)] public int houseBreakDebrisPerCell = 5;
+
+    [Tooltip("Bir yıkımda en çok kaç karede toz/kırıntı gösterilir (ev çökünce çok kare birden yıkılır).")]
+    [Min(1)] public int houseBreakMaxFxCells = 10;
+
+    [Tooltip("Duvar yıkılma sesinin düzeyi (0-1).")]
+    [Range(0f, 1f)] public float houseBreakVolume = 0.8f;
+
     [Tooltip("Silah kelimesi süre yazmıyorsa silahın elde kalma süresi (sn).")]
     [Min(1f)] public float weaponDefaultSeconds = 15f;
 

@@ -4,10 +4,14 @@ using UnityEngine;
 /// <summary>
 /// Resources/Sprites içindeki piksel sanat sprite'larını ada göre verir. Bulamazsa null döner;
 /// çağıran taraf eski daire/kare görüntüye geri düşer. Animasyonlu sprite iki karedir: "ad" ve "ad_b".
+/// Yaratığın saldırı karesi (varsa) "ad_atk"tır: vuruş anında kısa süre gösterilir.
 /// </summary>
 public static class SpriteLibrary
 {
     const string Folder = "Sprites/";
+
+    /// <summary>Saldırı karesinin ad eki ("aslan" -> "aslan_atk").</summary>
+    public const string AttackSuffix = "_atk";
 
     static readonly Dictionary<string, Sprite> cache = new Dictionary<string, Sprite>();
 
@@ -30,6 +34,13 @@ public static class SpriteLibrary
         if (a == null) return System.Array.Empty<Sprite>();
         Sprite b = Get(spriteName + "_b");
         return b == null ? new[] { a } : new[] { a, b };
+    }
+
+    /// <summary>Saldırı karesi ("ad_atk"); yoksa null (çağıran normal kareyle devam eder).</summary>
+    public static Sprite GetAttackFrame(string spriteName)
+    {
+        if (string.IsNullOrEmpty(spriteName)) return null;
+        return Get(spriteName + AttackSuffix);
     }
 
     /// <summary>Kelimenin sprite adı: JSON'daki "sprite" alanı, yoksa kelime kimliği; hiçbiri yoksa "unknown".</summary>

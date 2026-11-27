@@ -117,10 +117,12 @@ public class MapThemeTests
     [Test]
     public void VillageTheme_IsIdenticalToTheOriginalMap()
     {
-        // Parmak izleri, temalar eklenmeden önceki üreticiyle alındı: köy haritası birebir aynı kalmalı.
+        // Parmak izleri, kapılar hep güney duvarına alındıktan sonra yenilendi (eskisi: 1 → 2262998696, 7 → 637149040,
+        // 42 → 2114121051, 123 → 2527582666, 2024 → 2024983474). Evlerin yeri ve havuzlar aynı; yalnızca büyük köylerin alt
+        // sırasındaki kapılar alta taşındı (tohum 7'de kapının önündeki iki uçurum karesi de zemine çevrildi).
         var expected = new Dictionary<int, uint>
         {
-            { 1, 2262998696u }, { 7, 637149040u }, { 42, 2114121051u }, { 123, 2527582666u }, { 2024, 2024983474u },
+            { 1, 3552467176u }, { 7, 2830676206u }, { 42, 1822894795u }, { 123, 4047525594u }, { 2024, 252577226u },
         };
         foreach (KeyValuePair<int, uint> pair in expected)
         {
@@ -250,7 +252,8 @@ public class MapThemeTests
             {
                 Assert.IsTrue(house.HasDoor, $"{theme} {seed}: üretilen evin kapısı kayıtlı olmalı");
                 Assert.IsTrue(House.IsValidDoor(house.X, house.W, house.DoorX), $"{theme} {seed}: kapı köşeye değmemeli");
-                Assert.AreEqual(house.DoorUp ? house.Y + house.H - 1 : house.Y, house.DoorY);
+                Assert.IsFalse(house.DoorUp, $"{theme} {seed}: kapı hep güney (ön) duvarında");
+                Assert.AreEqual(house.Y, house.DoorY);
 
                 for (int i = 0; i < House.DoorWidth; i++)
                 {
@@ -262,7 +265,7 @@ public class MapThemeTests
                     Assert.IsTrue(TerrainMap.IsSafeGround(map.At(x, house.DoorstepY)), $"{theme} {seed}: kapının önü yürünür olmalı");
 
                     // İç taraf (kapının bir içerisi) evin zemini: kapıdan girilir.
-                    int inside = house.DoorUp ? house.DoorY - 1 : house.DoorY + 1;
+                    int inside = house.DoorY + 1;
                     Assert.AreEqual(theme.FloorTile, map.At(x, inside));
                 }
 

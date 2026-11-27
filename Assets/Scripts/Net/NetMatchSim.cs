@@ -63,6 +63,9 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
         this.random = random ?? throw new ArgumentNullException(nameof(random));
         arena = new ArenaBounds(config.arenaSize);
         revival = new GhostRevival(match.Players, config, random);
+
+        // Süren tehdidin sığınağı olan ev boss tarafından yıkılmaz.
+        if (terrain != null) terrain.IsHouseProtected = house => RefugeFinder.IsHouseRefuge(threats, terrain.Map, house);
     }
 
     /// <summary>Devam eden büyük tehditler (uyarıda ya da etkisi sürenler).</summary>
@@ -125,7 +128,7 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
     {
         if (word == null)
         {
-            Add(CreatureBuilder.BuildUnknown(config, arena, random), "???", true);
+            Add(CreatureBuilder.BuildUnknown(config, arena, random, Terrain?.Map), "???", true);
             return;
         }
 
@@ -226,7 +229,7 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
 
         if (!avatars.TryGetPosition(target.Id, out Vector2 targetPosition)) return;
 
-        List<CreatureModel> models = CreatureBuilder.BuildAttack(word, target, targetPosition, config, arena, random);
+        List<CreatureModel> models = CreatureBuilder.BuildAttack(word, target, targetPosition, config, arena, random, Terrain?.Map);
         for (int i = 0; i < models.Count; i++)
             Add(models[i], models.Count == 1 || i == 0 ? CreatureLabel.NameToken : "", false); // Ad istemcide, kendi dilinde yazılır
     }
