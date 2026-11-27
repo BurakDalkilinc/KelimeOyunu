@@ -5,6 +5,7 @@ using UnityEngine;
 /// <summary>
 /// Arazinin tehlikeleri: lav/uçuruma düşme, yanan karoda, dondurucu suda ve bataklık kumunda duran oyuncuya aralıklarla hasar,
 /// kaktüse dokunana küçük hasar.
+/// Büyük tehdidin çözüm alanında (mağara, sığınak...) korunan oyuncuya yerdeki ateş işlemez (bkz. <see cref="IsSheltered"/>): çözüm alanı tehdidin bütün hasar türlerinden korur.
 /// Kalkan hasarı engeller (hasar <see cref="PlayerState.TakeDamage"/> yolundan gider). Uçan ve elenmiş oyuncuya hiçbir şey işlemez.
 /// Düz C# sınıfı: konumu ve ışınlamayı dışarıdan (tek kişilik sahne ya da ağ) alır, test edilebilir.
 /// </summary>
@@ -29,6 +30,12 @@ public class TerrainHazards
     readonly FireSim fire;
     readonly GameConfig config;
     readonly Dictionary<int, PlayerTimers> timers = new Dictionary<int, PlayerTimers>();
+
+    /// <summary>
+    /// Oyuncu şu an bir tehdidin çözüm alanında korunuyor mu? Tehdit yöneticisi bağlar (<see cref="RefugeFinder.IsSheltered"/>);
+    /// boşsa kimse korunmaz.
+    /// </summary>
+    public Func<PlayerState, bool> IsSheltered { get; set; }
 
     /// <summary>Bir oyuncu uçuruma düştü: oyuncunun numarası, düştüğü karenin merkezi ve ışınlandığı güvenli nokta.</summary>
     public event Action<int, Vector2> Fell;
@@ -63,6 +70,8 @@ public class TerrainHazards
             }
 
             Vector2? position = positionOf(player.Id);
+            bool sheltered = player.IsAlive && IsSheltered != null && IsSheltered(player); // Mağaradakine yerdeki ateş işlemez
+
             if (!player.IsAlive || player.Status.IsFlying || position == null)
             {
                 t.LavaLeft = 0f;
@@ -80,7 +89,7 @@ public class TerrainHazards
             if (type == TileType.Lava) { StartFall(player, FallKind.Lava); continue; }
 
             // Ateş: girişte hemen, sonra her aralıkta bir hasar. Çıkınca sayaç sıfırlanır.
-            bool onFire = fire != null && fire.IsBurning(cell.x, cell.y);
+            bool onFire = !sheltered && fire != null && fire.IsBurning(cell.x, cell.y);
             t.FireLeft = TickFire(onFire, t.FireLeft, dt, player);
 
             // Dondurucu su / bataklık kumu: içinde durdukça aralıklarla hasar. Kaktüs: dokununca hasar, sonra kısa bekleme.

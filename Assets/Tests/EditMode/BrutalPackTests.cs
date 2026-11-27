@@ -62,7 +62,7 @@ public class BrutalPackTests
     }
 
     [Test]
-    public void Sword_KillsInFront_InOneHit_NotBehindOrFar_ShieldBlocks()
+    public void Sword_Deals2InFront_TwoHitsEliminate_NotBehindOrFar_ShieldBlocks()
     {
         WordEntry sword = db.Lookup("kilic").Entry;
         var world = new FakeWorld();
@@ -78,7 +78,9 @@ public class BrutalPackTests
         Assert.IsTrue(front.IsAlive, "apply false vurmaz");
 
         MeleeRules.Strike(me, Vector2.zero, Vector2.right, sword, world, config, true, victims);
-        Assert.IsFalse(front.IsAlive, "tek vuruşta elenir");
+        Assert.AreEqual(1, front.Health.Current, "tek vuruş 2 hasar: 3 canlı oyuncu ayakta kalır");
+        MeleeRules.Strike(me, Vector2.zero, Vector2.right, sword, world, config, true, victims);
+        Assert.IsFalse(front.IsAlive, "ikinci vuruşta elenir");
         Assert.IsTrue(behind.IsAlive);
         Assert.IsTrue(far.IsAlive);
         Assert.IsTrue(shielded.IsAlive, "kalkan korur");

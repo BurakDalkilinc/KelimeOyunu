@@ -66,6 +66,7 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
 
         // Süren tehdidin sığınağı olan ev boss tarafından yıkılmaz.
         if (terrain != null) terrain.IsHouseProtected = house => RefugeFinder.IsHouseRefuge(threats, terrain.Map, house);
+        if (terrain != null) terrain.Hazards.IsSheltered = player => RefugeFinder.IsSheltered(threats, player); // Mağaradakine yerdeki ateş işlemez
     }
 
     /// <summary>Devam eden büyük tehditler (uyarıda ya da etkisi sürenler).</summary>
@@ -279,8 +280,8 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
         if (MeleeRules.IsMelee(shooter.Status.Weapon))
         {
             if (onlyIfVictims && MeleeRules.Strike(shooter, from, facing, shooter.Status.Weapon, this, config, false, meleeVictims) == 0) return false;
-            if (!shooter.Status.TryUseWeaponShot(config.weaponShotIntervalSeconds, out WordEntry used)) return false;
-            MeleeRules.Strike(shooter, from, facing, used, this, config, true, meleeVictims);
+            if (!MeleeRules.TryBeginSwing(shooter, facing, config)) return false;
+            MeleeRules.TickSwing(shooter, 0f, this, config, meleeVictims); // Hazırlık 0 ise hemen vurur; yoksa Tick vurur
             return true;
         }
 
@@ -325,6 +326,7 @@ public class NetMatchSim : ICreatureWorld, ICreatureSink, IRefugeProvider, IRevi
         {
             if (player.IsGhost) player.Status.Clear(); // Elenenin üstünde etki kalmaz
             else player.Status.Tick(deltaSeconds);
+            if (player.Status.Swing.IsWindingUp) MeleeRules.TickSwing(player, deltaSeconds, this, config, meleeVictims); // Kılıç hazırlığı dolunca vurur
         }
 
         Walls.Tick(deltaSeconds);

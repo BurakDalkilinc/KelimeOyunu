@@ -252,7 +252,7 @@ public class ThreatTests
     {
         Assert.AreEqual(3, ThreatSpec.GetZoneCount(Real("tsunami")));
         Assert.AreEqual(3, ThreatSpec.GetZoneCapacity(Real("tsunami"), 8, config));
-        Assert.AreEqual(2, ThreatSpec.GetZoneCount(Real("ejderha")));
+        Assert.AreEqual(3, ThreatSpec.GetZoneCount(Real("ejderha")));
         Assert.AreEqual(4, ThreatSpec.GetZoneCapacity(Real("ejderha"), 8, config));
         Assert.AreEqual(4, ThreatSpec.GetZoneCount(Real("zombi_suru")));
         Assert.AreEqual(2, ThreatSpec.GetZoneCapacity(Real("zombi_suru"), 8, config));

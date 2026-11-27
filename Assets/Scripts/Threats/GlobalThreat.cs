@@ -91,6 +91,7 @@ public class GlobalThreat
 
         float dt = Mathf.Max(0f, deltaSeconds);
         context.Zones.Update(context.World, dt);
+        ExtinguishSheltered();
 
         if (Phase == ThreatPhase.Warning)
         {
@@ -128,6 +129,16 @@ public class GlobalThreat
             Phase = ThreatPhase.Finished;
             context.Zones.Clear();
         }
+    }
+
+    /// <summary>
+    /// Çözüm alanı tehdidin bütün hasar türlerinden korur: içeride korunan oyuncunun üstündeki alev söner
+    /// (ateş alanında tutuşup mağaraya kaçan yanmaya devam etmesin). Yerdeki ateşi <see cref="TerrainHazards.IsSheltered"/> keser.
+    /// </summary>
+    void ExtinguishSheltered()
+    {
+        foreach (PlayerState player in context.World.Players)
+            if (player.IsAlive && player.Status.IsBurning && context.Zones.IsProtected(player.Id)) player.Status.Extinguish();
     }
 
     void Activate()

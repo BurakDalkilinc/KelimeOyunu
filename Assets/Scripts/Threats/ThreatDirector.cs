@@ -72,11 +72,15 @@ public class ThreatDirector : MonoBehaviour, IRefugeProvider
         threats.Add(threat);
     }
 
-    /// <summary>Sığınak evleri tehdit sürerken boss tarafından yıkılmasın (arazi bu soruyu buraya sorar).</summary>
+    /// <summary>
+    /// Sığınak evleri tehdit sürerken boss tarafından yıkılmasın, çözüm alanındakine yerdeki ateş işlemesin
+    /// (arazi bu soruları buraya sorar).
+    /// </summary>
     void BindHouseProtection()
     {
         TerrainSim terrain = bootstrap.Terrain;
         if (terrain != null) terrain.IsHouseProtected = house => RefugeFinder.IsHouseRefuge(threats, terrain.Map, house);
+        if (terrain != null) terrain.Hazards.IsSheltered = player => RefugeFinder.IsSheltered(threats, player); // Mağaradakine yerdeki ateş işlemez
     }
 
     void Update()

@@ -92,7 +92,16 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
     {
         Walls.Tick(Time.deltaTime);
         foreach (ShoveCooldown cooldown in shoveCooldowns.Values) cooldown.Tick(Time.deltaTime);
+        TickSwings(Time.deltaTime);
         TickTerrain(Time.deltaTime);
+    }
+
+    /// <summary>Hazırlıktaki kılıç/sopa savuruşlarını ilerletir; süresi dolan vurur.</summary>
+    void TickSwings(float dt)
+    {
+        if (Match == null || config == null) return;
+        foreach (PlayerState player in Match.Players)
+            if (player.Status.Swing.IsWindingUp) MeleeRules.TickSwing(player, dt, this, config, meleeVictims);
     }
 
     /// <summary>Yangını, yaratıkların tutuşturmasını ve lav/ateş/uçurum hasarını ilerletir.</summary>
@@ -206,10 +215,13 @@ public class MatchBootstrap : MonoBehaviour, ICreatureWorld
             Vector2 facing = TryGetFacing(shooter.Id, out Vector2 face) ? face : Vector2.up;
             WordEntry melee = shooter.Status.Weapon;
             if (onlyIfVictims && MeleeRules.Strike(shooter, from, facing, melee, this, config, false, meleeVictims) == 0) return false;
-            if (!shooter.Status.TryUseWeaponShot(config.weaponShotIntervalSeconds, out WordEntry used)) return false;
+            if (!MeleeRules.TryBeginSwing(shooter, facing, config)) return false;
 
-            MeleeRules.Strike(shooter, from, facing, used, this, config, true, meleeVictims);
-            MeleeSwingEffect.Spawn(from, facing, MeleeRules.Reach(used, config), SpriteLibrary.Get(SpriteLibrary.NameFor(used)));
+            // Önce kısa hazırlık (silah parlar, yay görünür); vuruşu TickSwings yapar. Hazırlık 0 ise hemen vurur.
+            avatars.TryGetValue(shooter.Id, out Transform body);
+            MeleeSwingEffect.Spawn(from, facing, MeleeRules.Reach(melee, config), SpriteLibrary.Get(SpriteLibrary.NameFor(melee)),
+                                   config.swordWindupSeconds, body);
+            MeleeRules.TickSwing(shooter, 0f, this, config, meleeVictims);
             return true;
         }
 

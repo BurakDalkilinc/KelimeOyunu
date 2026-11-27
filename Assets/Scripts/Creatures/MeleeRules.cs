@@ -4,7 +4,8 @@ using UnityEngine;
 /// <summary>
 /// Yakın dövüş silahı (kılıç, sopa) kuralı: vuran oyuncunun önündeki yay içinde (menzil = kelimenin "stats.radius"u,
 /// yoksa itiş menzili; açı = itiş açısı) duran, hayattaki ve uçmayan herkes kelimenin hasarını alır (kalkan korur).
-/// Tek kişilik sahne ve ağ maçı aynı kuralı kullanır. Düz C# sınıfı, test edilebilir.
+/// Savuruşun önce kısa bir hazırlığı vardır (<see cref="GameConfig.swordWindupSeconds"/>: silah parlar, hedef kaçabilir), iki
+/// savuruş arasında da bekleme (<see cref="GameConfig.swordSwingCooldownSeconds"/>). Tek kişilik sahne ve ağ maçı aynı kuralı kullanır. Düz C# sınıfı, test edilebilir.
 /// </summary>
 public static class MeleeRules
 {
@@ -61,6 +62,41 @@ public static class MeleeRules
             if (apply) other.TakeDamage(damage);
         }
         return count;
+    }
+
+    /// <summary>
+    /// Savuruşu başlatır: bir atış harcanır, silah <see cref="GameConfig.swordWindupSeconds"/> kadar parlar, vuruş o süre dolunca
+    /// <paramref name="facing"/> yönüne yapılır (<see cref="TickSwing"/>). Hazırlık sürüyorsa, bekleme dolmadıysa ya da yakın
+    /// silah yoksa false.
+    /// </summary>
+    public static bool TryBeginSwing(PlayerState attacker, Vector2 facing, GameConfig config)
+    {
+        if (attacker == null || config == null || !attacker.IsAlive || attacker.Status.Swing.IsWindingUp) return false;
+        if (!IsMelee(attacker.Status.Weapon)) return false;
+
+        float windup = Mathf.Max(0f, config.swordWindupSeconds);
+        float wait = windup + Mathf.Max(0f, config.swordSwingCooldownSeconds); // Bekleme vuruştan sonra sayılır
+        if (!attacker.Status.TryUseWeaponShot(wait, out WordEntry used)) return false;
+
+        attacker.Status.Swing.Begin(used, facing, windup);
+        return true;
+    }
+
+    /// <summary>
+    /// Hazırlıktaki savuruşun zamanını ilerletir; süre dolunca vuranın o anki konumundan, hazırlıkta kilitlenen yöne vurur.
+    /// Vuruş bu karede yapıldıysa true (kurbanlar <paramref name="victims"/>'te). Vuran elendiyse vuruş olmaz.
+    /// </summary>
+    public static bool TickSwing(PlayerState attacker, float deltaSeconds, IPlayerLocator world, GameConfig config, List<PlayerState> victims)
+    {
+        victims?.Clear();
+        if (attacker == null) return false;
+
+        MeleeWindup swing = attacker.Status.Swing;
+        if (!swing.Tick(deltaSeconds)) return false;
+        if (!attacker.IsAlive || world == null || !world.TryGetPosition(attacker.Id, out Vector2 from)) return false;
+
+        Strike(attacker, from, swing.Facing, swing.Weapon, world, config, true, victims);
+        return true;
     }
 
     /// <summary>

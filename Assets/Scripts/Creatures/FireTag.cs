@@ -2,7 +2,8 @@
 /// "fire": ateş. Yaratığın alanı (area) süre boyunca ateş püskürtür: yarıçapındaki herkese, her
 /// <see cref="GameConfig.fireDamageIntervalSeconds"/> saniyede bir kelimenin "stats.damage" kadar hasar verir.
 /// Hedefi elenirse başka bir oyuncuya geçer. Tek başına (map_wide olmadan) bir tehdit kelimesinde (ör. Ejderha) etiket,
-/// yaratığı kenardan salan bir tehdit etkisi de üretir; çözüm alanı (mağara) korunanlara ateş işlemez.
+/// yaratığı kenardan salan bir tehdit etkisi de üretir. Bu etki uyarılıdır: yaratık uyarı süresi ("stats.warningSeconds") bitince
+/// gelir, oyuncular o sürede mağaraya koşar. Çözüm alanındaki (mağara) korunana ateşin hiçbir hasarı işlemez.
 /// </summary>
 public class FireTag : ITagBehaviour, IThreatEffectTag
 {
@@ -26,7 +27,7 @@ public class FireTag : ITagBehaviour, IThreatEffectTag
         // "map_wide" olan kelimelerde etkiyi o etiket üretir; çift etki olmasın.
         if (word != null && word.HasTag("map_wide")) return null;
 
-        // Bir yaratığı (ejderha) kenardan salar ve yaşadığı sürece tehdit sürer.
-        return new HordeEffect();
+        // Bir yaratığı (ejderha) uyarı bitince kenardan salar ve yaşadığı sürece tehdit sürer.
+        return new HordeEffect(needsWarning: true);
     }
 }

@@ -522,6 +522,12 @@ public class GameConfig : ScriptableObject
     [Tooltip("İki atış arası en kısa süre (sn).")]
     [Min(0f)] public float weaponShotIntervalSeconds = 0.35f;
 
+    [Tooltip("Yakın dövüş silahı (melee: kılıç, sopa) savurmadan önceki hazırlık (sn). Bu sürede silah parlar ve önündeki yay görünür; hedef kaçabilir.")]
+    [Min(0f)] public float swordWindupSeconds = 0.2f;
+
+    [Tooltip("Yakın dövüş silahının bir vuruşundan sonra yeniden savurmak için bekleme (sn).")]
+    [Min(0f)] public float swordSwingCooldownSeconds = 0.8f;
+
     [Tooltip("Lava ya da uçuruma itilen karakterin düşme animasyonu süresi (sn); bitince canı tamamen gider.")]
     [Min(0.2f)] public float fallSeconds = 0.9f;
     [Tooltip("Anında vuran (instant) yaratığın uyarı süresi en az bu kadardır (sn). Kelimede daha uzunu yazıyorsa o kullanılır.")]

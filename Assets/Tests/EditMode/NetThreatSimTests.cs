@@ -198,6 +198,8 @@ public class NetThreatSimTests
     public void Dragon_IsOneFlyingFireCreature_WithCaves()
     {
         sim.OnWordPlayed(writer, Word("ejderha"));
+        Assert.AreEqual(0, sim.CreatureCount, "Uyarı bitmeden ejderha gelmez");
+        sim.Tick(7.1f);
 
         Assert.AreEqual(1, sim.CreatureCount);
         var creatures = new List<CreatureSnapshot>();
@@ -205,7 +207,7 @@ public class NetThreatSimTests
         Assert.AreEqual(CreatureKind.FireArea, creatures[0].Kind);
 
         List<ZoneSnapshot> zones = Zones();
-        Assert.AreEqual(1, zones.Count); // 4 oyuncu: 2 * 4 / 8 = 1 mağara
+        Assert.AreEqual(2, zones.Count); // 4 oyuncu: 3 * 4 / 8 = 1,5 → 2 mağara
         Assert.IsTrue(zones.TrueForAll(z => z.Type == "cave"));
     }
 

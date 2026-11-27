@@ -14,8 +14,8 @@ public interface IThreatEffect
     bool IsFinished { get; }
 
     /// <summary>
-    /// Bu etki başlamadan önce oyunculara uyarı süresi verilmeli mi? Ani felaketlerde (patlama, dalga) evet; yaratıkların
-    /// hemen göründüğü (sürü, ejderha, meteor) etkilerde hayır: yaratıklar görünür ve sığınma zorunlu değil.
+    /// Bu etki başlamadan önce oyunculara uyarı süresi verilmeli mi? Ani felaketlerde (patlama, dalga) ve ateşli tek yaratıkta
+    /// (ejderha: mağaraya koşacak süre) evet; yaratıkların hemen göründüğü (sürü, meteor) etkilerde hayır.
     /// </summary>
     bool NeedsWarning { get; }
 }

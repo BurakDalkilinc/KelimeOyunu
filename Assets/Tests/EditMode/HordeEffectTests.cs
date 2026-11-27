@@ -351,6 +351,7 @@ public class HordeEffectTests
         Assert.IsTrue(new MapBlastEffect().NeedsWarning);
         Assert.IsTrue(new WaveEffect().NeedsWarning);
         Assert.IsFalse(new HordeEffect().NeedsWarning);
+        Assert.IsTrue(new HordeEffect(needsWarning: true).NeedsWarning, "Ateşli tek yaratık (ejderha) uyarıdan sonra gelir");
         Assert.IsFalse(new MeteorShowerEffect().NeedsWarning);
     }
 

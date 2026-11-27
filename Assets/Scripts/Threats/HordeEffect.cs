@@ -1,7 +1,9 @@
 using UnityEngine;
 
 /// <summary>
-/// Sürü saldırısı (ör. zombi sürüsü; tek üyeli olarak ejderha): uyarı bitince kelimenin "stats.count" kadar yaratığı arenanın kenarlarından salar.
+/// Sürü saldırısı (ör. zombi sürüsü; tek üyeli olarak ejderha): kelimenin "stats.count" kadar yaratığı arenanın kenarlarından salar.
+/// Sürüler hemen gelir; uyarılı kurulursa (ateşli tek yaratık: ejderha) yaratık tehdidin uyarı süresi bitince kenardan girer,
+/// oyuncular o sürede mağaraya koşar.
 /// Her yaratık kelimenin etiketlerinden kurulur (zombide "undead": kalıcı kovalama, "swarm": kademeli ilk vuruş), rastgele bir
 /// hayattaki oyuncuyu kovalar ve çözüm alanındaki (ev) korunanlara vuramaz. Yaratıklar yaşadığı sürece
 /// ("stats.duration") etki sürer; çözüm alanları o zamana kadar ayakta kalır. Düz C# sınıfı.
@@ -16,7 +18,15 @@ public class HordeEffect : IThreatEffect
 
     public bool IsFinished { get; private set; }
 
-    public bool NeedsWarning => false; // Yaratıklar hemen görünür; sığınma zorunlu değil
+    readonly bool needsWarning;
+
+    /// <param name="needsWarning">true ise yaratıklar tehdidin uyarı süresi bitince salınır ("fire" etiketi); false ise hemen.</param>
+    public HordeEffect(bool needsWarning = false)
+    {
+        this.needsWarning = needsWarning;
+    }
+
+    public bool NeedsWarning => needsWarning;
 
     /// <summary>Salınan yaratık sayısı.</summary>
     public int Spawned { get; private set; }

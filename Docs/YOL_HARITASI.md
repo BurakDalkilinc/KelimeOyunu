@@ -38,7 +38,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
   - [x] Tsunami: rastgele kenardan dalga, kuleler (3 × 3 kişi) korur
   - [x] Meteor yağmuru: 12 sn'de 30 meteor, her biri 1,5 sn gölge gösterir, çözüm gölgeleri görüp kaçmak
   - [x] Zombi sürüsü: hemen belirir (uyarı yok), kenarlardan 20 zombi en yakındaki oyuncuya saldırır (10 sn); evler isteğe bağlı sığınak, evdeki bot evinde kalır
-  - [x] Ejderha: hemen belirir, en yakındaki oyuncuya saldırır, alanında saniyede 1 ateş hasarı (10 sn); mağaralar isteğe bağlı sığınak
+  - [x] Ejderha: uyarıdan (7 sn) sonra kenardan gelir, en yakındaki oyuncuya saldırır, alanında saniyede 1 ateş hasarı (10 sn); mağaralar isteğe bağlı sığınak
 - [x] Bilinmeyen kelime → "???" yaratığı
 - [x] Hayalet modu (eleme sonrası izleme): yarı saydam, WASD ile gezer, duvarlar/yaratıklar/tehditler işlemez, hedef alınamaz (yeniden doğuş için bkz. Aşama 4)
 - [x] Maç sonu ekranı: kazanan, yazılan kelimeler listesi, R ile yeniden başlama
@@ -72,6 +72,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [x] Boss'lar evleri yıkar (duvar yıkımı, oranı aşınca ev çöker, sığınak evi tehdit sürerken korunur; ağda host hesaplar), yaratıklar evde/tehlikede doğmaz, kapılar hep güney duvarında
 - [x] Yaratık vuruş animasyonu: hazırlık (`ad_atk0`, geri çekilip ezilme) → vuruş (`ad_atk`, atılma) → toparlanma; süreler `GameConfig`'te; hedefte etiketlerden seçilen 4 karelik vuruş izi (`Resources/Data/attack_fx.json`); ağda istemcide de aynı
 - [x] Yaratıklar daha tehlikeli (oyuncu geri bildirimi): hız/ömür çarpanı, `slow` alt sınırı, atılma (hazırlıkta kırmızı yanar), vuruşta sendeleme, vuramadığı hedeften dönme, doğma mesafesi 4,5; etikete göre çarpanlar `GameConfig.creatureTagTunings`; korku ipuçları (yakın tehlikede kırmızı vinyet, ekran dışı kovalayana ok, sert doğma sesi); ölçüm testi `CreatureMenaceMeasurementTests` (önce/sonra)
+- [x] Ejderha ve kılıç dengesi (oyuncu geri bildirimi): mağaradakine ateşin hiçbir türü işlemez (ateş alanı, yerdeki ateş; mağaraya giren söner); ejderha 7 sn uyarıdan sonra kenardan gelir, hız 3,6, 3 mağara; kılıç 2 hasar / menzil 1,3 / 10 sn, savuruştan önce 0,2 sn parlayan hazırlık ve 0,8 sn bekleme; ölçüm testi `DragonRefugeMeasurementTests` (önce/sonra)
 - [x] Koleksiyon defteri (menüde "Defter"; kendi yazdığın kelime keşfedilir, başkasınınki görülür; kayıt `persistentDataPath/collection.json`, etiket adları `Resources/Data/tag_names.json`)
 - [x] Ayarlar, ses, Türkçe/İngilizce dil desteği
   - [x] Ses ve müzik: kodla üretilen retro efektler ve 3 müzik döngüsü (`Tools/GenerateSounds.py`), kelime sesi etiketlerden (`Resources/Data/sfx_tags.json`), tehditte siren ve gerilim müziği; ağ maçında istemcide de duyulur

@@ -3,7 +3,7 @@ using NUnit.Framework;
 using UnityEngine;
 using Random = System.Random;
 
-/// <summary>"fire" etiketinin ve Ejderha tehdidinin testleri: ateş alanı, yanma aralığı, hedef değiştirme, mağaralar, hemen başlama.</summary>
+/// <summary>"fire" etiketinin ve Ejderha tehdidinin testleri: ateş alanı, yanma aralığı, hedef değiştirme, mağaralar, uyarıdan sonra gelme.</summary>
 public class DragonFireTests
 {
     class FakeWorld : IPlayerLocator
@@ -84,7 +84,8 @@ public class DragonFireTests
         Assert.IsTrue(dragon.BurnsArea);
         Assert.IsTrue(dragon.RetargetsWhenTargetDies);
         Assert.AreEqual(2f, dragon.Radius, 0.001f);     // words.json: radius 2.0
-        Assert.AreEqual(6f, dragon.Speed, 0.001f);      // words.json: speed 6.0
+        Assert.AreEqual(3.6f, dragon.Speed, 0.001f);    // words.json: speed 3.6 (oyuncudan belirgin yavaş)
+        Assert.Less(dragon.Speed, config.playerMoveSpeed * 0.8f, "Koşan oyuncu ejderhadan uzaklaşabilmeli");
         Assert.AreEqual(1, dragon.Damage);
         Assert.AreEqual(10f, dragon.LifeLeft, 0.001f);  // words.json: duration 10
         Assert.AreEqual(config.fireDamageIntervalSeconds, dragon.AreaDamageIntervalSeconds, 0.001f);
@@ -169,7 +170,7 @@ public class DragonFireTests
         var dragon = Dragon(target, new Vector2(-6f, 0f));
         dragon.Obstacles = field;
 
-        for (int i = 0; i < 40; i++) dragon.TickArea(0.1f, world, PlayerRadius); // 4 sn × 6 = 24 birim
+        for (int i = 0; i < 40; i++) dragon.TickArea(0.1f, world, PlayerRadius); // 4 sn × 3,6 = 14,4 birim
 
         Assert.Greater(dragon.Position.x, 5f, "Duvarın üstünden uçup hedefe ulaştı");
     }
@@ -259,19 +260,26 @@ public class DragonFireTests
     }
 
     [Test]
-    public void Ejderha_AsAGlobalThreat_StartsImmediately_OneDragonWithItsName_AndTwoOptionalCaves()
+    public void Ejderha_AsAGlobalThreat_WarnsFirst_ThenOneDragonWithItsName_AndThreeCaves()
     {
         var world = new FakeWorld();
         for (int i = 1; i <= 8; i++) world.Add(i, new Vector2(-8f + i * 2f, 0f));
         var sink = new CollectingSink();
         var threat = new GlobalThreat(Ejderha(), world.Players[0], config, arena, world, new Random(2), sink);
 
-        Assert.AreEqual(ThreatPhase.Active, threat.Phase, "Uyarı beklenmez");
+        Assert.AreEqual(ThreatPhase.Warning, threat.Phase, "Önce uyarı: mağaraya koşacak süre");
+        Assert.AreEqual(7f, threat.WarningLeft, 0.001f, "words.json: warningSeconds 7");
+        Assert.AreEqual(0, sink.Models.Count, "Uyarı bitmeden ejderha gelmez");
+
+        threat.Tick(6.9f);
+        Assert.AreEqual(0, sink.Models.Count);
+        threat.Tick(0.2f);
+        Assert.AreEqual(ThreatPhase.Active, threat.Phase);
         Assert.AreEqual(1, sink.Models.Count);
         // Ad dilden bağımsız bir belirteçle gelir; ekrana basan taraf seçili dildeki adı yazar.
         Assert.AreEqual(CreatureLabel.NameToken, sink.Labels[0], "Tek yaratıkta adı yazılır");
         Assert.AreEqual(Ejderha().DisplayFor(Language.Turkish), CreatureLabel.Resolve(sink.Labels[0], sink.Models[0].Word));
-        Assert.AreEqual(2, threat.Zones.Zones.Count);
+        Assert.AreEqual(3, threat.Zones.Zones.Count, "8 oyuncu: 3 mağara x 4 kişi = 12 yer");
         foreach (SafeZone cave in threat.Zones.Zones)
         {
             Assert.AreEqual("cave", cave.Type);
@@ -284,16 +292,18 @@ public class DragonFireTests
     }
 
     [Test]
-    public void Ejderha_Flow_EndsAfter10Seconds_AndCavesDisappearAfterTheLinger()
+    public void Ejderha_Flow_EndsAfterWarningPlus10Seconds_AndCavesDisappearAfterTheLinger()
     {
         var world = new FakeWorld();
         for (int i = 1; i <= 4; i++) world.Add(i, new Vector2(-4f + i * 2f, 0f));
         var threat = new GlobalThreat(Ejderha(), world.Players[0], config, arena, world, new Random(2), new CollectingSink());
 
-        threat.Tick(9.9f);
-        // 4 oyuncu: mağara sayısı oyuncu sayısına göre (2 * 4 / 8 = 1).
+        threat.Tick(7.1f);  // Uyarı (7 sn) bitti, ejderha geldi
+        threat.Tick(9.8f);
+        // 4 oyuncu: mağara sayısı oyuncu sayısına göre (3 * 4 / 8 = 1,5 → 2).
         Assert.AreEqual(ThreatSpec.GetZoneCount(Ejderha(), 4, config), threat.Zones.Zones.Count);
-        Assert.AreEqual(1, threat.Zones.Zones.Count);
+        Assert.AreEqual(2, threat.Zones.Zones.Count);
+        Assert.AreEqual(ThreatPhase.Active, threat.Phase);
 
         threat.Tick(0.2f);
         threat.Tick(config.safeZoneLingerSeconds + 0.5f);

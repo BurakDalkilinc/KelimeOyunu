@@ -202,7 +202,8 @@ public class NetworkPlayer : NetworkBehaviour
         shoveCount.OnValueChanged += (_, __) => { if (config != null) ShoveEffect.Spawn(transform.position, config.shoveRange); };
         crashCount.OnValueChanged += (_, __) => { if (config != null) ExplosionEffect.Spawn(transform.position, config.vehicleCrashRadius); };
         swingCount.OnValueChanged += (_, __) =>
-            MeleeSwingEffect.Spawn(transform.position, swingDirection.Value, swingReach.Value, SpriteLibrary.Get(swingSprite.Value.ToString()));
+            MeleeSwingEffect.Spawn(transform.position, swingDirection.Value, swingReach.Value, SpriteLibrary.Get(swingSprite.Value.ToString()),
+                                   config != null ? config.swordWindupSeconds : 0f, transform); // Önce hazırlık parıltısı, sonra savuruş
         shoveLeftChangedAt = Time.unscaledTime;
         Everyone.Add(this);
         GoreEmitter.Attach(gameObject, () => health.Value,

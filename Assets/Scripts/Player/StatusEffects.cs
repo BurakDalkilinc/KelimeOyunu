@@ -209,6 +209,12 @@ public class StatusEffects
         charLevel = Mathf.Clamp01(charLevel + Mathf.Max(0f, charAmount));
     }
 
+    /// <summary>Alevi söndürür (sığınağa giren). Kömürleşme kalır.</summary>
+    public void Extinguish()
+    {
+        burnTimeLeft = 0f;
+    }
+
     // ---- Araç ----
 
     WordEntry vehicleWord;
@@ -258,6 +264,12 @@ public class StatusEffects
     int weaponShots;
     float weaponTimeLeft;
     float weaponShotWait;
+
+    /// <summary>
+    /// Yakın dövüş silahının hazırlıktaki savuruşu (kılıç parlarken). Zamanını ve vuruşu maç simülasyonu yürütür
+    /// (<see cref="MeleeRules.TickSwing"/>).
+    /// </summary>
+    public MeleeWindup Swing { get; } = new MeleeWindup();
 
     /// <summary>Elinde ateş edebileceği bir silah var mı?</summary>
     public bool HasWeapon => weaponWord != null && weaponShots > 0 && weaponTimeLeft > 0f;
@@ -383,6 +395,7 @@ public class StatusEffects
         flightTimeLeft = 0f;
         flightSpeedMultiplier = 1f;
         DropWeapon();
+        Swing.Cancel();
         Dismount();
         burnTimeLeft = 0f;
         charLevel = 0f;
