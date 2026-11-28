@@ -64,7 +64,7 @@ Claude `/sonraki-adim` ile buradaki ilk işaretlenmemiş görevi alır.
 - [x] Oyun adı, logo, kapsül görselleri (ad: WordRoyale; görseller `Steam/Store/`, üretici `Tools/GenerateStoreArt.py`)
 - [ ] 30 sn fragman
 - [ ] Steam sayfası yayında, wishlist toplanıyor
-- [ ] Next Fest demosu
+- ~~Next Fest demosu~~ (iptal: oyunun demosu olmayacak)
 
 ## Aşama 6 — İçerik ve çıkış
 - [x] 300+ kelime
