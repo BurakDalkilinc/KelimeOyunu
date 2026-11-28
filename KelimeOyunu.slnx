@@ -1,5 +1,7 @@
 ﻿<Solution>
   <Project Path="KelimeOyunu.Runtime.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="KelimeOyunu.Tests.EditMode.csproj" />
+  <Project Path="KelimeOyunu.Steam.csproj" />
   <Project Path="Unity.2D.Welcome.csproj" />
 </Solution>
