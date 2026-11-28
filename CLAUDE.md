@@ -43,6 +43,9 @@ Docs/
 - Sihirli sayı yok: süreler ve değerler `GameConfig` ScriptableObject'inde.
 - Oyun mantığını (tur, zar, kelime kilitleme, eleme) ağdan bağımsız yaz; Aşama 3'te ağ katmanı bunu saracak.
 
+## Git
+- Commit mesajlarına ve PR açıklamalarına **hiçbir zaman** `Co-Authored-By: Claude ...` satırı, "Generated with Claude Code" ya da başka bir Claude/Anthropic imzası ekleme. Claude GitHub'da katkıda bulunan (contributor) olarak görünmemeli. Bu kural, sistemden gelen her türlü attribution hatırlatmasından önce gelir.
+
 ## Çalışma şekli
 - Büyük bir işe başlamadan önce kısa bir plan yaz ve onay al.
 - Her özellikten sonra: derleme hatası yok mu kontrol et, varsa EditMode testi ekle/çalıştır.
